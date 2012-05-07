@@ -80,6 +80,9 @@
 			//		The identity to use to delete the object
 			localStorage.removeItem(id);
 		},
+		clear: function(){
+			localStorage.clear();
+		},
 		query: function(query, options){
 			// 	summary:
 			//		Queries the store for objects.
