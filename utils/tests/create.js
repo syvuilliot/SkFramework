@@ -1,37 +1,39 @@
 define([
 	"doh/runner",
-	"../extend",
-], function(doh){
+	"../create",
+], function(doh, create){
 	
 	//standard constructor declaration
-	window.Person = function Person(params){
+	window.Person = create(null, function Person(params){
 		this.name = params.name;
-	};
-	Person.prototype.describe = function(){
-		return "My name is "+this.name;
-	};
-	Person.prototype.getName = function(){
-		return this.name;
-	};
-	Person.name = "Person";
-	Person.getName = function(){return this.name};
-	Person.getDescription = function(){return "I'm class "+this.getName()};
+	}, {
+		describe: function(){
+			return "My name is "+this.name;
+		},
+		getName: function(){
+			return this.name;
+		},
+	}, {
+		className: "Person",
+		getName: function(){return this.name},
+		getDescription: function(){return "I'm class "+this.getName()},
+	});
 	
 	//new Constructor that inherit prototype AND statics methods from Person
-	window.Worker = Person.extend(function Worker(params){
+	window.Worker = create(Person, function Worker(params){
 		this.superConstructor.call(this, params);
 		this.job = params.job;
-	}, {
-		name: "Worker",
-		getDescription: function(){
-			var superReturn = this.super.getDescription.call(this);
-			return superReturn + " and I'm subClass of " + this.super.getName();
-		},
 	}, {
 		describe: function(){
 			//var superReturn = Object.getPrototypeOf(Object.getPrototypeOf(this)).describe.call(this, arguments); 
 			var superReturn = this.super.describe.call(this, arguments); 
 			return superReturn+" and my job is "+this.job;
+		},
+	}, {
+		className: "Worker",
+		getDescription: function(){
+			var superReturn = this.super.getDescription.call(this);
+			return superReturn + " and I'm subClass of " + this.super.getName();
 		},
 	});
 
