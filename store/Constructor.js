@@ -33,13 +33,22 @@ var Constructor = function(store, options){
 		return new constructor(rawItem);
 	};
 	
+	var copyOwnProperties = function(source, target) {
+        Object.getOwnPropertyNames(source).forEach(function(propName) {
+            Object.defineProperty(target, propName,
+                Object.getOwnPropertyDescriptor(source, propName));
+        });
+        return target;
+    };
+	
 	return lang.delegate(store, {
 		getConstructorId: options.getConstructorId,
 		//constructorsMap: options.constructorsMap,
 		query: function(query, directives){
-			var rawResult = store.query(query, directives);
+			//query all then instanciate then filter
+			var rawResult = store.query({});
 			var instancesResult = rawResult.map(function(rawItem){return createInstance(rawItem)});
-			return QueryResults(instancesResult);
+			return QueryResults(store.queryEngine(query, directives)(instancesResult));
 		},
 		get: function(id, directives){
 			var rawItem = store.get(id, directives);
@@ -53,8 +62,9 @@ var Constructor = function(store, options){
 		},
 		put: function(object, directives){
 			var constructorId = this.getConstructorId(object);
-			object[options.constructorIdProperty] = constructorId;
-			return store.put(object, directives);
+			rawItem = copyOwnProperties(object, {});
+			rawItem[options.constructorIdProperty] = constructorId;
+			return store.put(rawItem, directives);
 		},
 	});
 };
