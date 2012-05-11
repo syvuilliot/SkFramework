@@ -1,10 +1,12 @@
 ﻿define([
 	"doh/runner",
 	"SkFramework/utils/array",
+	"SkFramework/utils/identical",
 	"../Constructor",
 	"../LocalStorage",
 	"dojo/_base/declare",
-], function(doh, arrayUtils, Constructor, LocalStorage, declare){
+], function(doh, arrayUtils, identical, Constructor, LocalStorage, declare){
+
 	var Person = declare("Person", [], {
 		constructor: function(params){
 			this.id  = params.id;
@@ -45,26 +47,34 @@
 	
 	var sameArray = arrayUtils.sameArray;
 	
+	doh.i = doh.identical = function(expected, actual, sortArrays, hint){
+		if (! identical(expected, actual, sortArrays)){
+			throw new doh._AssertFailure("assertEqual() failed:\n\texpected\n\t\t"+JSON.stringify(expected)+"\n\tbut got\n\t\t"+JSON.stringify(actual)+"\n\n", hint);
+		}
+		return true;
+	};
+	
 	doh.register("Constructor store test",[
 		function personInstance(t){
-			t.is(toto, store.get(totoId));
-			t.is("my name is toto", store.get(totoId).describe());
+			t.i(toto, store.get(totoId));
+			t.i("my name is toto", store.get(totoId).describe());
 		},
 		function workerInstance(t){
-			t.is(titi, store.get(titiId));
-			t.is("my name is titi and my job is coder", store.get(titiId).describe());
+			t.i(titi, store.get(titiId));
+			t.i("my name is titi and my job is coder", store.get(titiId).describe());
 		},
 		function queryAll(t){
 			window.allInstances = store.query({});
-			t.is(2, allInstances.total);
-			t.t(sameArray([toto, titi], allInstances));
+			t.i(2, allInstances.total);
+			t.i([toto, titi], allInstances, true);
+			t.i([titi, toto], allInstances, true);//for t.i test... not related to Constructor test :-)
 			allInstances.forEach(function(item){
 				t.t(item.describe);
 			});
 		},
 		function queryOnInstanceMethod(t){
 			window.moreThanThirty = store.query(function(item){return item.getAge()>30});
-			t.t(sameArray([titi], moreThanThirty));
+			t.i([titi], moreThanThirty);
 		},
 	]);
 	
