@@ -22,6 +22,7 @@
 		{
 			name:"query",
 			setUp: function(t){
+				ls.clear();
 				ls.put({id: "20", name:"titi"});
 			},
 			runTest: function(t){
