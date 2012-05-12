@@ -1,9 +1,10 @@
 ﻿define([
 	"doh/runner",
 	"dojo/store/Memory",
-], function(doh, Memory){
+	'../SubQueryable'
+], function(doh, Memory, SubQueryable){
 
-	window.mainMemoryStore = new Memory({
+	window.mainMemoryStore = SubQueryable(new Memory({
 		data: [
 			{id:"1", name:"toto1", job:"farmer", country:"France"},
 			{id:"2", name:"toto2", job:"farmer", country:"Italy"},
@@ -11,10 +12,10 @@
 			{id:"4", name:"toto4", job:"pilote", country:"France"},
 			{id:"5", name:"toto5", job:"pilote", country:"France"},
 		]
-	});
+	}));
 
 	window.farmers = mainMemoryStore.query({job: "farmer"});
-	
+	window.pilotes = mainMemoryStore.query({job: "pilote"});
 	
 	doh.register("Query result with store API",{
 		"total": function(t){
@@ -22,7 +23,10 @@
 		},
 		"forEach": function(t){
 			farmers.forEach(function(item){
-				t.t(item);
+				t.is('farmer', item.job);
+			});
+			pilotes.forEach(function(item){
+				t.is('pilote', item.job);
 			});
 		},
 		"get": function(t){
@@ -31,7 +35,7 @@
 		},
 		"put": function(t){
 			farmers.put({id:"6", name:"toto6", job:"farmer", country:"GB"});
-			t.is("farmer", mainMemoryStore.get("6"));
+			t.is("farmer", mainMemoryStore.get("6").job);
 		},
 		"query": function(t){
 			var frenchFarmers = farmers.query({country: "France"});
