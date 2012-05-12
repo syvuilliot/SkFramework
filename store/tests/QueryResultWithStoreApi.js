@@ -16,6 +16,7 @@
 
 	window.farmers = mainMemoryStore.query({job: "farmer"});
 	window.pilotes = mainMemoryStore.query({job: "pilote"});
+	window.frenchFarmers = farmers.query({country: "France"});
 	
 	doh.register("Query result with store API",{
 		"total": function(t){
@@ -27,6 +28,10 @@
 			});
 			pilotes.forEach(function(item){
 				t.is('pilote', item.job);
+			});
+			frenchFarmers.forEach(function(item){
+				t.is('farmer', item.job);
+				t.is('France', item.country);
 			});
 		},
 		"get": function(t){

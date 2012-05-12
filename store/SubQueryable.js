@@ -1,13 +1,13 @@
 ﻿define([
-	"dojo/_base/lang",
-	"dojo/_base/Deferred",
-	"dojo/store/util/QueryResults",
-], function(lang, Deferred, QueryResults) {
+	'dojo/_base/lang'
+], function(
+	lang
+) {
 	return function(store, options) {
 		return lang.delegate(store, {
 			query: function(query, options) {
 				var queryResultStore = lang.delegate(this, {});
-				queryResultStore._query = query;
+				queryResultStore._query = lang.mixin(this._query, query);
 				return queryResultStore;
 			},
 			forEach: function(callback) {
