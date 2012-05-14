@@ -21,8 +21,12 @@
 	var create = function(baseConstructor, subConstructor, subPrototypeProps, subConstructorProps){
 		
 		//create an empty baseConstructor if none provided
-		if (!baseConstructor){baseConstructor = function BaseConstructor(){}};
+		if (!baseConstructor){baseConstructor = function BaseClass(){}};
 		
+		//default subConstructor if none is provided
+		if(!subConstructor){subConstructor = function SubClass(){
+			this.superConstructor.apply(this, arguments)		
+		}};
 		//make subConstructor inherite from baseConstructor
 		if (subConstructor.__proto__){ //no standard way to do this so we need to ensure that __proto__ exists
 			subConstructor.__proto__ = baseConstructor; 
