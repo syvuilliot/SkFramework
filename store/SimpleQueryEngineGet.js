@@ -14,18 +14,24 @@ return function(query, options){
 			query = function(object){
 				for(var key in queryObject){
 					var required = queryObject[key];
-					if(object.get){
-						var propValue = object.get(key);
+					//special case when key is "instanceof"
+					if (key == "instanceof"){
+						if (!(object instanceof required)){return false}
 					} else {
-						var propValue = object[key];
-					}
-					if(required && required.test){
-						// an object can provide a test method, which makes it work with regex
-						if(!required.test(propValue, object)){
+					//all other cases
+						if(object.get){
+							var propValue = object.get(key);
+						} else {
+							var propValue = object[key];
+						}
+						if(required && required.test){
+							// an object can provide a test method, which makes it work with regex
+							if(!required.test(propValue, object)){
+								return false;
+							}
+						}else if(required != propValue){
 							return false;
 						}
-					}else if(required != propValue){
-						return false;
 					}
 				}
 				return true;
