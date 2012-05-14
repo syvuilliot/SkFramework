@@ -4,7 +4,6 @@ return function (a, b, arrayOrderIrelevant) {
   
     var replacer = function (key, value) {
         
-		//at fisrt level only
 		if(key===""){
 			if (Array.isArray(value) && arrayOrderIrelevant){
 				return value.sort(function(a,b){
