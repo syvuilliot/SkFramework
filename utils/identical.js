@@ -6,7 +6,7 @@ return function (a, b, arrayOrderIrelevant) {
         
 		if(key===""){
 			if (Array.isArray(value) && arrayOrderIrelevant){
-				return value.sort(function(a,b){
+				return value.slice().sort(function(a,b){ //copy the array in order to keep the original unsorted
 					if (JSON.stringify(a, replacer) > JSON.stringify(b, replacer)){
 						return 1;
 					} else { 
