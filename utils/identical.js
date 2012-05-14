@@ -1,50 +1,37 @@
 define([], function(){
 
-/*
-    Original script title: "Object.identical.js"; version 1.12
-    Copyright (c) 2011, Chris O'Brien, prettycode.org
-    http://github.com/prettycode/Object.identical.js
-
-    Permission is hereby granted for unrestricted use, modification, and redistribution of this
-    script, only under the condition that this code comment is kept wholly complete, appearing
-    directly above the script's code body, in all original or modified non-minified representations
-*/
-
-return function (a, b, sortArrays) {
+return function (a, b, arrayOrderIrelevant) {
   
-    function sort(object) {
+    var replacer = function (key, value) {
         
-        if (typeof object !== "object" || object === null) {
-            return object;
-        }
-		
-		if (Array.isArray(object)){
-			if (sortArrays === true) {
-				return object.sort(function(a,b){
-					if (JSON.stringify(a) > JSON.stringify(b)){
+		//at fisrt level only
+		if(key===""){
+			if (Array.isArray(value) && arrayOrderIrelevant){
+				return value.sort(function(a,b){
+					if (JSON.stringify(a, replacer) > JSON.stringify(b, replacer)){
 						return 1;
 					} else { 
 						return -1;
 					}
 				});
-			} else {
-				return object
 			}
 		}
+		
+        if (typeof value !== "object" || value === null || Array.isArray(value)) {
+            return value;
+        }
+		
         
         var result = [];
         
-        Object.keys(object).sort().forEach(function(key) {
-            result.push({
-                key: key,
-                value: sort(object[key])
-            });
+        Object.keys(value).sort().forEach(function(key) {
+            result.push([key, value[key]]);
         });
         
         return result; 
-    }
+    };
     
-    return JSON.stringify(sort(a)) === JSON.stringify(sort(b));
+    return JSON.stringify(a, replacer) === JSON.stringify(b, replacer);
 };
 
 });
