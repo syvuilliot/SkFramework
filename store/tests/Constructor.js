@@ -30,7 +30,6 @@
 		}
 	});
 	
-	localStorage.clear();
 	
 	window.store = Constructor(new LocalStorage, {
 		constructorsMap: {
@@ -38,6 +37,7 @@
 			Worker: Worker,
 		}
 	});
+	store.clear();
 	
 	window.toto = new Person({id:"1", name: "toto", birthYear:1990});
 	var totoId = store.put(toto);

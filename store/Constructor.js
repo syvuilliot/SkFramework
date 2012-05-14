@@ -19,7 +19,7 @@ var Constructor = function(store, options){
 	options = lang.mixin({
 		constructorIdProperty: "ConstructorId",
 		getConstructorId: function(item){
-			return item.declaredClass;
+			return item.constructor.name;
 		},
 		getConstructor: function(constructorId){
 			return options.constructorsMap[constructorId];
