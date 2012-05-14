@@ -13,6 +13,9 @@
 			getIdentity: function(){
 				return Model.store.getIdentity(this);
 			},
+			getclassName: function(){
+				return this.constructor.name;
+			},
 			get: function(propertyName){
 				if (this["get"+propertyName]){
 					//if a getter is defined
@@ -39,10 +42,12 @@
 			},
 		}, {
 			query: function(query, options){
-				//TODO: return Model.store.query(lang.mixin(query, {_class: Tag}), options);
+				return Model.store.query(lang.mixin({}, {instanceof: this}, query), options);
+				/*
 				return Model.store.query(function(item){
 					return item instanceof this;
 				}.bind(this));
+				*/
 			},
 			addRelationTo: function(targetModel, options){
 				var relationDefinition = lang.mixin({

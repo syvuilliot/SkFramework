@@ -6,7 +6,8 @@
 	"dojo/store/Memory",
 	"SkFramework/store/Constructor",
 	"SkFramework/store/LocalStorage",
-], function(doh, identical, Model, create, Memory, Constructor, LocalStorage){
+	"SkFramework/store/SimpleQueryEngineGet",
+], function(doh, identical, Model, create, Memory, Constructor, LocalStorage, SimpleQueryEngineGet){
 
 	doh.i = doh.identical = function(expected, actual, sortArrays, hint){
 		if (! identical(expected, actual, sortArrays)){
@@ -89,7 +90,7 @@
 
 		window.ket = new Person({name: "Ket"});
 		ket.save();
-		window.aur = new Person({name: "Aurélie"});
+		window.aur = new Person({name: "Aurélie", birthYear:1982});
 		aur.save();
 		window.ant = new Person({name: "Antonin"});
 		ant.add("father", syv);
@@ -153,6 +154,9 @@
 		"Person instances": function(t){
 			t.i([syv, aur, ket, ant], Person.query({}), true);
 		},
+		"Thirty years old": function(t){
+			t.i([syv, aur], Model.store.query({age: 30}), true);
+		},
 	/*
 	console.log("Le conjoint de syv est:", syv.get("conjoint"));
 	console.log("Le conjoint de Aurélie est:", aur.get("conjoint"));
@@ -162,19 +166,23 @@
 	};
 	
 	doh.register("Tests with Memory store", testSet, function setUp(){
-		Model.store = new Memory();
+		Model.store = new Memory({
+			queryEngine: SimpleQueryEngineGet
+		});
 		setUpModels();
 		setUpInstances();
 	});
 	
 	doh.register("Tests with LocalStorage store", testSet, function setUp(){
 		setUpModels();
-		Model.store = Constructor(new LocalStorage, {
+		Model.store = Constructor(new LocalStorage({
+			queryEngine: SimpleQueryEngineGet,
+		}), {
 			constructorsMap: {
 				Person: Person,
 				Todo: Todo,
 				Tag: Tag,
-			}
+			},
 		});
 		Model.store.clear();
 		setUpInstances();
