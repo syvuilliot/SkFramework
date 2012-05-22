@@ -7,7 +7,7 @@
 var Constructor = function(store, options){
 	/*
 	summary:
-		make possible to persist the constructor id of items and to call it automatically when retriving an item
+		make possible to persist the constructor id of items and to call it automatically when retrieving an item
 	store:
 		the store to apply this wrapper
 	options:
@@ -45,7 +45,7 @@ var Constructor = function(store, options){
 		getConstructorId: options.getConstructorId,
 		//constructorsMap: options.constructorsMap,
 		query: function(query, directives){
-			//query all then instanciate then filter
+			//query all then instantiate then filter
 			var rawResult = store.query({});
 			var instancesResult = rawResult.map(function(rawItem){return createInstance(rawItem)});
 			return QueryResults(store.queryEngine(query, directives)(instancesResult));

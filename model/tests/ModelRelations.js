@@ -17,7 +17,7 @@
 	};
 
 	//************* Models
-	function setUpModels(){		
+	function setUpModels(){
 		window.Person = create(Model, function Person(){
 				this.superConstructor.apply(this, arguments);
 			}, {

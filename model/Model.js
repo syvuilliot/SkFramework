@@ -4,11 +4,14 @@
 ], function(lang, create){
 	var Model = create(null, function Model(params){
 			lang.mixin(this, params);
-			if (!this.id){this.id = Math.random()}
+			if (!this.id){this.id = Math.random();}
 		}, {
-			validate: function(){return true},
+			validate: function(){return true;},
 			save: function(){
-				if (this.validate()){Model.store.put(this)}
+				if (this.validate()){Model.store.put(this);}
+			},
+			remove: function(){
+				return Model.store.remove(this.getIdentity());
 			},
 			getIdentity: function(){
 				return Model.store.getIdentity(this);
@@ -61,7 +64,7 @@
 	Model.addRelation = function(relation){
 		//ajoute un getter sur la classe Model source
 		if (!relation.sourceModel.prototype["get"+relation.sourcePropertyName]){
-			relation.sourceModel.prototype["get"+relation.sourcePropertyName] = function(){	
+			relation.sourceModel.prototype["get"+relation.sourcePropertyName] = function(){
 				var self = this;
 				return Model.store.query(function(item){
 					return item instanceof relation.targetModel && self[relation.sourcePropertyName] && self[relation.sourcePropertyName].indexOf(item.getIdentity())>= 0;
@@ -75,12 +78,12 @@
 				return Model.store.query(function(item){
 					return item instanceof relation.sourceModel && item[relation.sourcePropertyName] && item[relation.sourcePropertyName].indexOf(self.getIdentity()) >= 0;
 				});
-			}
+			};
 		}
 		//ajoute un adder sur la classe Model source
 		if (!relation.sourceModel.prototype["add"+relation.sourcePropertyName]){
 			relation.sourceModel.prototype["add"+relation.sourcePropertyName] = function(value){
-				if (!this[relation.sourcePropertyName]){this[relation.sourcePropertyName]=[]}
+				if (!this[relation.sourcePropertyName]){this[relation.sourcePropertyName]=[];}
 				this[relation.sourcePropertyName].push(value.getIdentity());
 			};
 		}
@@ -88,7 +91,7 @@
 		if (!relation.targetModel.prototype["add"+relation.targetPropertyName]){
 			relation.targetModel.prototype["add"+relation.targetPropertyName] = function(value){
 				value.add(relation.sourcePropertyName, this);
-			}
+			};
 		}
 	};
 	
