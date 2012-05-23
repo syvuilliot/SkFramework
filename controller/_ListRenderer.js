@@ -15,6 +15,7 @@
 		},
 
 		_setItemsAttr: function(items){
+			this.removeAllItems();
 			this.items = items;
 			//rendering of initial items
 			items.forEach(function(item){
@@ -73,7 +74,7 @@
 		
 		uninitialize: function(){ //called by _WidgetBase destroy()
 			this.inherited(arguments);
-			this.observeHandle.cancel();
+			if (this.observeHandle){this.observeHandle.cancel();}
 		}
 	});
 	
