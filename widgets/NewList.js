@@ -2,10 +2,13 @@ define([
 	"dojo/_base/declare",
 	"dojo/_base/lang",
 	"SkFramework/widgets/Widget",
-], function(declare, lang, Widget){
-	return declare([Widget], {
-		//the property name used to set the item on each itemView instance
+	"SkFramework/controller/_ListRenderer",
+], function(declare, lang, Widget, _ListRenderer){
+	return declare([Widget, _ListRenderer], {
+		//the property name used to set the item on each itemView instance : "item" by default
 		itemPropName: "item",
+
+		//just to remember that a list can also have other children than item children
 /*		children: {
 			title: {
 				type: DomFragment,
@@ -14,25 +17,22 @@ define([
 				}
 			}
 		},
-*/		constructor: function(){
-			//sub set of children : only the children corresponding to a data item
-			this._itemsChildren = {};
+*/
+		addItem: function(item, index){
+			var child = new this.itemViewType(this.itemViewParams);
+			this.addChild(child, index);
+			child.set(this.itemPropName, item);
+			return child;
 		},
-		_setItemsAttr: function(items){
-			//for test only
-			this.emit("start rendering items");
+		
+		updateItem : function(item, from, to, child){
+			child.set(this.itemPropName, item);
+			return child;
+		},
+		
+		removeItem: function(item, index, child){
+			return child.destroyRecursive();
+		},
 
-			this.items = items;
-			items.forEach(function(item, index){
-				var itemViewParams = this.itemViewParams || {};
-				itemViewParams[this.itemPropName] = item;
-				var itemChild = new this.itemViewType(itemViewParams);
-				this._itemsChildren[item.id] = itemChild;
-				this.addChild(itemChild, index);
-			}.bind(this));
-
-			//for test only
-			this.emit("finished rendering items");
-		}
 	});
 });
