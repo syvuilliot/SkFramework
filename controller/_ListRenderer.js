@@ -69,6 +69,7 @@
 			Object.keys(this.byItemId).forEach(function(itemId){
 				var itemRefs = this.byItemId[itemId];
 				this.removeItem(itemRefs.item, itemRefs.index, itemRefs.child);
+				delete this.byItemId[itemId];
 			}.bind(this));
 		},
 		
