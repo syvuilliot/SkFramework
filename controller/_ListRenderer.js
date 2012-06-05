@@ -15,6 +15,7 @@
 		},
 
 		_setItemsAttr: function(items){
+			if (this.observeHandle){this.observeHandle.cancel();}
 			this.removeAllItems();
 			this.items = items;
 			//rendering of initial items
