@@ -10,7 +10,7 @@
 			save: function(){
 				if (this.validate()){Model.store.put(this);}
 			},
-			remove: function(){
+			delete: function(){
 				return Model.store.remove(this.getIdentity());
 			},
 			getIdentity: function(){
@@ -41,6 +41,14 @@
 					this["add"+propertyName](value);
 				} else {
 					this[propertyName].push(value);
+				}
+			},
+			remove: function(propertyName, value){
+				if (this["remove"+propertyName]){
+					//if a adder is defined
+					this["remove"+propertyName](value);
+				} else {
+					//TODO
 				}
 			},
 		}, {
@@ -91,6 +99,21 @@
 		if (!relation.targetModel.prototype["add"+relation.targetPropertyName]){
 			relation.targetModel.prototype["add"+relation.targetPropertyName] = function(value){
 				value.add(relation.sourcePropertyName, this);
+			};
+		}
+		//ajoute un remover sur la classe Model source
+		if (!relation.sourceModel.prototype["remove"+relation.sourcePropertyName]){
+			relation.sourceModel.prototype["remove"+relation.sourcePropertyName] = function(value){
+				if (!this[relation.sourcePropertyName]){this[relation.sourcePropertyName]=[];}
+				var idList = this[relation.sourcePropertyName];
+				var index = idList.indexOf(value.getIdentity());
+				if(index !== -1){idList.splice(index, 1);}
+			};
+		}
+		//ajoute un remover sur la classe Model cible
+		if (!relation.targetModel.prototype["remove"+relation.targetPropertyName]){
+			relation.targetModel.prototype["remove"+relation.targetPropertyName] = function(value){
+				value.remove(relation.sourcePropertyName, this);
 			};
 		}
 	};
