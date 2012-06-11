@@ -3,7 +3,7 @@ define(["dojo/_base/array"], function(arrayUtil) {
 return function(query, options){
 	// summary:
 	//		Based on dojo/store/util/SimpleQueryEngine but use "get" method on objects if available
-	//
+	//		and handle a special case where the queried property name is "instanceof"
 
 	// create our matching query function
 	switch(typeof query){
