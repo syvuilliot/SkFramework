@@ -64,17 +64,35 @@
 		
 		TodoTagRelation.addRelationTo(Tag, {
 			sourcePropertyName: "tag",
-			targetPropertyName: "todos",
+			targetPropertyName: "todosRelations",
 			min: 0,
 			max: null,
 		});
 		TodoTagRelation.addRelationTo(Todo, {
 			sourcePropertyName: "todo",
-			targetPropertyName: "tags",
+			targetPropertyName: "tagsRelations",
 			min: 0,
 			max: null,
 		});
-		
+		Todo.prototype.gettags = function(){
+			return this.get("tagsRelations").map(function(item){return item.get("tag");});
+		};
+		Tag.prototype.gettodos = function(){
+			return this.get("todosRelations").map(function(item){return item.get("todo");});
+		};
+		Todo.prototype.addtags = function(tag, options){
+			options = options || {};
+			options.todo = this;
+			options.tag = tag;
+			return new TodoTagRelation(options);
+		};
+		Tag.prototype.addtodos = function(todo, options){
+			options = options || {};
+			options.tag = this;
+			options.todo = todo;
+			return new TodoTagRelation(options);
+		};
+
 /*		Model.addRelation({
 			sourceModel: Person,
 			targetModel: Person,
@@ -143,20 +161,16 @@
 		window.coolTag = new Tag({label: "cool"}).save();
 		window.topTag = new Tag({label: "top"}).save();
 		
-		var todoTagRel1 = new TodoTagRelation();
-		todoTagRel1.set("tag", testTag);
-		todoTagRel1.save();
-		todo1.get("tags").add(todoTagRel1).save();
+		var todoTagRel1 = new TodoTagRelation({
+			todo: todo1,
+			tag: testTag
+		}).save();
+		todo1.get("tagsRelations").add(todoTagRel1).save();
 		// todo1.get("tags").add({tag: testTag}).save();
 		
-		var todoTagRel2 = new TodoTagRelation();
-		todoTagRel2.set("tag", coolTag);
-		todoTagRel2.save();
-		todo1.get("tags").add(todoTagRel2).save();
+		todo1.add("tags", coolTag).save();
 
-		testTag.get("todos").add(new TodoTagRelation({
-			todo: todo2,
-		})).save();
+		testTag.get("todosRelations").add(new TodoTagRelation({todo: todo2})).save();
 	}
 	
 //******* Tests
@@ -172,10 +186,10 @@
 			t.i([todo2, todo1], syv.get("todos"), true);
 		},
 		"todo1 tags": function(t){
-			t.i([testTag, coolTag], todo1.get("tags").map(function(item){return item.get("tag");}), true);
+			t.i([testTag, coolTag], todo1.get("tags"), true);
 		},
 		"todos with test tag": function(t){
-			t.i([todo1, todo2], testTag.get("todos").map(function(item){return item.get("todo");}), true);
+			t.i([todo1, todo2], testTag.get("todos"), true);
 		},
 		"Person instances": function(t){
 			t.i([syv, aur, ket, ant], Person.query({}), true);
@@ -202,7 +216,7 @@
 		setUpInstances();
 	});
 	
-/*	doh.register("Tests with LocalStorage store", testSet, function setUp(){
+	doh.register("Tests with LocalStorage store", testSet, function setUp(){
 		setUpModels();
 		Model.store = Constructor(new LocalStorage({
 			queryEngine: SimpleQueryEngineGet,
@@ -212,10 +226,11 @@
 				Person: Person,
 				Todo: Todo,
 				Tag: Tag,
+				TodoTagRelation: TodoTagRelation,
 			},
 		});
 		Model.store.clear();
 		setUpInstances();
 	});
-*/	
+	
 });

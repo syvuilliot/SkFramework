@@ -7,7 +7,8 @@
 	"SkFramework/store/Constructor",
 	"SkFramework/store/LocalStorage",
 	"SkFramework/store/SimpleQueryEngineGet",
-], function(doh, identical, Model, create, Memory, Constructor, LocalStorage, SimpleQueryEngineGet){
+	"SkFramework/store/RqlQueryEngineGet",	
+], function(doh, identical, Model, create, Memory, Constructor, LocalStorage, SimpleQueryEngineGet, RqlQueryEngineGet){
 
 	doh.i = doh.identical = function(expected, actual, sortArrays, hint){
 		if (! identical(expected, actual, sortArrays)){
@@ -18,8 +19,8 @@
 
 	//************* Models
 	function setUpModels(){
-		window.Person = create(Model, function Person(){
-				this.superConstructor.apply(this, arguments);
+		window.Person = create(Model, function Person(){ //need to give a constructor name for Constructor(new LocalStorage) to work
+				Model.apply(this, arguments);
 			}, {
 			getage: function(){
 				return 2012 - this.get("birthYear");
@@ -29,14 +30,25 @@
 				union.push(this.get("fatherOf"));
 				return union;
 			},
+			describe: function(){
+				return "My name is " + this.get("name") + " and I'm " + this.get("age");
+			},
+		});
+
+		window.Employee = create(Person, function Employee(){ //need to give a constructor name for Constructor(new LocalStorage) to work
+				Person.apply(this, arguments);
+			}, {
+			describe : function(){
+				return this.super.describe.call(this) + " and I work as " + this.get("job");
+			},
 		});
 		
-		window.Todo = create(Model, function Todo(){
-				this.superConstructor.apply(this, arguments);
+		window.Todo = create(Model, function Todo(){ //need to give a constructor name for Constructor(new LocalStorage) to work
+				Model.apply(this, arguments);
 		});
 		
-		window.Tag = create(Model, function Tag(){
-				this.superConstructor.apply(this, arguments);
+		window.Tag = create(Model, function Tag(){ //need to give a constructor name for Constructor(new LocalStorage) to work
+				Model.apply(this, arguments);
 		});
 		
 		Todo.addRelationTo(Person, {
@@ -77,20 +89,21 @@
 			min: 0,
 			max: 1,
 		});
-	};
-	
+	}
+
 	//************* Instances
 	function setUpInstances(){		
-		window.syv = new Person({
+		window.syv = new Employee({
 			id: "1",
 			name: "Syv",
 			birthYear: 1982,
+			job: "consultant"
 		});
 		syv.save();
 
-		window.ket = new Person({name: "Ket"});
+		window.ket = new Employee({name: "Ket", birthYear: 1986, job: "coder"});
 		ket.save();
-		window.aur = new Person({name: "Aurélie", birthYear:1982});
+		window.aur = new Employee({name: "Aurélie", birthYear: 1982, job: "catman"});
 		aur.save();
 		window.ant = new Person({name: "Antonin"});
 		ant.add("father", syv);
@@ -127,7 +140,7 @@
 		todo1.save();
 		tag1.add("todos", todo2);
 		todo2.save();
-	};
+	}
 	
 //******* Tests
 	
@@ -154,6 +167,9 @@
 		"Person instances": function(t){
 			t.i([syv, aur, ket, ant], Person.query({}), true);
 		},
+		"Employee instances": function(t){
+			t.i([syv, aur, ket], Employee.query({}), true);
+		},
 		"Thirty years old": function(t){
 			t.i([syv, aur], Model.store.query({age: 30}), true);
 		},
@@ -167,7 +183,7 @@
 	
 	doh.register("Tests with Memory store", testSet, function setUp(){
 		Model.store = new Memory({
-			queryEngine: SimpleQueryEngineGet
+			queryEngine: SimpleQueryEngineGet,
 		});
 		setUpModels();
 		setUpInstances();
@@ -179,6 +195,7 @@
 			queryEngine: SimpleQueryEngineGet,
 		}), {
 			constructorsMap: {
+				Employee: Employee,
 				Person: Person,
 				Todo: Todo,
 				Tag: Tag,

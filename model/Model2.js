@@ -48,23 +48,27 @@
 				}
 				return this;
 			},
-/*			add: function(propertyName, value){
+			add: function(propertyName, value, options){
 				if (this["add"+propertyName]){
 					//if a adder is defined
-					this["add"+propertyName](value);
+					return this["add"+propertyName](value, options);
 				} else {
-					this[propertyName].push(value);
+					if(!this[propertyName]){this[propertyName]=[];}
+					return this[propertyName].push(value);
 				}
 			},
 			remove: function(propertyName, value){
 				if (this["remove"+propertyName]){
 					//if a adder is defined
-					this["remove"+propertyName](value);
+					return this["remove"+propertyName](value);
 				} else {
-					//TODO
+					var index = this[propertyName] && this[propertyName].indexOf(value);
+					if(index >= 0){
+						return this[propertyName].splice(index, 1);
+					}
 				}
 			},
-*/		}, {
+		}, {
 			query: function(query, options){
 				return this.store.query(lang.mixin({}, {instanceof: this}, query), options);
 			},
@@ -92,9 +96,12 @@
 		if (!relation.targetModel.prototype["get"+relation.targetPropertyName]){
 			relation.targetModel.prototype["get"+relation.targetPropertyName] = function(){
 				var targetInstance = this;
-				var result = relation.sourceModel.store.query(function(item){
-					return item instanceof relation.sourceModel && item[relation.sourcePropertyName] && item[relation.sourcePropertyName] === this.getIdentity();
-				}.bind(this));
+				// var result = relation.sourceModel.store.query(function(item){
+				// 	return item instanceof relation.sourceModel && item[relation.sourcePropertyName] && item[relation.sourcePropertyName] === this.getIdentity();
+				// }.bind(this));
+				var query = {instanceof: relation.sourceModel};
+				query[relation.sourcePropertyName] = this;
+				var result = relation.sourceModel.store.query(query);
 				result.add = result.put = function(sourceInstance){
 					return sourceInstance.set(relation.sourcePropertyName, targetInstance);
 				};
