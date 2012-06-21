@@ -1,10 +1,11 @@
 define([
-	"dojo/_base/lang",
-	"dojo/_base/declare",
-	"dojo/aspect",
-	"dojo/when",
-], function(lang, declare, aspect, when){
-	var Sync = declare(null, {
+	"dojo/_base/lang",	"dojo/_base/declare",
+	"dojo/aspect"
+], function(
+	lang,				declare,
+	aspect
+){
+	return declare(null, {
 		constructor: function(params){
 			lang.mixin(this, params);
 			aspect.after(this.local, "put", this.put.bind(this), true);
@@ -15,15 +16,11 @@ define([
 				this.remote.put(object, options);
 			}
 		},
-		query:  function(query, options){
+		query: function(query, options){
 			var defered = this.remote.query(query, options);
-			when(defered, function(result){
-				result.forEach(function(item){
-					this.local.put(item, {silent: true});
-				}.bind(this));
+			defered.forEach(function(item) {
+				this.local.put(item, {silent: true});
 			}.bind(this));
-		},
-
+		}
 	});
-	return Sync;
 });

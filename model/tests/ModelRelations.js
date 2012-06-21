@@ -1,7 +1,7 @@
 ﻿define([
 	"doh/runner",
 	"SkFramework/utils/identical",
-	"../Model",
+	"../Model2",
 	"SkFramework/utils/create",
 	"dojo/store/Memory",
 	"SkFramework/store/Constructor",
@@ -50,22 +50,50 @@
 		window.Tag = create(Model, function Tag(){ //need to give a constructor name for Constructor(new LocalStorage) to work
 				Model.apply(this, arguments);
 		});
+
+		window.TodoTagRelation = create(Model, function TodoTagRelation(){ //need to give a constructor name for Constructor(new LocalStorage) to work
+				Model.apply(this, arguments);
+		});
 		
 		Todo.addRelationTo(Person, {
-			sourcePropertyName: "user",
+			sourcePropertyName: "responsible",
 			targetPropertyName: "todos",
 			min: 1,
 			max: 1,
 		});
 		
-		Todo.addRelationTo(Tag, {
-			sourcePropertyName: "tags",
-			targetPropertyName: "todos",
+		TodoTagRelation.addRelationTo(Tag, {
+			sourcePropertyName: "tag",
+			targetPropertyName: "todosRelations",
 			min: 0,
 			max: null,
 		});
-		
-		Model.addRelation({
+		TodoTagRelation.addRelationTo(Todo, {
+			sourcePropertyName: "todo",
+			targetPropertyName: "tagsRelations",
+			min: 0,
+			max: null,
+		});
+		Todo.prototype.gettags = function(){
+			return this.get("tagsRelations").map(function(item){return item.get("tag");});
+		};
+		Tag.prototype.gettodos = function(){
+			return this.get("todosRelations").map(function(item){return item.get("todo");});
+		};
+		Todo.prototype.addtags = function(tag, options){
+			options = options || {};
+			options.todo = this;
+			options.tag = tag;
+			return new TodoTagRelation(options);
+		};
+		Tag.prototype.addtodos = function(todo, options){
+			options = options || {};
+			options.tag = this;
+			options.todo = todo;
+			return new TodoTagRelation(options);
+		};
+
+/*		Model.addRelation({
 			sourceModel: Person,
 			targetModel: Person,
 			sourcePropertyName: "conjoint",
@@ -89,7 +117,7 @@
 			min: 0,
 			max: 1,
 		});
-	}
+*/	}
 
 	//************* Instances
 	function setUpInstances(){		
@@ -106,63 +134,61 @@
 		window.aur = new Employee({name: "Aurélie", birthYear: 1982, job: "catman"});
 		aur.save();
 		window.ant = new Person({name: "Antonin"});
-		ant.add("father", syv);
-		ant.add("mother", aur);
+		// ant.add("father", syv);
+		// ant.add("mother", aur);
 		ant.save();
 		
-		aur.add("conjoint", syv);
-		aur.save();
+		// aur.add("conjoint", syv);
+		// aur.save();
 		
 		window.todo1 = new Todo({
 			id: "2",
 			title: "Concevoir la couche Model",
 		});
-		todo1.add("user", syv);
+		todo1.set("responsible", syv);
 		todo1.save();
 		
 		window.todo2 = new Todo({id: "3", title: "Concevoir la couche UI"});
-		todo2.add("user", syv);
+		todo2.set("responsible", syv);
 		todo2.save();
 		
-		window.todo3 = new Todo({title:"Lancer Maponaute"});
-		todo3.add("user", ket);
-		todo3.save();
+		window.todo3 = new Todo({title:"Lancer Maponaute"}).save();
+		// todo3.set("user", ket);
+		// todo3.save();
+		ket.get("todos").add(todo3).save();
 		
-		window.tag1 = new Tag({label: "test"});
-		tag1.save();
-		window.tag2 = new Tag({label: "cool"});
-		tag2.save();
-		window.tag3 = new Tag({label: "top"});
-		tag3.save();
+		window.testTag = new Tag({label: "test"}).save();
+		window.coolTag = new Tag({label: "cool"}).save();
+		window.topTag = new Tag({label: "top"}).save();
 		
-		todo1.add("tags", tag1);
-		todo1.add("tags", tag2);
-		todo1.save();
-		tag1.add("todos", todo2);
-		todo2.save();
+		var todoTagRel1 = new TodoTagRelation({
+			todo: todo1,
+			tag: testTag
+		}).save();
+		todo1.get("tagsRelations").add(todoTagRel1).save();
+		
+		todo1.add("tags", coolTag).save();
+
+		testTag.get("todosRelations").add(new TodoTagRelation({todo: todo2})).save();
 	}
 	
 //******* Tests
 	
 	testSet = {
 		"Simple getter": function(t){
-			t.is(30, syv.get("age"), "syv should be 30");
+			t.i(30, syv.get("age"), "syv should be 30");
 		},
 		"user of todo1": function (t){
-			t.is(syv, todo1.get("user")[0], "The user of todo1 should be syv");
+			t.i(syv, todo1.get("responsible"), "The responsible of todo1 should be syv");
 		},
 		"syv's todos": function (t){
 			t.i([todo2, todo1], syv.get("todos"), true);
 		},
 		"todo1 tags": function(t){
-			t.i([tag1, tag2], todo1.get("tags"), true);
+			t.i([testTag, coolTag], todo1.get("tags"), true);
 		},
 		"todos with test tag": function(t){
-			t.i([todo1, todo2], tag1.get("todos"), true);
-		},
-		"all Model instances": function(t){
-			//t.i(Model.store.query(function(item){return item instanceof Model}), [syv, aur, ket, ant, todo1, todo2, todo3, tag1, tag2, tag3], true);
-			t.i([syv, aur, ket, ant, todo1, todo2, todo3, tag1, tag2, tag3], Model.query({}), true);
+			t.i([todo1, todo2], testTag.get("todos"), true);
 		},
 		"Person instances": function(t){
 			t.i([syv, aur, ket, ant], Person.query({}), true);
@@ -199,6 +225,7 @@
 				Person: Person,
 				Todo: Todo,
 				Tag: Tag,
+				TodoTagRelation: TodoTagRelation,
 			},
 		});
 		Model.store.clear();
