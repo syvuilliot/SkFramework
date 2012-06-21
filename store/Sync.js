@@ -8,15 +8,15 @@ var Sync = function(localStore, remoteStore, options){
 		
 		put: function(object, directives){
 			currentObject = localStore.get(object.id);
-			if (currentObject && currentObject._revision){
-				object._revision = currentObject._revision;
+			if (currentObject && currentObject.etag){
+				object.etag = currentObject.etag;
 				object._updated = true;
 			}
 			return localStore.put(object, directives);
 		},
 		remove: function(id, directives){
 			object = localStore.get(id);
-			if (object._revision){
+			if (object.etag){
 				object._removed = true;
 				return localStore.put(object, directives);
 			} else {
@@ -39,9 +39,9 @@ var Sync = function(localStore, remoteStore, options){
 				else {
 					// => si dirty en local, ne rien faire (traité par la suite)
 					// => si révisions identiques, ne rien faire
-					if (localObject._revision == object._revision){} else { 
+					if (localObject.etag == object.etag){} else { 
 						// => si révision différente, màj le local si non dirty, sinon il y a un conflit
-						if (localObject._revision !== object._revision && localObject._updated === undefined && localObject._removed === undefined){
+						if (localObject.etag !== object.etag && localObject._updated === undefined && localObject._removed === undefined){
 							localStore.put(object);
 						} else {
 							console.log("Conflict detected between local object", localObject, "and remote object", object);
@@ -56,7 +56,7 @@ var Sync = function(localStore, remoteStore, options){
 			//});
 			
 			//Pour les objets locaux n'ayant pas de numéro de révision, tenter de les créer sur le serveur
-			localStore.query({_revision: undefined}).forEach(function(object){
+			localStore.query({etag: undefined}).forEach(function(object){
 				remoteStore.put(object).then(function(object){
 					localStore.put(object);
 				},
@@ -67,9 +67,9 @@ var Sync = function(localStore, remoteStore, options){
 			//récupérer tous les objets "_updated" du store local, si les numéro de révision concordent, tenter de les mettre à jour le serveur puis stocker localement le nouveau numéro de révision
 			localStore.query({_updated: true}).forEach(function(localObject){
 				remoteStore.get(localObject.id).then(function(remoteObject){
-					if (localObject._revision == remoteObject._revision){
+					if (localObject.etag == remoteObject.etag){
 						var objectToStore = lang.clone(localObject);
-						delete objectToStore._revision;
+						delete objectToStore.etag;
 						delete objectToStore._updated;
 						remoteStore.put(objectToStore).then(function(object){
 							localStore.put(object);
@@ -85,7 +85,7 @@ var Sync = function(localStore, remoteStore, options){
 			//récupérer tous les objets "_removed" du store local, si les numéros de révision concordent, tenter de les supprimer sur le serveur puis les supprimer également en local
 			localStore.query({_removed: true}).forEach(function(localObject){
 				remoteStore.get(localObject.id).then(function(remoteObject){
-					if (localObject._revision == remoteObject._revision){
+					if (localObject.etag == remoteObject.etag){
 						remoteStore.remove(localObject.id).then(function(object){
 							localStore.remove(localObject.id);
 						}, function(error){
@@ -102,6 +102,5 @@ var Sync = function(localStore, remoteStore, options){
 		}
 	});
 };
-//lang.setObject("dojo.store.Cache", Cache);
 return Sync;
 });
