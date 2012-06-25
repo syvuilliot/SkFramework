@@ -39,9 +39,9 @@ var Sync = function(localStore, remoteStore, options){
 				else {
 					// => si dirty en local, ne rien faire (traité par la suite)
 					// => si révisions identiques, ne rien faire
-					if (localObject.etag == object.etag){} else { 
+					if (localObject.etag === object.etag){} else { 
 						// => si révision différente, màj le local si non dirty, sinon il y a un conflit
-						if (localObject.etag !== object.etag && localObject._updated === undefined && localObject._removed === undefined){
+						if (localObject._updated === undefined && localObject._removed === undefined){
 							localStore.put(object);
 						} else {
 							console.log("Conflict detected between local object", localObject, "and remote object", object);
@@ -50,7 +50,7 @@ var Sync = function(localStore, remoteStore, options){
 				}
 			});
 			
-			//Pour les objets n'existants plus sur le serveur (n° révision en local inexistant sur serveur), le supprimer en local... mais seulement s'il n'y a pas eu de modif en local
+			//Pour les objets n'existants plus sur le serveur (mais ayant un n° révision en local), le supprimer en local... mais seulement s'il n'y a pas eu de modif en local
 			//localStore.query().forEach(function(object){
 				//TODO
 			//});
