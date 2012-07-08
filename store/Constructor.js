@@ -57,8 +57,9 @@ var Constructor = function(store, options){
 		},
 		add: function(object, directives){
 			var constructorId = this.getConstructorId(object);
-			object[options.constructorIdProperty] = constructorId;
-			return store.put(object, directives);
+			rawItem = copyOwnProperties(object, {});
+			rawItem[options.constructorIdProperty] = constructorId;
+			return store.add(rawItem, directives);
 		},
 		put: function(object, directives){
 			var constructorId = this.getConstructorId(object);
