@@ -2,14 +2,14 @@ define([
 	"doh/runner",
 	"dojo/store/Memory",
 	"SkFramework/store/LocalStorage",
-	"../Sync",
-], function(doh, Memory, LocalStorage, Sync){
+	"../Mirror",
+], function(doh, Memory, LocalStorage, Mirror){
 
 
 	window.myMemoryStore = new Memory({});
 	window.myLocalStorage = new LocalStorage();
 	myLocalStorage.clear();
-	window.sync = new Sync({
+	window.sync = new Mirror({
 		local: myMemoryStore,
 		remote: myLocalStorage
 	});
