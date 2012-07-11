@@ -10,8 +10,8 @@ var Sync = function(localStore, remoteStore, options){
 			currentObject = localStore.get(object.id);
 			if (currentObject && currentObject.etag){
 				object.etag = currentObject.etag;
-				object._updated = true;
 			}
+			object._updated = true;
 			return localStore.put(object, directives);
 		},
 		remove: function(id, directives){
@@ -27,66 +27,51 @@ var Sync = function(localStore, remoteStore, options){
 			query._removed = undefined;
 			return localStore.query(query, options);
 		},
-		sync: function(){
-			//récupérer tous les objets du serveur et mettre à jour le store local
-			remoteStore.query().forEach(function(object){
-				var localObject = localStore.get(object.id);
-				//si l'objet n'existe pas en local, le créer
-				if (localObject === undefined){
-					localStore.put(object);
-				}
-				//si l'objet existe en local, comparer les révisions
-				else {
-					// => si dirty en local, ne rien faire (traité par la suite)
-					// => si révisions identiques, ne rien faire
-					if (localObject.etag === object.etag){} else { 
-						// => si révision différente, màj le local si non dirty, sinon il y a un conflit
-						if (localObject._updated === undefined && localObject._removed === undefined){
-							localStore.put(object);
-						} else {
-							console.log("Conflict detected between local object", localObject, "and remote object", object);
-						}
-					}
-				}
+		sync: function(query){
+			//supprimer tous les objets locaux non modifiés
+			localStore.query({_updated: undefined, _removed: undefined}).forEach(function(object){
+				localStore.remove(object.id);
 			});
-			
-			//Pour les objets n'existants plus sur le serveur (mais ayant un n° révision en local), le supprimer en local... mais seulement s'il n'y a pas eu de modif en local
-			//localStore.query().forEach(function(object){
-				//TODO
-			//});
-			
-			//Pour les objets locaux n'ayant pas de numéro de révision, tenter de les créer sur le serveur
-			localStore.query({etag: undefined}).forEach(function(object){
-				remoteStore.put(object).then(function(object){
-					localStore.put(object);
-				},
-				function(error){
-					console.log("Error during object creation on remote store", error);
-				});
-			});			
-			//récupérer tous les objets "_updated" du store local, si les numéro de révision concordent, tenter de les mettre à jour le serveur puis stocker localement le nouveau numéro de révision
+
+			//récupérer tous les objets "_updated" du store local
 			localStore.query({_updated: true}).forEach(function(localObject){
-				remoteStore.get(localObject.id).then(function(remoteObject){
-					if (localObject.etag == remoteObject.etag){
-						var objectToStore = lang.clone(localObject);
-						delete objectToStore.etag;
-						delete objectToStore._updated;
-						remoteStore.put(objectToStore).then(function(object){
-							localStore.put(object);
-						}, function(error){
-							console.log("Error during object update on remote store", error);
-						});
-					} else {
-						console.log("Conflict detected between local object", localObject, "and remote object", remoteObject);
-					}
-				});
+				//si l'objet n'a pas de numéro de révision, tenter de le créer sur le serveur
+				if(localObject.etag === undefined){
+					remoteStore.put(object).then(function(object){
+						//lorsque la création s'est bien passée, le supprimer en local
+						localStore.remove(object);
+					},
+					function(error){
+						console.log("Error during object creation on remote store", error);
+					});
+				//si l'objet a un numéro de révision en local (c'est à dire qu'il existe ou a existé sur le serveur)
+				//si le numéro de révision du serveur concorde (il n'a pas changé sur le serveur), tenter de le mettre à jour le serveur
+				} else {
+					remoteStore.get(localObject.id).then(function(remoteObject){
+						if (localObject.etag === remoteObject.etag){
+							var objectToStore = lang.clone(localObject);
+							delete objectToStore.etag;
+							delete objectToStore._updated;
+							remoteStore.put(objectToStore).then(function(object){
+								localStore.remove(object.id);
+							}, function(error){
+								console.log("Error during object update on remote store", error);
+							});
+						} else {
+							console.log("Conflict between local object", localObject, "and remote object", remoteObject);
+						}
+					}, function(error){
+						//TODO : si l'erreur indique que l'objet n'existe plus sur le serveur, indiquer un conflit
+					});
+				}
 			});
 			
-			//récupérer tous les objets "_removed" du store local, si les numéros de révision concordent, tenter de les supprimer sur le serveur puis les supprimer également en local
+			//récupérer tous les objets "_removed" du store local
 			localStore.query({_removed: true}).forEach(function(localObject){
 				remoteStore.get(localObject.id).then(function(remoteObject){
+					// si les numéros de révision concordent, tenter de les supprimer sur le serveur
 					if (localObject.etag == remoteObject.etag){
-						remoteStore.remove(localObject.id).then(function(object){
+						remoteStore.remove(localObject.id).then(function(){
 							localStore.remove(localObject.id);
 						}, function(error){
 							console.log("Error during object remove on remote store", error);
@@ -94,9 +79,21 @@ var Sync = function(localStore, remoteStore, options){
 					} else {
 						console.log("Conflict detected between local object", localObject, "and remote object", remoteObject);
 					}
+				}, function(error){
+					//TODO : si l'erreur indique que l'objet n'existe plus sur le serveur, le supprimer en local
 				});
 			});
-			
+
+			//récupérer tous les objets du serveur et mettre à jour le store local
+			remoteStore.query(query).forEach(function(object){
+				var localObject = localStore.get(object.id);
+				//si l'objet n'existe pas en local, le créer
+				//sinon ne rien faire (si l'objet existe encore en local, c'est que sa mise à jour vers le serveur a échoué)
+				if (localObject === undefined){
+					localStore.put(object);
+				}
+			});
+						
 			//at the end, log as done
 			console.log("data sync done");
 		}
