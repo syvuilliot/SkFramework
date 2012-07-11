@@ -1,7 +1,9 @@
 ﻿define([
 	"dojo/_base/lang",
 	"SkFramework/utils/create",
-], function(lang, create){
+	"dojo/store/Memory",
+	"SkFramework/store/SimpleQueryEngineGet",
+], function(lang, create, Memory, SimpleQueryEngineGet){
 	var Model = create(null, function Model(params){
 			//use set to mix every property from params
 			if(params){
@@ -71,6 +73,7 @@
 				}
 			},
 		}, {
+			store: new Memory({queryEngine: SimpleQueryEngineGet}),
 			query: function(query, options){
 				return this.store.query(lang.mixin({}, {instanceof: this}, query), options);
 			},
@@ -83,7 +86,10 @@
 			},
 			generateId: function() {
 				return (Math.floor(Math.random() * 1000000)).toString();
-			}
+			},
+			extend: function(constructor, prototypeExtension, ClassExtension){
+				return create(this, constructor, prototypeExtension, ClassExtension);
+			},
 		}
 	);
 	Model.addRelation = function(relation){
