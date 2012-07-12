@@ -23,15 +23,21 @@
 		//create an empty baseConstructor if none provided
 		if (!baseConstructor){baseConstructor = function BaseClass(){};}
 		
-		//default subConstructor if none is provided
+		//create a subConstructor if none is provided
 		if(!subConstructor){subConstructor = function SubClass(){
 			baseConstructor.apply(this, arguments);
 		};}
-		//make subConstructor inherite from baseConstructor
+		//if a string is provided as subConstructor, use it to name the function
+		if (typeof subConstructor === "string"){
+			var subConstructorName = subConstructor;
+			subConstructor = new Function("baseConstructor", "return function " + subConstructorName + "(){ baseConstructor.apply(this, arguments); }")(baseConstructor);
+		}
+
+		//make subConstructor inherits from baseConstructor
 		if (subConstructor.__proto__){ //no standard way to do this so we need to ensure that __proto__ exists
 			subConstructor.__proto__ = baseConstructor; 
 		} else {
-			throw "Sk/create cannot be used in this environnement because __proto__ is not provided";
+			throw "Sk/create cannot be used in this environnement because __proto__ is not implemented";
 		}
 		
 		//copy subConstructorProps own properties (class properties) onto subConstructor

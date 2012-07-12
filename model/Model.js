@@ -3,8 +3,11 @@
 	"SkFramework/utils/create",
 	"dojo/Stateful",
 	"dojo/store/Memory",
+	//"SkFramework/store/PersistableMemory",
+	"dojo/store/Observable",
 	"SkFramework/store/SimpleQueryEngineGet",
-], function(lang, create, Stateful, Memory, SimpleQueryEngineGet){
+	"dojox/json/schema",
+], function(lang, create, Stateful, Memory, Observable, SimpleQueryEngineGet, jsonSchema){
 	var Model = create(Stateful, function Model(params){
 			//use set to mix every property from params
 			Model.super.apply(this, arguments);
@@ -12,7 +15,13 @@
 				this.set("id", this.constructor.generateId());
 			}
 		}, {
-			validate: function(){return true;},
+			"$schema": {type: "object", properties:{id: {type: "string"}}},
+			validate: function(){
+				//use JSON parsing to remove inherited properties from instance and from schema
+				var validationResult = jsonSchema.validate(JSON.parse(JSON.stringify(this)), JSON.parse(JSON.stringify(this.$schema)));
+				if (! validationResult.valid){console.log("Validation failed for ", this, validationResult);}
+				return validationResult.valid;
+			},
 			save: function(){
 				if (this.validate()){
 					this.constructor.store.put(this);
@@ -48,7 +57,7 @@
 				}
 			},
 		}, {
-			store: new Memory({queryEngine: SimpleQueryEngineGet}),
+			store: Observable(new Memory({queryEngine: SimpleQueryEngineGet})),
 			query: function(query, options){
 				return this.store.query(lang.mixin({}, {instanceof: this}, query), options);
 			},
@@ -62,8 +71,18 @@
 			generateId: function() {
 				return (Math.floor(Math.random() * 1000000)).toString();
 			},
-			extend: function(constructor, prototypeExtension, ClassExtension){
-				return create(this, constructor, prototypeExtension, ClassExtension);
+			extend: function(subConstructor, prototypeExtension, ClassExtension){
+				return create(this, subConstructor, prototypeExtension, ClassExtension);
+			},
+			extendWithSchema: function(schema){
+				if (schema.id){
+					subConstructor = create(this, schema.id);
+				} else {
+					subConstructor = create(this);
+				}
+				schema["extends"] = this.prototype.$schema;
+				subConstructor.prototype.$schema = schema;
+				return subConstructor;
 			},
 		}
 	);
