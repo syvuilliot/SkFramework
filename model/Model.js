@@ -1,17 +1,13 @@
 ﻿define([
 	"dojo/_base/lang",
 	"SkFramework/utils/create",
+	"dojo/Stateful",
 	"dojo/store/Memory",
 	"SkFramework/store/SimpleQueryEngineGet",
-], function(lang, create, Memory, SimpleQueryEngineGet){
-	var Model = create(null, function Model(params){
+], function(lang, create, Stateful, Memory, SimpleQueryEngineGet){
+	var Model = create(Stateful, function Model(params){
 			//use set to mix every property from params
-			if(params){
-				Object.keys(params).forEach(function(key){
-					this.set(key, params[key]);
-				}.bind(this));
-			}
-			//lang.mixin(this, params);
+			Model.super.apply(this, arguments);
 			if (!this.id) {
 				this.set("id", this.constructor.generateId());
 			}
@@ -29,13 +25,7 @@
 			getIdentity: function(){
 				return this.constructor.store.getIdentity(this);
 			},
-			getclassName: function(){
-				return this.constructor.name;
-			},
-			getinstanceof: function(constructor){
-
-			},
-			get: function(propertyName){
+/*			get: function(propertyName){
 				if (this["get"+propertyName]){
 					//if a getter is defined
 					return this["get"+propertyName]();
@@ -52,7 +42,7 @@
 				}
 				return this;
 			},
-			add: function(propertyName, value, options){
+*/			add: function(propertyName, value, options){
 				if (this["add"+propertyName]){
 					//if a adder is defined
 					return this["add"+propertyName](value, options);
@@ -94,18 +84,20 @@
 	);
 	Model.addRelation = function(relation){
 		//ajoute un getter sur la classe Model source
-		if (!relation.sourceModel.prototype["get"+relation.sourcePropertyName]){
-			relation.sourceModel.prototype["get"+relation.sourcePropertyName] = function(){
+		var getterName = "_"+relation.sourcePropertyName+"Getter";
+		if (!relation.sourceModel.prototype[getterName]){
+			relation.sourceModel.prototype[getterName] = function(){
 				//	var self = this;
 				//	return relation.targetModel.store.query(function(item){
 				//	return item instanceof relation.targetModel && self[relation.sourcePropertyName] && self[relation.sourcePropertyName].indexOf(item.getIdentity())>= 0;
 				// });
-				return relation.targetModel.store.get(this[relation.sourcePropertyName]);
+				return this[relation.sourcePropertyName] && relation.targetModel.store.get(this[relation.sourcePropertyName]);
 			};
 		}
 		//ajoute un getter sur la classe Model cible
-		if (!relation.targetModel.prototype["get"+relation.targetPropertyName]){
-			relation.targetModel.prototype["get"+relation.targetPropertyName] = function(){
+		getterName = "_"+relation.targetPropertyName+"Getter";
+		if (!relation.targetModel.prototype[getterName]){
+			relation.targetModel.prototype[getterName] = function(){
 				var targetInstance = this;
 				// var result = relation.sourceModel.store.query(function(item){
 				// 	return item instanceof relation.sourceModel && item[relation.sourcePropertyName] && item[relation.sourcePropertyName] === this.getIdentity();
@@ -120,9 +112,10 @@
 			};
 		}
 		//ajoute un setter sur la classe Model source
-		if (!relation.sourceModel.prototype["set"+relation.sourcePropertyName]){
-			relation.sourceModel.prototype["set"+relation.sourcePropertyName] = function(value){
-				this[relation.sourcePropertyName] = value.getIdentity();
+		var setterName = "_"+relation.sourcePropertyName+"Setter";
+		if (!relation.sourceModel.prototype[setterName]){
+			relation.sourceModel.prototype[setterName] = function(value){
+				this[relation.sourcePropertyName] = typeof value === "string" ? value : value.getIdentity();
 			};
 		}
 /*		//ajoute un adder sur la classe Model source

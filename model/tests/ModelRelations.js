@@ -1,7 +1,7 @@
 ﻿define([
 	"doh/runner",
 	"SkFramework/utils/identical",
-	"../Model2",
+	"../Model",
 	"SkFramework/utils/create",
 	"dojo/store/Memory",
 	"SkFramework/store/Constructor",
@@ -22,10 +22,10 @@
 		window.Person = create(Model, function Person(){ //need to give a constructor name for Constructor(new LocalStorage) to work
 				Model.apply(this, arguments);
 			}, {
-			getage: function(){
+			_ageGetter: function(){
 				return 2012 - this.get("birthYear");
 			},
-			getchildren: function(){
+			_childrenGetter: function(){
 				var union = this.get("motherOf");
 				union.push(this.get("fatherOf"));
 				return union;
@@ -74,10 +74,10 @@
 			min: 0,
 			max: null,
 		});
-		Todo.prototype.gettags = function(){
+		Todo.prototype._tagsGetter = function(){
 			return this.get("tagsRelations").map(function(item){return item.get("tag");});
 		};
-		Tag.prototype.gettodos = function(){
+		Tag.prototype._todosGetter = function(){
 			return this.get("todosRelations").map(function(item){return item.get("todo");});
 		};
 		Todo.prototype.addtags = function(tag, options){
