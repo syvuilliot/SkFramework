@@ -80,13 +80,13 @@
 		Tag.prototype._todosGetter = function(){
 			return this.get("todosRelations").map(function(item){return item.get("todo");});
 		};
-		Todo.prototype.addtags = function(tag, options){
+		Todo.prototype._tagsAdder = function(tag, options){
 			options = options || {};
 			options.todo = this;
 			options.tag = tag;
 			return new TodoTagRelation(options);
 		};
-		Tag.prototype.addtodos = function(todo, options){
+		Tag.prototype._todosAdder = function(todo, options){
 			options = options || {};
 			options.tag = this;
 			options.todo = todo;

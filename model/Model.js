@@ -25,36 +25,21 @@
 			getIdentity: function(){
 				return this.constructor.store.getIdentity(this);
 			},
-/*			get: function(propertyName){
-				if (this["get"+propertyName]){
-					//if a getter is defined
-					return this["get"+propertyName]();
-				} else {
-					return this[propertyName];
-				}
-			},
-			set: function(propertyName, value){
-				if (this["set"+propertyName]){
-					//if a setter is defined
-					this["set"+propertyName](value);
-				} else {
-					this[propertyName]=value;
-				}
-				return this;
-			},
-*/			add: function(propertyName, value, options){
-				if (this["add"+propertyName]){
+			add: function(propertyName, value, options){
+				var adderName = "_"+propertyName+"Adder";
+				if (this[adderName]){
 					//if a adder is defined
-					return this["add"+propertyName](value, options);
+					return this[adderName](value, options);
 				} else {
 					if(!this[propertyName]){this[propertyName]=[];}
 					return this[propertyName].push(value);
 				}
 			},
 			remove: function(propertyName, value){
-				if (this["remove"+propertyName]){
+				var removerName = "_"+propertyName+"Remover";
+				if (this[removerName]){
 					//if a adder is defined
-					return this["remove"+propertyName](value);
+					return this[removerName](value);
 				} else {
 					var index = this[propertyName] && this[propertyName].indexOf(value);
 					if(index >= 0){
