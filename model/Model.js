@@ -58,6 +58,18 @@
 			},
 		}, {
 			store: Observable(new Memory({queryEngine: SimpleQueryEngineGet})),
+			get: function(id){
+				return this.store.get(id);
+			},
+			put: function(object, options){
+				return this.store.put(object, options);
+			},
+			add: function(object, options){
+				return this.store.add(object, options);
+			},
+			remove: function(id){
+				return this.store.remove(id);
+			},
 			query: function(query, options){
 				return this.store.query(lang.mixin({}, {instanceof: this}, query), options);
 			},
