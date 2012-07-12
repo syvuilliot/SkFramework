@@ -1,4 +1,4 @@
-define(["dojo/_base/array"], function(arrayUtil) {
+define(["dojo/_base/array", "SkFramework/utils/identical"], function(arrayUtil, identical) {
 
 return function(query, options){
 	// summary:
@@ -7,8 +7,6 @@ return function(query, options){
 
 	// create our matching query function
 	switch(typeof query){
-		default:
-			throw new Error("Can not query with a " + typeof query);
 		case "object": case "undefined":
 			var queryObject = query;
 			query = function(object){
@@ -16,20 +14,21 @@ return function(query, options){
 					var required = queryObject[key];
 					//special case when key is "instanceof"
 					if (key == "instanceof"){
-						if (!(object instanceof required)){return false}
+						if (!(object instanceof required)){return false;}
 					} else {
 					//all other cases
+						var propValue;
 						if(object.get){
-							var propValue = object.get(key);
+							propValue = object.get(key);
 						} else {
-							var propValue = object[key];
+							propValue = object[key];
 						}
 						if(required && required.test){
 							// an object can provide a test method, which makes it work with regex
 							if(!required.test(propValue, object)){
 								return false;
 							}
-						}else if(required != propValue){
+						}else if(! identical(required, propValue)){
 							return false;
 						}
 					}
@@ -44,8 +43,12 @@ return function(query, options){
 			}
 			query = this[query];
 			// fall through
+			break;
 		case "function":
 			// fall through
+			break;
+		default:
+			throw new Error("Can not query with a " + typeof query);
 	}
 	function execute(array){
 		// execute the whole query, first we filter
