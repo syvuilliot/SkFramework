@@ -23,7 +23,7 @@ define([
 			return this.constructorsMap[constructorId];
 		},
 		constructorsMap: {},
-		autoSave: true,
+		autoSave: false,
 
 		put: function(object, options){
 			// if autoSave, persist MemoryStore when an item is added/updated
@@ -45,7 +45,7 @@ define([
 			};
 			var jsondata = localStorage[this.storageKey];
 			if (jsondata){
-				data = JSON.parse(jsondata).map(createInstance.bind(this));
+				var data = JSON.parse(jsondata).map(createInstance.bind(this));
 				store.setData(data);
 			}
 		},

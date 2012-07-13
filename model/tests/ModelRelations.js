@@ -182,7 +182,7 @@
 			t.i(syv, todo1.get("responsible"), "The responsible of todo1 should be syv");
 		},
 		"syv's todos": function (t){
-			t.i([todo2, todo1], syv.get("todos"), true);
+			t.i([todo2, todo1], syv.get("todos").slice(), true);
 		},
 		"todo1 tags": function(t){
 			t.i([testTag, coolTag], todo1.get("tags"), true);
@@ -191,13 +191,13 @@
 			t.i([todo1, todo2], testTag.get("todos"), true);
 		},
 		"Person instances": function(t){
-			t.i([syv, aur, ket, ant], Person.query({}), true);
+			t.i([syv, aur, ket, ant], Person.query({}).slice(), true);
 		},
 		"Employee instances": function(t){
-			t.i([syv, aur, ket], Employee.query({}), true);
+			t.i([syv, aur, ket], Employee.query({}).slice(), true);
 		},
 		"Thirty years old": function(t){
-			t.i([syv, aur], Model.store.query({age: 30}), true);
+			t.i([syv, aur], Model.store.query({age: 30}).slice(), true);
 		},
 	/*
 	console.log("Le conjoint de syv est:", syv.get("conjoint"));
@@ -208,9 +208,9 @@
 	};
 	
 	doh.register("Tests with Memory store", testSet, function setUp(){
-		Model.store = new Memory({
-			queryEngine: SimpleQueryEngineGet,
-		});
+		// Model.store = new Memory({
+		// 	queryEngine: SimpleQueryEngineGet,
+		// });
 		setUpModels();
 		setUpInstances();
 	});

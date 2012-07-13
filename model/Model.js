@@ -3,11 +3,12 @@
 	"SkFramework/utils/create",
 	"dojo/Stateful",
 	//"dojo/store/Memory",
+	"SkFramework/store/Memory",
 	"SkFramework/store/PersistableMemory",
 	"dojo/store/Observable",
 	"SkFramework/store/SimpleQueryEngineGet",
 	"dojox/json/schema",
-], function(lang, create, Stateful, Memory, Observable, SimpleQueryEngineGet, jsonSchema){
+], function(lang, create, Stateful, Memory, Persistable, Observable, SimpleQueryEngineGet, jsonSchema){
 	var Model = create(Stateful, function Model(params){
 			//use set to mix every property from params
 			Model.super.apply(this, arguments);
@@ -60,8 +61,9 @@
 			initNewStore: function(){
 				var constructorsMap = {};
 				constructorsMap[this.name] = this;
-				var store = Observable(new Memory({
+				var store = Observable(Persistable(new Memory({
 					queryEngine: SimpleQueryEngineGet,
+				}), {
 					storageKey: this.name + "Store",
 					constructorsMap: constructorsMap,
 				}));

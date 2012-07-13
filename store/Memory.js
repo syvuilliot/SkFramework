@@ -5,12 +5,13 @@ function(create, QueryResults, SimpleQueryEngine /*=====, Store =====*/){
 	//		This is a basic in-memory object store that implements dojo.store.api.Store.
 
 var Memory = create(Array, function MemoryStore(options){
-		this.setData(options && options.data || []);
-/*		delete options.data;
-		for(var i in options){
-			this[i] = options[i];
+		this.index={};
+		if (options){
+			for(var i in options){
+				if(i==="data"){this.setData(options[i]);}else{this[i] = options[i];}
+			}
 		}
-*/	}, {
+	}, {
 
 	idProperty: "id",
 
