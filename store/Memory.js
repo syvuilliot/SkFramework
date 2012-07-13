@@ -78,8 +78,8 @@ var Memory = create(Array, function MemoryStore(options){
 		}.bind(this));
 		//index items
 		this.index = {};
-		for(var i = 0, l = data.length; i < l; i++){
-			this.index[data[i][this.idProperty]] = i;
+		for(var i = 0, l = this.length; i < l; i++){
+			this.index[this[i][this.idProperty]] = i;
 		}
 	}
 });
