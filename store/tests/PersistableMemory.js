@@ -1,10 +1,11 @@
 define([
 	"doh/runner",
 	"SkFramework/utils/identical",
+	"../Memory",
 	"../PersistableMemory",
 	"dojo/_base/declare",
 	"dojo/_base/lang",
-], function(doh, identical, PersistableMemory, declare, lang){
+], function(doh, identical, Memory, Persistable, declare, lang){
 
 	var Person = declare("Person", [], {
 		constructor: function(params){
@@ -32,6 +33,8 @@ define([
 		
 	var toto = new Person({id:"1", name: "toto", birthYear:1990});	
 	var titi = new Worker({id:"2", name: "titi", job: "coder", birthYear:1980});
+	var tata = new Person({id:"3", name: "tata", birthYear: 1980});
+
 	var params = {
 		key: "testPersistableMemory",
 		constructorsMap: {
@@ -54,23 +57,33 @@ define([
 	doh.register("PersistableMemory store test", {
 		"saveAndLoad": function(t){
 			delete localStorage.testPersistableMemory;
-			var paramsAndData = lang.mixin({}, params, {data: [toto, titi]});
-			window.store = new PersistableMemory(paramsAndData);
+			//var paramsAndData = lang.mixin({}, params, {data: });
+			window.store = Persistable(new Memory({data: [toto, titi]}), params);
 			store.save();
-			store = new PersistableMemory(params);
+			window.store = Persistable(new Memory(), params);
 			store.load();
-			t.i([toto, titi], store.query(), true);
+			t.i([toto, titi], store.query().slice(), true);
 			t.t(store.get("1") instanceof Person);
 			t.t(store.get("2") instanceof Worker);
 		},
-		"autoSave": function(t){
+		"autoSave on put": function(t){
 			delete localStorage.testPersistableMemory;
-			window.store = new PersistableMemory(params);
+			window.store = Persistable(new Memory(), params);
 			store.put(titi);
-			store = new PersistableMemory(params);
-			t.i([titi], store.query(), true);
+			window.store = Persistable(new Memory(), params);
+			store.load();
+			t.i([titi], store.query().slice(), true);
 			t.t(store.get("2") instanceof Person);
 			t.t(store.get("2") instanceof Worker);
+		},
+		"autoSave on remove": function(t){
+			delete localStorage.testPersistableMemory;
+			window.store = Persistable(new Memory({data:[toto, titi]}), params);
+			store.remove("2");
+			window.store = Persistable(new Memory(), params);
+			store.load();
+			t.i([toto], store.query().slice(), true);
+			t.t(store.get("1") instanceof Person);
 		},
 	});
 	

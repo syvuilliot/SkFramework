@@ -1,7 +1,7 @@
 define([
 	"dojo/_base/declare",
 	"dojo/_base/lang",
-	"dojo/store/Memory",
+	"./Memory",
 ], function(declare, lang, Memory){
 
 	var copyOwnProperties = function(source, target) {
@@ -12,7 +12,8 @@ define([
         return target;
     };
 
-	return declare([Memory], {
+    var Persistable = function(store, options){
+	var wrappedStore = lang.delegate(store, {
 		storageKey: "memoryStore",
 		constructorIdProperty: "ConstructorId",
 		getConstructorId: function(item){
@@ -24,20 +25,15 @@ define([
 		constructorsMap: {},
 		autoSave: true,
 
-		constructor: function(params){
-			if (! window.localStorage){throw("No localStorage available");}
-			lang.mixin(this, params);
-			//this.load();
-		},
 		put: function(object, options){
 			// if autoSave, persist MemoryStore when an item is added/updated
-			var r = this.inherited(arguments);
+			var r = store.put(object, options);
 			if(this.autoSave){this.save();}
 			return r;
 		},
 		remove: function(id){
 			// if autoSave, persist MemoryStore when an item is removed
-			var r = this.inherited(arguments);
+			var r = store.remove(id);
 			if(this.autoSave){this.save();}
 			return r;
 		},
@@ -50,7 +46,7 @@ define([
 			var jsondata = localStorage[this.storageKey];
 			if (jsondata){
 				data = JSON.parse(jsondata).map(createInstance.bind(this));
-				this.setData(data);
+				store.setData(data);
 			}
 		},
 		save: function(){
@@ -60,8 +56,11 @@ define([
 				rawItem[this.constructorIdProperty] = constructorId;
 				return rawItem;
 			};
-			var jsondata = this.data.map(serialize.bind(this));
+			var jsondata = store.query().map(serialize.bind(this));
 			localStorage[this.storageKey] = JSON.stringify(jsondata);
 		}
 	});
+	return lang.mixin(wrappedStore, options);
+	};
+	return Persistable;
 });
