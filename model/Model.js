@@ -2,8 +2,8 @@
 	"dojo/_base/lang",
 	"SkFramework/utils/create",
 	"dojo/Stateful",
-	"dojo/store/Memory",
-	//"SkFramework/store/PersistableMemory",
+	//"dojo/store/Memory",
+	"SkFramework/store/PersistableMemory",
 	"dojo/store/Observable",
 	"SkFramework/store/SimpleQueryEngineGet",
 	"dojox/json/schema",
@@ -57,7 +57,17 @@
 				}
 			},
 		}, {
-			store: Observable(new Memory({queryEngine: SimpleQueryEngineGet})),
+			initNewStore: function(){
+				var constructorsMap = {};
+				constructorsMap[this.name] = this;
+				var store = Observable(new Memory({
+					queryEngine: SimpleQueryEngineGet,
+					storageKey: this.name + "Store",
+					constructorsMap: constructorsMap,
+				}));
+				this.store = store;
+				return store;
+			},
 			get: function(id){
 				return this.store.get(id);
 			},
@@ -84,17 +94,22 @@
 				return (Math.floor(Math.random() * 1000000)).toString();
 			},
 			extend: function(subConstructor, prototypeExtension, ClassExtension){
-				return create(this, subConstructor, prototypeExtension, ClassExtension);
+				var subModel = create(this, subConstructor, prototypeExtension, ClassExtension);
+				//in case the store is a persistableMemory
+				if (this.store.constructorsMap){
+					this.store.constructorsMap[subModel.name] = subModel;
+				}
+				return subModel;
 			},
 			extendWithSchema: function(schema){
 				if (schema.id){
-					subConstructor = create(this, schema.id);
+					subModel = this.extend(schema.id);
 				} else {
-					subConstructor = create(this);
+					subModel = this.extend();
 				}
 				schema["extends"] = this.prototype.$schema;
-				subConstructor.prototype.$schema = schema;
-				return subConstructor;
+				subModel.prototype.$schema = schema;
+				return subModel;
 			},
 		}
 	);
@@ -164,5 +179,6 @@
 		}
 */	};
 	
+	Model.initNewStore();
 	return Model;
 });

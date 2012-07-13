@@ -13,7 +13,7 @@ define([
     };
 
 	return declare([Memory], {
-		key: "memoryStore",
+		storageKey: "memoryStore",
 		constructorIdProperty: "ConstructorId",
 		getConstructorId: function(item){
 			return item.constructor.name;
@@ -27,7 +27,7 @@ define([
 		constructor: function(params){
 			if (! window.localStorage){throw("No localStorage available");}
 			lang.mixin(this, params);
-			this.load();
+			//this.load();
 		},
 		put: function(object, options){
 			// if autoSave, persist MemoryStore when an item is added/updated
@@ -47,7 +47,7 @@ define([
 				delete rawItem[this.constructorIdProperty];
 				return new constructor(rawItem);
 			};
-			var jsondata = localStorage[this.key];
+			var jsondata = localStorage[this.storageKey];
 			if (jsondata){
 				data = JSON.parse(jsondata).map(createInstance.bind(this));
 				this.setData(data);
@@ -61,7 +61,7 @@ define([
 				return rawItem;
 			};
 			var jsondata = this.data.map(serialize.bind(this));
-			localStorage[this.key] = JSON.stringify(jsondata);
+			localStorage[this.storageKey] = JSON.stringify(jsondata);
 		}
 	});
 });
