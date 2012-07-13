@@ -2,13 +2,13 @@ define([], function(){
 	var objectUtils = {};
 
 	objectUtils.copyOwnProperties = function(source, target) {
-        Object.getOwnPropertyNames(source).forEach(function(propName) {
-            Object.defineProperty(target, propName,
-                Object.getOwnPropertyDescriptor(source, propName));
-        });
-        return target;
-    };
-	
+		Object.getOwnPropertyNames(source).forEach(function(propName) {
+			Object.defineProperty(target, propName,
+				Object.getOwnPropertyDescriptor(source, propName));
+		});
+		return target;
+	};
+
 	objectUtils.sameValue = function(o1, o2){
 		// Degenerate case: if they are both null, then their "properties" are equal.
 		if(o1 === null && o2 === null){
