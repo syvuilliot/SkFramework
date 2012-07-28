@@ -3,7 +3,7 @@
 	"dojo/_base/lang",
 	"dojo/store/Memory",
 	"dojo/store/Observable",
-	'../SubQueryable',
+	'../ChainableQuery',
 	"SkFramework/utils/identical",
 ], function(doh, lang, Memory, Observable, SubQueryable, identical){
 	doh.i = doh.identical = function(expected, actual, sortArrays, hint){
@@ -19,7 +19,8 @@
 	window.toto4 = {id:"4", name:"toto4", job:"pilote", country:"France", age:30};
 	window.toto5 = {id:"5", name:"toto5", job:"pilote", country:"France"};
 	window.toto6 = {id:"6", name:"toto6", job:"farmer", country:"GB"};
-	window.toto7 = {id:"7", name:"toto7", job:"farmer", country:"France", age:20};
+	window.toto7 = {id:"7", name:"toto7", job:"farmer", country:"France", age:30};
+	window.toto8 = {id:"8", name:"toto8", job:"pilote", country:"GB"};
 
 	var testSet = {
 		// "total": function(t){
@@ -60,19 +61,17 @@
 			*/
 		},
 		"put": function(t){
-			farmers.put({id:"6", name:"toto6", job:"farmer", country:"GB"});
-			t.is("farmer", memoryStore.get("6").job);
-			memoryStore.remove("6");
+			farmers.put(toto6);
+			t.i(toto6, farmers.get("6"));
+			farmers.remove("6");
 			//actually we can add items that do not match the query
-			farmers.put({id:"7", name:"toto7", job:"pilote", country:"GB"});
-			t.is("pilote", memoryStore.get("7").job);
-			memoryStore.remove("7");
+			// farmers.put(toto8);
+			// t.is("error: you cannot put an object that do not match the query", farmers.get("8").job);
 		},
 		"remove": function(t){
 			farmers.remove("2");
 			t.f(farmers.get("2"));
 			t.f(store.get("2"));
-			//t.f(memoryStore.get("2"));
 		},
 	};
 
@@ -113,41 +112,43 @@
 	});
 
 	var ObservationTestSet = {
-		"first level observing": function(t){
+		"3 levels observing": function(t){
 			window.farmers = store.query({job: "farmer"});
 			t.t(farmers.observe);
+			window.frenchFarmers = farmers.query({country: "France"});
+			t.t(frenchFarmers.observe);
+			window.frenchFarmersThirty = frenchFarmers.query({age: 30});
+			t.t(frenchFarmersThirty.observe);
+			window.pilotes = store.query({job: "pilote"});
+			t.t(pilotes.observe);
 
-			window.changes=[];
-			window.observeHandler = farmers.observe(function(item, from, to){
-				changes.push({
+			window.farmersChanges=[];
+			window.farmersObserveHandler = farmers.observe(function(item, from, to){
+				farmersChanges.push({
 					item: item,
 					// from: from,
 					// to: to
 				});
 			}, true);
-
-			store.put(toto6);
-			t.i([{item: toto6}], changes, true);
-
-			var qr = [];
-			farmers.forEach(function(item){
-				qr.push(item);
-			});
-			t.i([toto1, toto2, toto3, toto6], qr, true);
-
-			qr = [];
-			pilotes.forEach(function(item){
-				qr.push(item);
-			});
-			t.i([toto4, toto5], qr, true);
-		},
-		"second level observing": function(t){
-			window.frenchFarmers = farmers.query({country: "France"});
-			t.t(frenchFarmers.observe);
-
-			window.changes=[];
-			window.observeHandler = frenchFarmers.observe(function(item, from, to){
-				changes.push({
+			window.frenchFarmersChanges=[];
+			window.frenchFarmersObserveHandler = frenchFarmers.observe(function(item, from, to){
+				frenchFarmersChanges.push({
+					item: item,
+					// from: from,
+					// to: to
+				});
+			}, true);
+			window.frenchFarmersThirtyChanges=[];
+			window.frenchFarmersThirtyObserveHandler = frenchFarmersThirty.observe(function(item, from, to){
+				frenchFarmersThirtyChanges.push({
+					item: item,
+					// from: from,
+					// to: to
+				});
+			}, true);
+			window.pilotesChanges=[];
+			window.pilotesObserveHandler = pilotes.observe(function(item, from, to){
+				pilotesChanges.push({
 					item: item,
 					// from: from,
 					// to: to
@@ -155,13 +156,36 @@
 			}, true);
 
 			store.put(toto7);
-			t.i([{item: toto7}], changes, true);
+			store.put(toto6);
+			t.i([{item: toto7}, {item: toto6}], farmersChanges, true);
+			t.i([{item: toto7}], frenchFarmersChanges, true);
+			t.i([{item: toto7}], frenchFarmersThirtyChanges, true);
 
-			var qr = [];
-			frenchFarmers.forEach(function(item){
-				qr.push(item);
+			var farmersList = [];
+			farmers.forEach(function(item){
+				farmersList.push(item);
 			});
-			t.i([toto1, toto3, toto7], qr, true);
+			t.i([toto1, toto2, toto3, toto6, toto7], farmersList, true);
+
+			var frenchFarmersList = [];
+			frenchFarmers.forEach(function(item){
+				frenchFarmersList.push(item);
+			});
+			t.i([toto1, toto3, toto7], frenchFarmersList, true);
+
+			var frenchFarmersThirtyList = [];
+			frenchFarmersThirty.forEach(function(item){
+				frenchFarmersThirtyList.push(item);
+			});
+			t.i([toto3, toto7], frenchFarmersThirtyList, true);
+
+			//be sure that pilotes are not affected
+			t.i([], pilotesChanges, true);
+			pilotesList = [];
+			pilotes.forEach(function(item){
+				pilotesList.push(item);
+			});
+			t.i([toto4, toto5], pilotesList, true);
 
 		},
 	};
