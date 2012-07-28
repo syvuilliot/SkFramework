@@ -112,72 +112,37 @@
 	});
 
 	var ObservationTestSet = {
-		"3 levels observing": function(t){
-			window.farmers = store.query({job: "farmer"});
-			t.t(farmers.observe);
-			window.frenchFarmers = farmers.query({country: "France"});
-			t.t(frenchFarmers.observe);
-			window.frenchFarmersThirty = frenchFarmers.query({age: 30});
-			t.t(frenchFarmersThirty.observe);
-			window.pilotes = store.query({job: "pilote"});
-			t.t(pilotes.observe);
-
-			window.farmersChanges=[];
-			window.farmersObserveHandler = farmers.observe(function(item, from, to){
-				farmersChanges.push({
-					item: item,
-					// from: from,
-					// to: to
-				});
-			}, true);
-			window.frenchFarmersChanges=[];
-			window.frenchFarmersObserveHandler = frenchFarmers.observe(function(item, from, to){
-				frenchFarmersChanges.push({
-					item: item,
-					// from: from,
-					// to: to
-				});
-			}, true);
-			window.frenchFarmersThirtyChanges=[];
-			window.frenchFarmersThirtyObserveHandler = frenchFarmersThirty.observe(function(item, from, to){
-				frenchFarmersThirtyChanges.push({
-					item: item,
-					// from: from,
-					// to: to
-				});
-			}, true);
-			window.pilotesChanges=[];
-			window.pilotesObserveHandler = pilotes.observe(function(item, from, to){
-				pilotesChanges.push({
-					item: item,
-					// from: from,
-					// to: to
-				});
-			}, true);
-
-			store.put(toto7);
-			store.put(toto6);
+		"farmersChanges": function(t){
 			t.i([{item: toto7}, {item: toto6}], farmersChanges, true);
+		},
+		"frenchFarmersChanges": function(t){
 			t.i([{item: toto7}], frenchFarmersChanges, true);
+		},
+		"frenchFarmersThrityChanges": function(t){
 			t.i([{item: toto7}], frenchFarmersThirtyChanges, true);
-
+		},
+		"farmers list update": function(t){
 			var farmersList = [];
 			farmers.forEach(function(item){
 				farmersList.push(item);
 			});
 			t.i([toto1, toto2, toto3, toto6, toto7], farmersList, true);
-
+		},
+		"french farmers list update": function(t){
 			var frenchFarmersList = [];
 			frenchFarmers.forEach(function(item){
 				frenchFarmersList.push(item);
 			});
 			t.i([toto1, toto3, toto7], frenchFarmersList, true);
-
+		},
+		"french farmers thirty list update": function(t){
 			var frenchFarmersThirtyList = [];
 			frenchFarmersThirty.forEach(function(item){
 				frenchFarmersThirtyList.push(item);
 			});
 			t.i([toto3, toto7], frenchFarmersThirtyList, true);
+		},
+		"pilotes list update": function(t){
 
 			//be sure that pilotes are not affected
 			t.i([], pilotesChanges, true);
@@ -200,5 +165,46 @@
 			]
 		});
 		window.store = SubQueryable(Observable(memoryStore));
+		window.farmers = store.query({job: "farmer"});
+		window.frenchFarmers = farmers.query({country: "France"});
+		window.frenchFarmersThirty = frenchFarmers.query({age: 30});
+		window.pilotes = store.query({job: "pilote"});
+
+		window.farmersChanges=[];
+		window.farmersObserveHandler = farmers.observe(function(item, from, to){
+			farmersChanges.push({
+				item: item,
+				// from: from,
+				// to: to
+			});
+		}, true);
+		window.frenchFarmersChanges=[];
+		window.frenchFarmersObserveHandler = frenchFarmers.observe(function(item, from, to){
+			frenchFarmersChanges.push({
+				item: item,
+				// from: from,
+				// to: to
+			});
+		}, true);
+		window.frenchFarmersThirtyChanges=[];
+		window.frenchFarmersThirtyObserveHandler = frenchFarmersThirty.observe(function(item, from, to){
+			frenchFarmersThirtyChanges.push({
+				item: item,
+				// from: from,
+				// to: to
+			});
+		}, true);
+		window.pilotesChanges=[];
+		window.pilotesObserveHandler = pilotes.observe(function(item, from, to){
+			pilotesChanges.push({
+				item: item,
+				// from: from,
+				// to: to
+			});
+		}, true);
+
+		store.put(toto7);
+		store.put(toto6);
+
 	});
 });
