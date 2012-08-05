@@ -14,10 +14,12 @@ define([
 					var widget = new widgetDecl.type(widgetDecl.params);
 					var node = this[widgetDecl.node]; //nodeName must be a dojo-attach-point
 					var eventsMap = {};
-					Object.keys(widgetDecl.events).forEach(function(eventName){
-						var methodName = widgetDecl.events[eventName];
-						eventsMap[eventName]=this[methodName];
-					}.bind(this));
+					if(widgetDecl.events){
+						Object.keys(widgetDecl.events).forEach(function(eventName){
+							var methodName = widgetDecl.events[eventName];
+							eventsMap[eventName]=this[methodName];
+						}.bind(this));
+					}
 					this[widgetName] = this.addOwnedWidget(widget, node, eventsMap);
 				}.bind(this));
 			}
