@@ -25,11 +25,10 @@
 			"dijit/_TemplatedMixin",
 			"dijit/_WidgetsInTemplateMixin",
 			"dijit/_Container",
-			"SkFramework/widgets/OwnedWidgetsMixin",
+			"SkFramework/widgets/_OwnedWidgetsMixin",
 			"dojo/text!./template.html",
 			"dijit/form/TextBox",
 		], function(declare, Widget, Templated, WidgetsInTemplate, Container, OwnedWidgetsMixin, template, TextBox){
-
 			window.MyWidget = declare([Widget, Templated, WidgetsInTemplate, OwnedWidgetsMixin, Container], {
 				templateString: template,
 				ownedWidgetsDeclaration:{
@@ -80,13 +79,13 @@
 			console.log("il y a 5 widgets actuellement", dijit.registry.length);
 
 			//delayed so that events, have finished fired	
-			setTimeout(function(){
+/*			setTimeout(function(){
 				myWidget.destroyDescendants();
 				console.log("après suppression des enfants, il en reste 4", dijit.registry.length);
 				myWidget.destroyRecursive();
 				console.log("après suppression de myWidget, il ne reste plus rien", dijit.registry.length);
 			}, 5000);
-
+*/
 		});
 	</script>
 </body>

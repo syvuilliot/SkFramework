@@ -12,7 +12,7 @@ define([
 				Object.keys(this.ownedWidgetsDeclaration).forEach(function(widgetName){
 					var widgetDecl = this.ownedWidgetsDeclaration[widgetName];
 					var widget = new widgetDecl.type(widgetDecl.params);
-					var node = this[widgetDecl.node]; //nodeName must be a dojo-attach-point
+					var node = this[widgetDecl.node] || this[widgetName + "Node"]; //nodeName must be a dojo-attach-point
 					var eventsMap = {};
 					if(widgetDecl.events){
 						Object.keys(widgetDecl.events).forEach(function(eventName){
@@ -26,7 +26,7 @@ define([
 		},
 		addOwnedWidget: function(widget, node, eventsMap){
 			//insert ownedWidget in this.domNode
-			widget.placeAt(node);
+			widget.placeAt(node, "replace");
 			//bind events
 			if (eventsMap){
 				Object.keys(eventsMap).forEach(function(eventName){
