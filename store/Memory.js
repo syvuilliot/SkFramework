@@ -2,7 +2,8 @@ define(["SkFramework/utils/create", "dojo/store/util/QueryResults", "dojo/store/
 function(create, QueryResults, SimpleQueryEngine /*=====, Store =====*/){
 
 	// summary:
-	//		This is a basic in-memory object store that implements dojo.store.api.Store.
+	//		This is a basic in-memory object store subcalssing Array and implementing the dojo.store.api.Store.
+	//		QueryResults also implement this store API
 
 var Memory = create(Array, function MemoryStore(options){
 		this.index={};
@@ -15,7 +16,7 @@ var Memory = create(Array, function MemoryStore(options){
 
 	idProperty: "id",
 
-	index:null,
+	index: null,
 
 	queryEngine: SimpleQueryEngine,
 
