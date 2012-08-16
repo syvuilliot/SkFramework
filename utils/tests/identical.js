@@ -1,7 +1,10 @@
 define([
 	"doh/runner",
 	"../identical",
-], function(doh, identical){
+	"lodash/lodash",
+], function(doh, identical, _){
+
+window._ = _;
 
 doh.register("identical tests", {
 	"numbers": function(t){
@@ -60,7 +63,7 @@ doh.register("identical tests", {
 		var d = {name:"tutu", age:10};
 		t.t(identical([[a, b], [c, d]],[ [a, b], [c, d]], true));
 		t.t(identical([[a, b], [c, d]],[ [c, d], [a, b]], true));
-		t.t(identical([[a, b], [c, d]],[ [b, a], [c, d]], true));
+		t.f(identical([[a, b], [c, d]],[ [b, a], [c, d]], true));
 	},
 
 });

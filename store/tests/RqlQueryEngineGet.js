@@ -13,9 +13,7 @@
 		return true;
 	};
 
-	window.Person = create(Model, function Person(params){
-		Model.apply(this, arguments);
-	}, {
+	window.Person = create(Model, null, {
 		getage: function(){
 			return 2012 - this.get("birthYear");
 		},
@@ -23,9 +21,7 @@
 			return "My name is " + this.get("name") + " and I'm " + this.get("age");
 		},
 	});
-	window.Employee = create(Person, function Employee(params){
-		Person.apply(this, arguments);
-	}, {
+	window.Employee = create(Person, null, {
 		describe : function(){
 			return this.super.describe.call(this) + " and I work as " + this.get("job");
 		},
