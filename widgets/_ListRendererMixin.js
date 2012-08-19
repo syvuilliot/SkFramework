@@ -1,7 +1,7 @@
 ﻿define([
 	'dojo/_base/declare',
 	'lodash/lodash',
-	'SkFramework/utils/harmony-collections',
+	'SkFramework/utils/es6-collections',
 ], function(declare, _) {
 	// module:
 	// summary:
@@ -95,7 +95,7 @@
 		removeItem: function(item){
 			var child = this.itemsMap.get(this.getItemIdentity(item));
 			child.destroy(); //child.destroyRecursive();
-			this.itemsMap.delete_(item);
+			this.itemsMap.delete(item);
 		},
 		
 		removeItems: function(){
