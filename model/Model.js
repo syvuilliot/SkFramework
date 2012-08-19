@@ -87,7 +87,9 @@
 				return this.store.remove(id);
 			},
 			query: function(query, options){
-				return this.store.query(lang.mixin({}, {'instanceof': this}, query), options);
+				var result = this.store.query(lang.mixin({}, {'instanceof': this}, query), options);
+				result.observe && result.observe(function(){}); //start observing (prevent "out of date queryResult" error)
+				return result;
 			},
 			addRelationTo: function(targetModel, options){
 				var relationDefinition = lang.mixin({
