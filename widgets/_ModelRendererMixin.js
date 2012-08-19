@@ -23,13 +23,15 @@ function(
 				var modelMapping = this.get("modelMapping");
 				var model = this.get("model");
 				_(modelMapping).forEach(function(thisProp, modelProp){
-					this.set(thisProp, model.get(modelProp));
-					var handler = model.watch(modelProp, function(modelProp, oldValue, currentValue){
-						this.set(thisProp, currentValue);
-					}.bind(this));
+					this.set(thisProp, model.get && model.get(modelProp) || model[modelProp]);
+					if (model.watch){
+						var handler = model.watch(modelProp, function(modelProp, oldValue, currentValue){
+							this.set(thisProp, currentValue);
+						}.bind(this));
 
-					this.own(handler);
-					this._modelWatchHandlers.push(handler);
+						this.own(handler);
+						this._modelWatchHandlers.push(handler);
+					}
 				}, this);
 			}
 		},
