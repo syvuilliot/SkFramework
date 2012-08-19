@@ -3,12 +3,16 @@
 	"SkFramework/utils/create",
 	"dojo/Stateful",
 	//"dojo/store/Memory",
-	"SkFramework/store/Memory",
-	"SkFramework/store/PersistableMemory",
-	"dojo/store/Observable",
+	"SkFramework/store/Memory",	"SkFramework/store/PersistableMemory",
+	"dojo/store/Observable",	"SkFramework/store/Mappable",
 	"SkFramework/store/SimpleQueryEngineGet",
 	"dojox/json/schema",
-], function(lang, create, Stateful, Memory, Persistable, Observable, SimpleQueryEngineGet, jsonSchema){
+], function(
+	lang, create, Stateful,
+	Memory,						Persistable,
+	Observable,					Mappable,
+	SimpleQueryEngineGet, jsonSchema
+){
 	var Model = create(Stateful, function Model(params){
 			//use set to mix every property from params
 			Model.super.apply(this, arguments);
@@ -29,7 +33,7 @@
 				}
 				return this;
 			},
-			delete: function(){
+			'delete': function(){
 				return this.constructor.store.remove(this.getIdentity());
 			},
 			getIdentity: function(){
@@ -61,9 +65,9 @@
 			initNewStore: function(){
 				var constructorsMap = {};
 				constructorsMap[this.name] = this;
-				var store = Observable(Persistable(new Memory({
+				var store = Mappable(Observable(Persistable(new Memory({
 					queryEngine: SimpleQueryEngineGet,
-				}), {
+				})), {
 					storageKey: this.name + "Store",
 					constructorsMap: constructorsMap,
 				}));
@@ -83,7 +87,7 @@
 				return this.store.remove(id);
 			},
 			query: function(query, options){
-				return this.store.query(lang.mixin({}, {instanceof: this}, query), options);
+				return this.store.query(lang.mixin({}, {'instanceof': this}, query), options);
 			},
 			addRelationTo: function(targetModel, options){
 				var relationDefinition = lang.mixin({
@@ -135,7 +139,7 @@
 				// var result = relation.sourceModel.store.query(function(item){
 				// 	return item instanceof relation.sourceModel && item[relation.sourcePropertyName] && item[relation.sourcePropertyName] === this.getIdentity();
 				// }.bind(this));
-				var query = {instanceof: relation.sourceModel};
+				var query = {'instanceof': relation.sourceModel};
 				query[relation.sourcePropertyName] = this;
 				var result = relation.sourceModel.store.query(query);
 				result.add = result.put = function(sourceInstance){
