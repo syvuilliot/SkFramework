@@ -1,14 +1,14 @@
 define([
 	'lodash/lodash',
 	'dojo/_base/declare',
-	'./_Base'
+	'./_AppModel'
 ],
 function(
 	_,
 	declare,
-	Base
+	AppModel
 ) {
-	return declare([Base], {
+	return declare([AppModel], {
 		domainModel: null,
 		
 		constructor: function(params) {
