@@ -7,17 +7,19 @@
 	"SkFramework/store/ChainableQuery",
 	"SkFramework/store/PersistableMemory",
 	"dojo/store/Observable",
-	"SkFramework/store/Mappable",
+	"SkFramework/store/ObservableMap",
 	"SkFramework/store/SimpleQueryEngineGet",
 	"dojox/json/schema",
 	// "JSV/lib/jsv",
 ], function(
-	lang, create, Stateful,
+	lang,
+	create,
+	Stateful,
 	Memory,
 	Chainable,
 	Persistable,
 	Observable,
-	Mappable,
+	ObservableMap,
 	SimpleQueryEngineGet,
 	jsonSchema,
 	jsv
@@ -93,12 +95,12 @@
 			initNewStore: function(){
 				var constructorsMap = {};
 				constructorsMap[this.name] = this;
-				var store = Mappable(Chainable(Observable(Persistable(new Memory({
+				var store = ObservableMap(Observable(Persistable(new Memory({
 					queryEngine: SimpleQueryEngineGet,
 				}), {
 					storageKey: this.name + "Store",
 					constructorsMap: constructorsMap,
-				}))));
+				})));
 				this.store = store;
 				return store;
 			},
