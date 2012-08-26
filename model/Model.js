@@ -2,17 +2,50 @@
 	"dojo/_base/lang",
 	"SkFramework/utils/create",
 	"dojo/Stateful",
-	//"dojo/store/Memory",
-	"SkFramework/store/Memory",	"SkFramework/store/PersistableMemory",
-	"dojo/store/Observable",	"SkFramework/store/Mappable",
+	"dojo/store/Memory",
+	//"SkFramework/store/Memory",
+	"SkFramework/store/ChainableQuery",
+	"SkFramework/store/PersistableMemory",
+	"dojo/store/Observable",
+	"SkFramework/store/Mappable",
 	"SkFramework/store/SimpleQueryEngineGet",
 	"dojox/json/schema",
+	// "JSV/lib/jsv",
 ], function(
 	lang, create, Stateful,
-	Memory,						Persistable,
-	Observable,					Mappable,
-	SimpleQueryEngineGet, jsonSchema
+	Memory,
+	Chainable,
+	Persistable,
+	Observable,
+	Mappable,
+	SimpleQueryEngineGet,
+	jsonSchema,
+	jsv
 ){
+	var jsonSchemaValidator = {
+		dojox: function(){
+			//use JSON parsing to remove inherited properties from instance and from schema
+			var value = JSON.parse(JSON.stringify(this));
+			var schema = this.$schema;
+			var validationResult = jsonSchema.validate(value, schema);
+			if (! validationResult.valid){console.log("Validation failed for ", this, validationResult);}
+			return validationResult.valid;
+		},
+/*		jsv: function(){
+			var value = JSON.parse(JSON.stringify(this));
+			var schema = this.$schema;
+			var env = JSV.createEnvironment();
+			var report = env.validate(value, schema);
+			if (report.errors.length === 0){
+				return true;
+			} else {
+				console.log("Validation failed for", this, report);
+				return false;
+			}
+		}
+*/	};
+
+
 	var Model = create(Stateful, function Model(params){
 			//use set to mix every property from params
 			Model.super.apply(this, arguments);
@@ -21,12 +54,7 @@
 			}
 		}, {
 			"$schema": {type: "object", properties:{id: {type: "string"}}},
-			validate: function(){
-				//use JSON parsing to remove inherited properties from instance and from schema
-				var validationResult = jsonSchema.validate(JSON.parse(JSON.stringify(this)), JSON.parse(JSON.stringify(this.$schema)));
-				if (! validationResult.valid){console.log("Validation failed for ", this, validationResult);}
-				return validationResult.valid;
-			},
+			validate: jsonSchemaValidator.dojox,
 			save: function(){
 				if (this.validate()){
 					this.constructor.store.put(this);
@@ -65,12 +93,12 @@
 			initNewStore: function(){
 				var constructorsMap = {};
 				constructorsMap[this.name] = this;
-				var store = Mappable(Observable(Persistable(new Memory({
+				var store = Mappable(Chainable(Observable(Persistable(new Memory({
 					queryEngine: SimpleQueryEngineGet,
-				})), {
+				}), {
 					storageKey: this.name + "Store",
 					constructorsMap: constructorsMap,
-				}));
+				}))));
 				this.store = store;
 				return store;
 			},

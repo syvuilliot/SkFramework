@@ -14,7 +14,7 @@ define([
 
     var Persistable = function(store, options){
 	var wrappedStore = lang.delegate(store, {
-		storageKey: "memoryStore",
+		storageKey: options && options.storageKey || "memoryStore",
 		constructorIdProperty: "ConstructorId",
 		getConstructorId: function(item){
 			return item.constructor.name;
