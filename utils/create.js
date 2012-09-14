@@ -23,15 +23,15 @@
 		//create an empty baseConstructor if none provided
 		if (!baseConstructor){baseConstructor = function BaseClass(){};}
 		
-		//create a subConstructor if none is provided
-		if(!subConstructor){subConstructor = function SubClass(){
-			baseConstructor.apply(this, arguments);
-		};}
-		//if a string is provided as subConstructor, use it to name the function
+		//if a string is provided as subConstructor, use it to name the function and call super constructor
 		if (typeof subConstructor === "string"){
 			var subConstructorName = subConstructor;
 			subConstructor = new Function("baseConstructor", "return function " + subConstructorName + "(){ baseConstructor.apply(this, arguments); }")(baseConstructor);
 		}
+		//create a subConstructor if none is provided
+		if(!subConstructor){subConstructor = function SubClass(){
+			baseConstructor.apply(this, arguments);
+		};}
 
 		//make subConstructor inherits from baseConstructor
 		if (subConstructor.__proto__){ //no standard way to do this so we need to ensure that __proto__ exists

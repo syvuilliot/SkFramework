@@ -49,7 +49,6 @@
 
 
 	var Model = create(Stateful, function Model(params){
-			//use set to mix every property from params
 			Model.super.apply(this, arguments);
 			if (!this.id) {
 				this.set("id", this.constructor.generateId());
