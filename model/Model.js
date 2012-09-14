@@ -144,8 +144,9 @@
 				} else {
 					subModel = this.extend();
 				}
-				schema["extends"] = this.prototype.$schema;
-				subModel.prototype.$schema = schema;
+				var schemaCopy = lang.clone(schema);
+				schemaCopy["extends"] = this.prototype.$schema;
+				subModel.prototype.$schema = schemaCopy;
 				return subModel;
 			},
 		}
