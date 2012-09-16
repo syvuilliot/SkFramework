@@ -30,7 +30,7 @@
 			var value = JSON.parse(JSON.stringify(this));
 			var schema = this.$schema;
 			var validationResult = jsonSchema.validate(value, schema);
-			if (! validationResult.valid){console.log("Validation failed for ", this, validationResult);}
+			if (! validationResult.valid){console.warn("Validation failed for ", this, validationResult);}
 			return validationResult.valid;
 		},
 /*		jsv: function(){
@@ -144,10 +144,13 @@
 				} else {
 					subModel = this.extend();
 				}
-				var schemaCopy = lang.clone(schema);
-				schemaCopy["extends"] = this.prototype.$schema;
-				subModel.prototype.$schema = schemaCopy;
+				subModel.setSchema(schema);
 				return subModel;
+			},
+			setSchema: function(schema){
+				var schemaCopy = lang.clone(schema);
+				schemaCopy["extends"] = this.super.$schema;
+				this.prototype.$schema = schemaCopy;
 			},
 		}
 	);
