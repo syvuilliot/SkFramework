@@ -84,5 +84,25 @@ define([
 		},
 	});
 
+	binding.ObservableQueryResult= declare(binding.Value, {
+		update: function(source, target, params){
+			var queryResult = source[params.sourceProp];
+			//init
+			queryResult.forEach(function(value){
+				target[params.addMethod](value, value.id);//TODO: use getIdentity
+			});
+			//observe
+			this.handlers.push(source[params.sourceProp].observe(function(item, from, to){
+				if (to < 0){ //item removed
+					target[params.removeMethod](item, item.id);//TODO: use getIdentity
+				}
+				if (from < 0){ //item added
+					target[params.addMethod](item, item.id);//TODO: use getIdentity
+				}
+			}, true));
+		},
+	});
+
+
 	return binding;
 });
