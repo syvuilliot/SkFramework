@@ -1,11 +1,11 @@
 define([
 	'dojo/_base/declare',
-	'dojo/Stateful',	'dijit/Destroyable'
+	'dojo/Stateful',	'dojo/Evented',	'dijit/Destroyable'
 ], function(
 	declare,
-	Stateful,			Destroyable
+	Stateful,			Evented,		Destroyable
 ) {
-	return declare([Stateful, Destroyable], {
+	return declare([Stateful, Evented, Destroyable], {
 		_presenter: null,
 		view: null,
 		
