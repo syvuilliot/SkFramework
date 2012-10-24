@@ -1,13 +1,18 @@
 define([
-	'dojo/_base/declare',	'dojo/_base/lang',
+	'lodash/lodash',
+	'dojo/_base/declare',
 	'dojo/Stateful',	'dojo/Evented',	'dijit/Destroyable'
-], function(
-	declare,				lang,
+], function(_,
+	declare,
 	Stateful,			Evented,		Destroyable
 ) {
 	return declare([Stateful, Evented, Destroyable], {
-		_presenter: null,
-		_components: null,
+
+		constructor: function(){
+			this._presenter = null;
+			this._components = {};
+
+		},
 		
 
 		get: function() {
@@ -27,8 +32,31 @@ define([
 		 * Register sub-components
 		 */
 		_addComponents: function(components) {
-			this._components = lang.mixin(this._components, components);
+			Object.keys(components).forEach(function(id){
+				this._addComponent(components[id], id);
+			}.bind(this));
 		},
+		_addComponent: function(component, id){
+			//TODO: generate an id if none is provided
+			this._components[id] = component;
+		},
+		_getComponent: function(id){
+			return this._components[id];
+		},
+		_removeComponent: function (id) {
+			//TODO: remove component by reference and not (only) by id
+			delete this._components[id];
+		},
+
+		destroy: function () {
+			//unregister every component and call destroy on them if available
+			_(this._components).forEach(function(component, id){
+				this._removeComponent(id);
+				component.destroy && component.destroy();
+			}.bind(this));
+			this.inherited(arguments);
+		}
+
 
 	});
 });

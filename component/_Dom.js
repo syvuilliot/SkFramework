@@ -15,16 +15,16 @@ define([
 
 		postscript: function(params) {
 			this.inherited(arguments);
-			this.render();
-			this.bind();
+			this._render();
+			this._bind();
 		},
 		
-		render: function(){
+		_render: function(){
 			this.domNode = domConstruct.create(this.tag, this.domNodeAttrs);
 
 		},
 
-		bind: function() {
+		_bind: function() {
 			// Binding between Presenter and sub components
 		},
 
@@ -45,16 +45,19 @@ define([
 			}
 		},
 
-		placeAt: function(refNode, option) {
-			domConstruct.place(this.domNode, refNode, option);
+		placeAt: function(refComponent, position) {
+			//use addChild method from parent if available (skComponent, dijit). In case of dijit parent, the children should also be a dijit
+			if (refComponent.addChild){
+				refComponent.addChild(this, position);
+				return;
+			}
+			//if refComponent is a domNode
+			if (refComponent instanceof HTMLElement || typeof refComponent === "string") {
+				domConstruct.place(this.domNode, refComponent, position);
+				return;
+			}
 		},
 
-		destroy: function(){
-			this._components.forEach(function(component){
-				component.destroy();
-			});
-			this.inherited(arguments);
-		},
 
 	});
 });
