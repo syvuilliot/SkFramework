@@ -1,23 +1,14 @@
 define([
-	'dojo/_base/declare',
+	'dojo/_base/declare',	'dojo/_base/lang',
 	'dojo/Stateful',	'dojo/Evented',	'dijit/Destroyable'
 ], function(
-	declare,
+	declare,				lang,
 	Stateful,			Evented,		Destroyable
 ) {
 	return declare([Stateful, Evented, Destroyable], {
 		_presenter: null,
-		view: null,
+		_components: null,
 		
-		postscript: function(params) {
-			this.inherited(arguments);
-			this.bind();
-		},
-		
-		destroy: function(){
-			this.inherited(arguments);
-			this.view.destroy();
-		},
 
 		get: function() {
 			return this._presenter.get.apply(this._presenter, arguments);
@@ -31,8 +22,13 @@ define([
 			}
 		},
 		
-		bind: function() {
-			// Binding between Presenter & View
-		}
+
+		/*
+		 * Register sub-components
+		 */
+		_addComponents: function(components) {
+			this._components = lang.mixin(this._components, components);
+		},
+
 	});
 });
