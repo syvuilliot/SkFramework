@@ -44,6 +44,13 @@ define([
 				return;
 			}
 		},
+		_remove: function (component) {
+			if (component instanceof HTMLElement) {
+				this.domNode.removeChild(component); //this method doen't seem to exist in domConstruct
+			} else {
+				this.domNode.removeChild(component.domNode);
+			}
+		},
 
 		placeAt: function(refComponent, position) {
 			//use addChild method from parent if available (skComponent, dijit). In case of dijit parent, the children should also be a dijit
@@ -58,6 +65,12 @@ define([
 			}
 		},
 
+		//do we need to do something "view related" on destroy ?
+		//to my mind, it's up to the parent to remove us from its view but we don't have to do it in its place (it could have removing logic that we can't call since we don't know our parent component, only our parent domNode)
+		//destroy should only "kill" the component === cancel binding handlers... this is what destroyable already do
+/*		destroy: function(){
+		}
+*/
 
 	});
 });
