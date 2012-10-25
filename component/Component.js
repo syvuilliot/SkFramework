@@ -18,6 +18,7 @@ define([
 		},
 
 		get: function() {
+			//TODO: return this.get if prop in this... no ?
 			return this._presenter.get.apply(this._presenter, arguments);
 		},
 

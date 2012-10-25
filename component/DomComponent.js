@@ -29,7 +29,7 @@ define([
 		 */
 		_append: function(component, options) {
 			if (component instanceof DomComponent) {
-				component.placeAt(this.domNode);
+				domConstruct.place(component.domNode, this.domNode, "last");
 			}
 		},
 		_remove: function (component) {
@@ -45,6 +45,10 @@ define([
 			if (refComponent instanceof HTMLElement || typeof refComponent === "string") {
 				domConstruct.place(this.domNode, refComponent, position);
 				return;
+			}
+			//if refComponent is a SkComponent, delegate to its "addChild" public method
+			if (refComponent instanceof DomComponent) {
+				refComponent.addChild(this, position);
 			}
 		},
 
