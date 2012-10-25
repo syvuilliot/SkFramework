@@ -7,13 +7,15 @@ define([
 	Stateful,			Evented,		Destroyable
 ) {
 	return declare([Stateful, Evented, Destroyable], {
-
 		constructor: function(){
 			this._presenter = null;
 			this._components = {};
-
 		},
-		
+
+		postscript: function(params) {
+			this.inherited(arguments);
+			this._bind();
+		},
 
 		get: function() {
 			return this._presenter.get.apply(this._presenter, arguments);
@@ -47,6 +49,12 @@ define([
 			//TODO: remove component by reference and not (only) by id
 			delete this._components[id];
 		},
+		
+		/*
+		 * Binding between Presenter and sub components
+		 */
+		_bind: function() {
+		},
 
 		destroy: function () {
 			//unregister every component and call destroy on them if available
@@ -56,7 +64,5 @@ define([
 			}.bind(this));
 			this.inherited(arguments);
 		}
-
-
 	});
 });
