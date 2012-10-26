@@ -33,22 +33,8 @@ define([
 			}
 		},
 		_remove: function (component) {
-			if (component instanceof HTMLElement) {
-				this.domNode.removeChild(component); //this method doen't seem to exist in domConstruct
-			} else {
-				this.domNode.removeChild(component.domNode);
-			}
-		},
-
-		placeAt: function(refComponent, position) {
-			//if refComponent is a domNode
-			if (refComponent instanceof HTMLElement || typeof refComponent === "string") {
-				domConstruct.place(this.domNode, refComponent, position);
-				return;
-			}
-			//if refComponent is a SkComponent, delegate to its "addChild" public method
-			if (refComponent instanceof DomComponent) {
-				refComponent.addChild(this, position);
+			if (component instanceof DomComponent) {
+				this.domNode.removeChild(component.domNode); //this method doen't seem to exist in domConstruct
 			}
 		},
 

@@ -34,19 +34,13 @@ define([
 
 		//default implementation for SkComponents and domNodes
 		//to be extended/overridden by subclasses
+		//by default a child is appended the same way as a sub component (so it benefits from mixin placement logic)
 		_placeChild: function(component, position){
-			var containerNode = this.containerNode || this.domNode;
-			domConstruct.place(component.domNode || component, containerNode, position);
-			//could also be the following
-			// this._getComponent("container").addChild(component, position);
+			this._append(component, position);
 		},
-		_unplace: function (component) {
-			if (component.domNode) {
-				this.domNode.removeChild(component.domNode); //this method doesn't seem to exist in domConstruct
-			} else {
-				this.domNode.removeChild(component);
-			}
-		}
+		_unplaceChild: function (component) {
+			this._remove(component);
+		},
 
 	});
 });
