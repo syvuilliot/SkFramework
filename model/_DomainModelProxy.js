@@ -1,17 +1,15 @@
 define([
 	'lodash/lodash',
-	'dojo/_base/declare',
-	'./_AppModel'
+	'./Model'
 ],
 function(
 	_,
-	declare,
-	AppModel
+	Model
 ) {
-	return declare([AppModel], {
-		domainModel: null,
-		
-		constructor: function(params) {
+	return Model.extend(
+		function ProxyModel() {
+			this.id = null;
+			Model.apply(this, arguments);
 			//for each function that exists on domainModel (owned and inherited) but not on this, proxy it
 			_(this.domainModel).forIn(function(value, prop){
 				if (prop[0] != '_' && typeof value === "function"){
@@ -22,7 +20,8 @@ function(
 					}
 				}
 			}, this);
-		},
+		}, {
+		domainModel: null,
 		set: function(attr) {
 			//when setting a prop that is not defined on this, set it on this.domainModel instead
 			var setter = this[this._getAttrNames(attr).s];
