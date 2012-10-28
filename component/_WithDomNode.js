@@ -9,7 +9,7 @@ define([
 	 * Mixin adding support of DOM-nodes as sub-components
 	 */
 	return declare([], {
-		_append: function(component, option) {
+		_placeComponent: function(component, option) {
 			if (component instanceof HTMLElement) {
 				domConstruct.place(component, this.domNode, option);
 			}
@@ -18,7 +18,7 @@ define([
 			}
 		},
 		
-		_remove: function (component) {
+		_unplaceComponent: function (component) {
 			if (component instanceof HTMLElement) {
 				this.domNode.removeChild(component); //this method doen't seem to exist in domConstruct
 			} else {

@@ -36,10 +36,10 @@ define([
 		//to be extended/overridden by subclasses
 		//by default a child is appended the same way as a sub component (so it benefits from mixin placement logic)
 		_placeChild: function(component, position){
-			this._append(component, position);
+			this._placeComponent(component, position);
 		},
 		_unplaceChild: function (component) {
-			this._remove(component);
+			this._unplaceComponent(component);
 		},
 
 	});

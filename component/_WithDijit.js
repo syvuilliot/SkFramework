@@ -9,7 +9,7 @@ define([
 	 * Mixin adding support of Dijits (dojo) as sub-components
 	 */
 	return declare([], {
-		_append: function(component, option) {
+		_placeComponent: function(component, option) {
 			if (component.domNode && component.startup) {
 				dom.place(component.domNode, this.domNode, option);
 				component.startup();
@@ -19,7 +19,7 @@ define([
 			}
 		},
 		
-		_remove: function (component) {
+		_unplaceComponent: function (component) {
 			if (component.domNode) {
 				this.domNode.removeChild(component.domNode); //this method doesn't seem to exist in domConstruct
 			} else {

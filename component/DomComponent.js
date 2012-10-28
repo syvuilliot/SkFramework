@@ -27,14 +27,14 @@ define([
 		/*
 		 * Places sub-components' views in its own view (DOM-node)
 		 */
-		_append: function(component, options) {
+		_placeComponent: function(component, options) {
 			if (component instanceof DomComponent) {
 				domConstruct.place(component.domNode, this.domNode, "last");
 			}
 		},
-		_remove: function (component) {
+		_unplaceComponent: function (component) {
 			if (component instanceof DomComponent) {
-				this.domNode.removeChild(component.domNode); //this method doen't seem to exist in domConstruct
+				this.domNode.removeChild(component.domNode); //this method doesn't seem to exist in domConstruct
 			}
 		},
 
