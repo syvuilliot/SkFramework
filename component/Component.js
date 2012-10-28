@@ -1,9 +1,9 @@
 define([
 	'lodash/lodash',
-	'dojo/_base/declare',
+	'dojo/_base/declare',	'dojo/_base/lang',
 	'dojo/Stateful',	'dojo/Evented',	'dijit/Destroyable'
 ], function(_,
-	declare,
+	declare,				lang,
 	Stateful,			Evented,		Destroyable
 ) {
 	return declare([Stateful, Evented, Destroyable], {
@@ -30,18 +30,58 @@ define([
 			}
 		},
 		
+		/*
+		 * Build a component from a configuration object
+		 * 
+		 * configObject: can be one of the following:
+		 * 	- Class of component
+		 *  - {
+		 * 		constructor: Class,
+		 * 		classOption1: ...,
+		 * 		classOption2: ...,
+		 * 		...
+		 *    }
+		 * 	- instance of component (return as is)
+		 */
+		_buildComponent: function(configObject, options) {
+			if (configObject instanceof Function) {
+				// configObject is a class
+				return new configObject(options);
+			}
+			if (_.isPlainObject(configObject)) {
+				var configOptions = lang.mixin({}, configObject);
+				delete configOptions.constructor;
+				
+				return new configObject.constructor(lang.mixin(configOptions, options));
+			}
+			else {
+				// configObject is an instance
+				return configObject;
+			}
+		},
 
 		/*
 		 * Register sub-components
 		 */
-		_addComponents: function(components) {
-			Object.keys(components).forEach(function(id){
-				this._addComponent(components[id], id);
-			}.bind(this));
-		},
 		_addComponent: function(component, id){
 			//TODO: generate an id if none is provided
 			this._components[id] = component;
+			return component;
+		},
+		
+		/*
+		 * Add several components at once
+		 * 
+		 *  - components: {
+		 * 		id1: configObject1,
+		 * 		id2: configObject2,
+		 * 		...
+		 * 	  }
+		 */
+		_addComponents: function(components) {
+			Object.keys(components).forEach(function(id){
+				this._addComponent(this._buildComponent(components[id]), id);
+			}.bind(this));
 		},
 		_getComponent: function(id){
 			return this._components[id];
