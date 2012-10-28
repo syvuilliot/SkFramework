@@ -51,6 +51,13 @@ define([
 		},
 	});
 
+	binding.Stateful2InnerHtml = declare(binding.Value, {
+		update: function(source, target, params){
+			target.innerHTML = source.get(params.sourceProp); 
+		},
+	});
+
+
 	binding.ValueSync = declare(Binding, {
 		constructor: function(source, target, params){
 			var mapping = {};
