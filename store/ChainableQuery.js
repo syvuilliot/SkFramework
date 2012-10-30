@@ -9,7 +9,7 @@
 			query: function(query, options) {
 				var queryResult = store.query(query, options);
 				//add dojo.store API to the queryResult
-				["get", "put", "add", "remove"].forEach(function(method){
+				["get", "put", "add", "remove", "getIdentity"].forEach(function(method){
 					queryResult[method] = function(){
 						return store[method].apply(store, arguments);
 					};
