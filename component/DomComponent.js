@@ -18,10 +18,16 @@ define([
 		postscript: function(params) {
 			this.inherited(arguments);
 			this._render();
+			this._bind();
 		},
 		
 		_render: function(){
 			this.domNode = domConstruct.create(this.domTag, this.domAttrs);
+		},
+		/*
+		 * Binding between Presenter and sub components
+		 */
+		_bind: function() {
 		},
 
 		/*

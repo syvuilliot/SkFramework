@@ -12,14 +12,12 @@ define([
 			this._components = {};
 		},
 
-		postscript: function(params) {
-			this.inherited(arguments);
-			this._bind();
-		},
-
-		get: function() {
-			//TODO: return this.get if prop in this... no ?
-			return this._presenter.get.apply(this._presenter, arguments);
+		get: function(prop) {
+			if (prop in this) {
+				return this.inherited(arguments);
+			} else {
+				return this._presenter.get.apply(this._presenter, arguments);
+			}
 		},
 
 		set: function(prop, value) {
@@ -91,11 +89,6 @@ define([
 			delete this._components[id];
 		},
 		
-		/*
-		 * Binding between Presenter and sub components
-		 */
-		_bind: function() {
-		},
 
 		destroy: function () {
 			//unregister every component and call destroy on them if available
