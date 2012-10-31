@@ -81,7 +81,7 @@
 			remove: function(propertyName, value){
 				var removerName = "_"+propertyName+"Remover";
 				if (this[removerName]){
-					//if a adder is defined
+					//if a remover is defined
 					return this[removerName](value);
 				} else {
 					var index = this[propertyName] && this[propertyName].indexOf(value);
@@ -159,10 +159,6 @@
 		var getterName = "_"+relation.sourcePropertyName+"Getter";
 		if (!relation.sourceModel.prototype[getterName]){
 			relation.sourceModel.prototype[getterName] = function(){
-				//	var self = this;
-				//	return relation.targetModel.store.query(function(item){
-				//	return item instanceof relation.targetModel && self[relation.sourcePropertyName] && self[relation.sourcePropertyName].indexOf(item.getIdentity())>= 0;
-				// });
 				return this[relation.sourcePropertyName] && relation.targetModel.store.get(this[relation.sourcePropertyName]);
 			};
 		}
@@ -171,9 +167,6 @@
 		if (!relation.targetModel.prototype[getterName]){
 			relation.targetModel.prototype[getterName] = function(){
 				var targetInstance = this;
-				// var result = relation.sourceModel.store.query(function(item){
-				// 	return item instanceof relation.sourceModel && item[relation.sourcePropertyName] && item[relation.sourcePropertyName] === this.getIdentity();
-				// }.bind(this));
 				var query = {'instanceof': relation.sourceModel};
 				query[relation.sourcePropertyName] = this;
 				var result = relation.sourceModel.store.query(query);
@@ -190,35 +183,111 @@
 				this[relation.sourcePropertyName] = typeof value === "string" ? value : value.getIdentity();
 			};
 		}
-/*		//ajoute un adder sur la classe Model source
-		if (!relation.sourceModel.prototype["add"+relation.sourcePropertyName]){
-			relation.sourceModel.prototype["add"+relation.sourcePropertyName] = function(value){
-				if (!this[relation.sourcePropertyName]){this[relation.sourcePropertyName]=[];}
-				this[relation.sourcePropertyName].push(value.getIdentity());
-			};
-		}
-		//ajoute un adder sur la classe Model cible
-		if (!relation.targetModel.prototype["add"+relation.targetPropertyName]){
-			relation.targetModel.prototype["add"+relation.targetPropertyName] = function(value){
-				value.add(relation.sourcePropertyName, this);
-			};
-		}
-		//ajoute un remover sur la classe Model source
-		if (!relation.sourceModel.prototype["remove"+relation.sourcePropertyName]){
-			relation.sourceModel.prototype["remove"+relation.sourcePropertyName] = function(value){
-				if (!this[relation.sourcePropertyName]){this[relation.sourcePropertyName]=[];}
-				var idList = this[relation.sourcePropertyName];
-				var index = idList.indexOf(value.getIdentity());
-				if(index !== -1){idList.splice(index, 1);}
-			};
-		}
-		//ajoute un remover sur la classe Model cible
-		if (!relation.targetModel.prototype["remove"+relation.targetPropertyName]){
-			relation.targetModel.prototype["remove"+relation.targetPropertyName] = function(value){
-				value.remove(relation.sourcePropertyName, this);
-			};
-		}
-*/	};
+	};
+
+	Model.addMany2ManyRelation = function(relationDef){
+		var IntermediaryModel = Model.extend();
+		
+		IntermediaryModel.addRelationTo(relationDef.targetModel, {
+			sourcePropertyName: relationDef.sourceAddRemoveName,
+			targetPropertyName: relationDef.targetGetName+"Relations",
+		});
+		IntermediaryModel.addRelationTo(Todo, {
+			sourcePropertyName: relationDef.targetAddRemoveName,
+			targetPropertyName: relationDef.sourceGetName+"Relations",
+		});
+		
+		//add a getter on target Model
+		relationDef.targetModel.prototype["_"+relationDef.targetGetName+"Getter"] = function(){
+			var relations = this.get(relationDef.targetGetName+"Relations");
+			var sourceInstances = Chainable(Observable(new Memory()));
+			relations.forEach(function(relation){
+				sourceInstances.put(relation.get(relationDef.targetAddRemoveName));
+			});
+			relations.observe(function(relation, from, to){
+				if (to < 0) {
+					sourceInstances.remove(relation.get(relationDef.targetAddRemoveName).getIdentity());
+				} 
+				if (from < 0) {
+					sourceInstances.put(relation.get(relationDef.targetAddRemoveName));
+				}
+			});
+			return sourceInstances.query();
+		};
+
+		//add an adder on target model
+		relationDef.targetModel.prototype["_"+relationDef.targetAddRemoveName+"Adder"] = function(sourceInstance, options){
+			if(this.get(relationDef.targetGetName).get(sourceInstance.getIdentity()) === undefined) {
+				options = options || {};
+				options[relationDef.sourceAddRemoveName] = this;
+				options[relationDef.targetAddRemoveName] = sourceInstance;
+				return new IntermediaryModel(options).save();
+			}
+		};
+		relationDef.targetModel.prototype["_"+relationDef.targetAddRemoveName+"Remover"] = function(sourceInstance){
+			var queryObject = {};
+			queryObject[relationDef.sourceAddRemoveName] = this;
+			queryObject[relationDef.targetAddRemoveName] = sourceInstance;
+			IntermediaryModel.query(queryObject).forEach(function(intermediaryInstance){
+				intermediaryInstance.delete();
+			});
+		};
+
+		
+
+		relationDef.sourceModel.prototype["_"+relationDef.sourceGetName+"Getter"] = function(){
+			var relations = this.get(relationDef.sourceGetName+"Relations");
+			var targetInstances = Chainable(Observable(new Memory()));
+			relations.forEach(function(relation){
+				targetInstances.put(relation.get(relationDef.sourceAddRemoveName));
+			});
+			relations.observe(function(rel, from, to){
+				if (to < 0) {
+					targetInstances.remove(rel.get(relationDef.sourceAddRemoveName).getIdentity());
+				} 
+				if (from < 0) {
+					targetInstances.put(rel.get(relationDef.sourceAddRemoveName));
+				} 
+			});
+			return targetInstances.query();
+		};
+		relationDef.sourceModel.prototype["_"+relationDef.sourceAddRemoveName+"Adder"] = function(targetInstance, options){
+			//in this case, where the intermediary model is transparent, we don't want to have many relations between one todo and one tag => a tag can only be set once on a todo
+			if(this.get(relationDef.sourceGetName).get(targetInstance.getIdentity()) === undefined) {
+				options = options || {};
+				options[relationDef.targetAddRemoveName] = this;
+				options[relationDef.sourceAddRemoveName] = targetInstance;
+				return new IntermediaryModel(options).save();
+			}
+		};
+		relationDef.sourceModel.prototype["_"+relationDef.sourceAddRemoveName+"Remover"] = function(targetInstance){
+			var queryObject = {};
+			queryObject[relationDef.targetAddRemoveName] = this;
+			queryObject[relationDef.sourceAddRemoveName] = targetInstance;
+			IntermediaryModel.query(queryObject).forEach(function(intermediaryInstance){
+				intermediaryInstance.delete();
+			});
+		};
+
+		var oldDelete = relationDef.sourceModel.prototype.delete;
+		relationDef.sourceModel.prototype.delete = function(){
+			//it should only exist one relation but we never know...
+			this.get(relationDef.sourceGetName+"Relations").forEach(function(relation){
+				relation.delete();
+			});
+			oldDelete.apply(this, arguments);
+		};
+
+		oldDelete = relationDef.targetModel.prototype.delete;
+		relationDef.targetModel.prototype.delete = function(){
+			this.get(relationDef.targetGetName+"Relations").forEach(function(relation){
+				relation.delete();
+			});
+			oldDelete.apply(this, arguments);
+		};
+
+		return IntermediaryModel;
+	};
 	
 	Model.initNewStore();
 	return Model;
