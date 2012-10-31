@@ -94,12 +94,12 @@
 			initNewStore: function(){
 				var constructorsMap = {};
 				constructorsMap[this.name] = this;
-				var store = ObservableMap(Chainable(Observable(Persistable(new Memory({
+				var store = Chainable(Observable(Persistable(new Memory({
 					queryEngine: SimpleQueryEngineGet,
 				}), {
 					storageKey: this.name + "Store",
 					constructorsMap: constructorsMap,
-				}))));
+				})));
 				this.store = store;
 				return store;
 			},
