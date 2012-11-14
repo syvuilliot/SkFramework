@@ -37,7 +37,7 @@ var Sync = function(localStore, remoteStore, options){
 			localStore.query({_updated: true}).forEach(function(localObject){
 				//si l'objet n'a pas de numéro de révision, tenter de le créer sur le serveur
 				if(localObject.etag === undefined){
-					remoteStore.put(object).then(function(object){
+					remoteStore.put(localObject).then(function(object){
 						//lorsque la création s'est bien passée, le supprimer en local
 						localStore.remove(object);
 					},
