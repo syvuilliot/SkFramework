@@ -120,6 +120,12 @@
 				result.observe && result.observe(function(){}); //start observing (prevent "out of date queryResult" error)
 				return result;
 			},
+			save: function(){
+				return this.store.save();
+			},
+			load: function(){
+				return this.store.load();
+			},
 			addRelationTo: function(targetModel, options){
 				var relationDefinition = lang.mixin({
 					sourceModel: this,
