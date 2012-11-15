@@ -99,6 +99,7 @@
 				}), {
 					storageKey: this.name + "Store",
 					constructorsMap: constructorsMap,
+					autoSave: true,
 				})));
 				this.store = store;
 				return store;

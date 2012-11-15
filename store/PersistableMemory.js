@@ -23,7 +23,7 @@ define([
 			return this.constructorsMap[constructorId];
 		},
 		constructorsMap: {},
-		autoSave: false,
+		autoSave: options && options.autoSave || false,
 
 		put: function(object, options){
 			// if autoSave, persist MemoryStore when an item is added/updated
