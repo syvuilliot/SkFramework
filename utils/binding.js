@@ -48,7 +48,9 @@ define([
 			}.bind(this)));
 		},
 		update: function(source, target, params){
-			target.set(params.targetProp, source.get(params.sourceProp)); 
+			var value = source.get(params.sourceProp);
+			var prop = params.targetProp;
+			target.set ? target.set(prop, value) : target[prop] = value; 
 		},
 	});
 

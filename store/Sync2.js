@@ -92,35 +92,34 @@ var Sync = function(localStore, remoteStore, options){
 			var remainingLocalObjects = localStore.query().slice();
 
 			//récupérer tous les objets du serveur et mettre à jour le store local
-			remoteStore.query(query).forEach(function(remoteObject){
-				var localObject = localStore.get(remoteObject.id);
-				// si l'objet n'existe pas en local, le créer
-				if (localObject === undefined){
-					localStore.put(object);
-				// sinon
-				} else {
-					// enlever l'objet de la liste des objets non traités
-					remainingLocalObjects.splice(remainingLocalObjects.indexOf(localObject), 1);
-					// si les numéros de révision sont différents
-						// s'il n'y a pas de conflit, mettre à jour l'objet local
-						// sinon... que faut-il faire pour premettre la résolution de conflit ? stocker l'objet distant dans un store à part ? ou inversement, stocker l'objet local à part et le remplacer par l'objet distant dans le store local ? ou faut-il que l'instance de modèle puisse stocker ces 2 versions et exposer des méthodes de résolution de conflits
-					if () {
+			remoteStore.query(query).then(function(remoteObjects){
+				remoteObjects.forEach(function(remoteObject){
+					var localObject = localStore.get(remoteObject.id);
+					// si l'objet n'existe pas en local, le créer
+					if (localObject === undefined){
+						localStore.put(remoteObject);
+					// sinon
+					} else {
+						// enlever l'objet de la liste des objets non traités
+						remainingLocalObjects.splice(remainingLocalObjects.indexOf(localObject), 1);
+						// si les numéros de révision sont différents
+							// s'il n'y a pas de conflit, mettre à jour l'objet local
+							// sinon... que faut-il faire pour premettre la résolution de conflit ? stocker l'objet distant dans un store à part ? ou inversement, stocker l'objet local à part et le remplacer par l'objet distant dans le store local ? ou faut-il que l'instance de modèle puisse stocker ces 2 versions et exposer des méthodes de résolution de conflits
+						if (localObject.etag !== remoteObject.etag) {
 
+						}
+						// si les numéros de révision sont identiques, normalement il n'y a rien à faire
 					}
-					// si les numéros de révision sont identiques, normalement il n'y a rien à faire
-					if () {
-						
-					}
-				}
+				});
+				//supprimer tous les objets locaux non inclus dans la réponse du serveur
+				remainingLocalObjects.forEach(function(object){
+					localStore.remove(object.id);
+				});
+				//at the end, log as done
+				console.log("data sync done");
 			});
 
-			//supprimer tous les objets locaux non inclus dans la réponse du serveur
-			remainingLocalObjects.forEach(function(object){
-				localStore.remove(object.id);
-			});
 						
-			//at the end, log as done
-			console.log("data sync done");
 		}
 	});
 };
