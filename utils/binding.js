@@ -1,7 +1,8 @@
 define([
+	'require',
 	"dojo/_base/declare",
 	"dojo/_base/lang",
-], function(declare, lang){
+], function(require, declare, lang){
 
 	var binding = {};
 
