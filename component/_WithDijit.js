@@ -10,7 +10,7 @@ define([
 	 */
 	return declare([], {
 		_placeComponent: function(component, option) {
-			if (component.domNode && component.startup) {
+			if (this._placed && component.domNode && component.startup) {
 				dom.place(component.domNode, this.domNode, option);
 				component.startup();
 			}
@@ -20,7 +20,7 @@ define([
 		},
 		
 		_unplaceComponent: function (component) {
-			if (component.domNode) {
+			if (component.domNode && component.startup) {
 				this.domNode.removeChild(component.domNode); //this method doesn't seem to exist in domConstruct
 			} else {
 				this.inherited(arguments);
