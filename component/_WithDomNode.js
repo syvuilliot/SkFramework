@@ -10,7 +10,7 @@ define([
 	 */
 	return declare([], {
 		_placeComponent: function(component, option) {
-			if (component instanceof HTMLElement) {
+			if (this._placed && component instanceof HTMLElement) {
 				domConstruct.place(component, this.domNode, option);
 			}
 			else {
