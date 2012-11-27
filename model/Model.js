@@ -146,6 +146,7 @@
 				return subModel;
 			},
 			extendWithSchema: function(schema){
+				var subModel;
 				if (schema.id){
 					subModel = this.extend(schema.id);
 				} else {
@@ -156,7 +157,7 @@
 			},
 			setSchema: function(schema){
 				var schemaCopy = lang.clone(schema);
-				schemaCopy["extends"] = this.super.$schema;
+				schemaCopy["extends"] = this.super.prototype.$schema;
 				this.prototype.$schema = schemaCopy;
 			},
 		}
