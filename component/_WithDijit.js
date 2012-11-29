@@ -6,22 +6,37 @@ define([
 	dom
 ) {
 	/*
-	 * Mixin adding support of Dijits (dojo) as sub-components
+	 * Mixin adding support for Dijits (dojo) as sub-components
 	 */
+	var isDijit = function(component) {
+		return component && component.domNode && component.startup;
+	};
+	
 	return declare([], {
-		_placeComponent: function(component, option) {
-			if (this._placed && component.domNode && component.startup) {
+		_insertComponentIntoDom: function(component, option) {
+			if (isDijit(component)) {
 				dom.place(component.domNode, this.domNode, option);
-				component.startup();
 			}
 			else {
 				this.inherited(arguments);
 			}
 		},
 		
-		_unplaceComponent: function (component) {
-			if (component.domNode && component.startup) {
-				this.domNode.removeChild(component.domNode); //this method doesn't seem to exist in domConstruct
+		_detachComponentFromDom: function (component) {
+			if (isDijit(component)) {
+				this.domNode.removeChild(component.domNode);
+			} else {
+				this.inherited(arguments);
+			}
+		},
+		
+		_setComponentInDom: function (component, value) {
+			if (isDijit(component)) {
+				if (value) {
+					component.startup();
+				} else {
+					component._started = false;
+				}
 			} else {
 				this.inherited(arguments);
 			}

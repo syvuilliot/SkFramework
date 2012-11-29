@@ -6,21 +6,29 @@ define([
 	domConstruct
 ) {
 	/*
-	 * Mixin adding support of DOM-nodes as sub-components
+	 * Mixin adding support for DOM-nodes as sub-components
 	 */
+	var isDomNode = function(component) {
+		return component instanceof HTMLElement;
+	};
+	
 	return declare([], {
-		_placeComponent: function(component, option) {
-			if (this._placed && component instanceof HTMLElement) {
+		_insertComponentIntoDom: function(component, option) {
+			if (isDomNode(component)) {
 				domConstruct.place(component, this.domNode, option);
-			}
-			else {
+			} else {
 				this.inherited(arguments);
 			}
 		},
 		
-		_unplaceComponent: function (component) {
-			if (component instanceof HTMLElement) {
-				this.domNode.removeChild(component); //this method doen't seem to exist in domConstruct
+		_detachComponentFromDom: function (component) {
+			if (isDomNode(component)) {
+				try {
+					this.domNode.removeChild(component);
+				}
+				catch(NotFoundError) {
+					console.warn('Tried to remove a node not present in parent');
+				}
 			} else {
 				this.inherited(arguments);
 			}

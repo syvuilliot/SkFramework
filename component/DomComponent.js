@@ -1,9 +1,9 @@
 define([
-	'dojo/_base/declare',
+	'dojo/_base/declare',	'dojo/_base/lang',
 	'dojo/dom-construct',
 	'./Component'
 ], function(
-	declare,
+	declare,				lang,
 	domConstruct,
 	Component
 ) {
@@ -25,7 +25,9 @@ define([
 		},
 		
 		render: function() {
-			this._render();
+			if (!this.domNode) {
+				this._render();
+			}
 			return this.domNode;
 		},
 		
@@ -37,35 +39,104 @@ define([
 		 */
 		_bind: function() {
 		},
+		
+		/*
+		 * Insert component's view into its own DOM-node
+		 */
+		_insertComponentIntoDom: function(component, options) {
+			if (component instanceof DomComponent) {
+				domConstruct.place(component.render(), this.domNode, options);
+			}
+		},
+		
+		_setComponentInDom: function(component, value) {
+			if (component instanceof DomComponent) {
+				component.set('inDom', value);
+			}
+		},
 
 		/*
-		 * Places sub-components' views in its own view (DOM-node)
+		 * Place sub-components' views in its own view
+		 * 
+		 * - component: component instance or name
+		 * - options: placement options (to be defined)
 		 */
 		_placeComponent: function(component, options) {
-			if (this._placed) {
-				if (component instanceof DomComponent) {
-					domConstruct.place(component.render(), this.domNode, "last");
-					component.isPlaced();
-				}
+			if (lang.isString(component)) {
+				component = this._components[component];
+			}
+			if (this.inDom) {
+				this._insertComponentIntoDom(component, options);
+				this._setComponentInDom(component, true);
 			}
 			else {
-				this._placeCallsOrder.push(arguments);	
+				this._placeCallsOrder.push(arguments);
 			}
 		},
-		_unplaceComponent: function (component) {
+		
+		/*
+		 * Place sub-components in bulk
+		 */
+		_placeComponents: function(components, options) {
+			components.forEach(function(component) {
+				this._placeComponent(component);
+			}.bind(this));
+		},
+		
+		/*
+		 * Detach component's view from its own DOM-node
+		 */
+		_detachComponentFromDom: function (component) {
 			if (component instanceof DomComponent) {
-				this.domNode.removeChild(component.domNode); //this method doesn't seem to exist in domConstruct
+				this.domNode.removeChild(component.domNode);
 			}
+		},
+		
+		/*
+		 * Unplace sub-components' views from its own view
+		 * 
+		 * - component: component instance or name
+		 */
+		_unplaceComponent: function(component) {
+			if (this.domNode) {
+				if (lang.isString(component)) {
+					component = this._components[component];
+				}
+				this._detachComponentFromDom(component);
+				this._setComponentInDom(component, false);
+			}
+		},
+		
+		/*
+		 * Unplace several sub-components
+		 */
+		_unplaceComponents: function(components, options) {
+			components.forEach(function(component) {
+				this._unplaceComponent(component);
+			}.bind(this));
 		},
 
-		_placed: false,
-		isPlaced: function() {
-			if (!this._placed) {
-				this._placed = true;
-				this._placeCallsOrder.forEach(function(args) {
-					this._placeComponent.apply(this, args);
-				}.bind(this));
+		inDom: false,
+		_inDomSetter: function(value) {
+			if (value === undefined) {
+				value = true;
+			};
+			if (value != this.inDom) {
+				this.inDom = value;
+				if (value) {
+					// this component has been inserted in DOM document
+					// insert its children for real now
+					this._placeCallsOrder.forEach(function(args) {
+						this._placeComponent.apply(this, args);
+					}.bind(this));
+					this._placeCallsOrder = [];
+				}
 			}
+		},
+		
+		_removeComponent: function (component) {
+			this._unplaceComponent(component);
+			this.inherited(arguments);
 		},
 		
 		//do we need to do something "view related" on destroy ?
