@@ -81,8 +81,11 @@ define([
 				this._addComponent(this._buildComponent(components[id]), id);
 			}.bind(this));
 		},
-		_getComponent: function(id){
-			return this._components[id];
+		_getComponent: function(component) {
+			if (lang.isString(component)) {
+				component = this._components[component];
+			}
+			return component;
 		},
 		_removeComponent: function (id) {
 			//TODO: remove component by reference and not (only) by id

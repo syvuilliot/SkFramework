@@ -1,9 +1,9 @@
 define([
-	'dojo/_base/declare',	'dojo/_base/lang',
+	'dojo/_base/declare',
 	'dojo/dom-construct',
 	'./Component'
 ], function(
-	declare,				lang,
+	declare,
 	domConstruct,
 	Component
 ) {
@@ -62,10 +62,8 @@ define([
 		 * - options: placement options (to be defined)
 		 */
 		_placeComponent: function(component, options) {
-			if (lang.isString(component)) {
-				component = this._components[component];
-			}
 			if (this.inDom) {
+				component = this._getComponent(component);
 				this._insertComponentIntoDom(component, options);
 				this._setComponentInDom(component, true);
 			}
@@ -99,9 +97,7 @@ define([
 		 */
 		_unplaceComponent: function(component) {
 			if (this.domNode) {
-				if (lang.isString(component)) {
-					component = this._components[component];
-				}
+				component = this._getComponent(component);
 				this._detachComponentFromDom(component);
 				this._setComponentInDom(component, false);
 			}
@@ -130,6 +126,10 @@ define([
 						this._placeComponent.apply(this, args);
 					}.bind(this));
 					this._placeCallsOrder = [];
+				}
+				// Inform subcomponents of the new state
+				for (var c in this._components) {
+					this._setComponentInDom(this._getComponent(c), value);
 				}
 			}
 		},
