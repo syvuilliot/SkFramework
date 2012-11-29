@@ -19,11 +19,6 @@ define([
 			this._placedComponents = [];
 			this._placeCallsOrder = [];
 		},
-
-		postscript: function(params) {
-			this.inherited(arguments);
-			this._bind();
-		},
 		
 		render: function() {
 			if (!this.domNode) {
@@ -34,11 +29,6 @@ define([
 		
 		_render: function() {
 			this.domNode = domConstruct.create(this.domTag, this.domAttrs);
-		},
-		/*
-		 * Binding between Presenter and sub components
-		 */
-		_bind: function() {
 		},
 		
 		/*
@@ -59,8 +49,8 @@ define([
 		/*
 		 * Place sub-components' views in its own view
 		 * 
-		 * - component: component instance or name
-		 * - options: placement options (to be defined)
+		 * @param {String|Component} component Component instance or id
+		 * @param options: placement options (to be defined)
 		 */
 		_placeComponent: function(component, options) {
 			if (this.inDom) {
@@ -135,22 +125,15 @@ define([
 				}
 				// Inform subcomponents of the new state
 				for (var c in this._placedComponents) {
-					this._setComponentInDom(this._getComponent(c), value);
+					this._setComponentInDom(this._placedComponents[c], value);
 				}
 			}
 		},
 		
-		_removeComponent: function (component) {
+		_deleteComponent: function (component) {
 			this._unplaceComponent(component);
 			this.inherited(arguments);
-		},
-		
-		//do we need to do something "view related" on destroy ?
-		//to my mind, it's up to the parent to remove us from its view but we don't have to do it in its place (it could have removing logic that we can't call since we don't know our parent component, only our parent domNode)
-		//destroy should only "kill" the component === cancel binding handlers... this is what destroyable already do
-/*		destroy: function(){
 		}
-*/
 
 	});
 	return DomComponent;

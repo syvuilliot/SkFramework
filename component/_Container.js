@@ -52,6 +52,14 @@ define([
 		_unplaceChild: function (component) {
 			this._unplaceComponent(component);
 		},
-
+		
+		_getComponent: function(arg) {
+			// Override to retrieve registered children also
+			if (this.children.indexOf(arg) > -1) {
+				return arg;
+			} else {
+				return this.inherited(arguments);
+			}
+		}
 	});
 });

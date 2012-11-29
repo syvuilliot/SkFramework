@@ -1,15 +1,16 @@
 define([
 	'lodash/lodash',
-	'dojo/_base/declare',	'dojo/_base/lang',
+	'dojo/_base/declare',	'dojo/_base/lang',	'dojo/_base/array',
 	'dojo/Stateful',	'dojo/Evented',	'dijit/Destroyable'
 ], function(_,
-	declare,				lang,
+	declare,				lang,				array,
 	Stateful,			Evented,		Destroyable
 ) {
-	return declare([Stateful, Evented, Destroyable], {
+	var Component = declare([Stateful, Evented, Destroyable], {
 		constructor: function(){
-			this._presenter = null;
+			this._presenter = new Stateful();
 			this._components = {};
+			this._bindings = {};
 		},
 
 		get: function(prop) {
@@ -81,25 +82,97 @@ define([
 				this._addComponent(this._buildComponent(components[id]), id);
 			}.bind(this));
 		},
-		_getComponent: function(component) {
-			if (lang.isString(component)) {
-				component = this._components[component];
+		
+		/*
+		 * Create bindings with a subcomponent
+		 * 
+		 * @param {Component} component
+		 * @param {Array} bindings	Binding handlers
+		 */
+		_bindComponent: function(component, bindings) {
+			var id = this._getComponentId(component);
+			if (id) {
+				if (!lang.isArray(bindings)) {
+					bindings = [bindings];
+				}
+				this._bindings[id] = this.own.apply(this, bindings);
 			}
-			return component;
 		},
-		_removeComponent: function (id) {
-			//TODO: remove component by reference and not (only) by id
+		/*
+		 * Create bindings with several subcomponents
+		 * 
+		 * @param {Object} bindings	Binding handlers indexed by subcomponent's id
+		 */
+		_bindComponents: function(bindings) {
+			for (var id in bindings) {
+				this._bindComponent(id, bindings[id]);
+			}
+		},
+		
+		_unbindComponent: function(component) {
+			var id = this._getComponentId(component);
+			array.forEach(this._bindings[id], function(handle) {
+				handle.remove();
+			});
+			delete this._bindings[id];
+		},
+		
+		/*
+		 * Get a subcomponent's id from its id or itself
+		 * 
+		 * @param {String|Component} arg
+		 * @return {String} Id of subcomponent
+		 */
+		_getComponentId: function(arg) {
+			if (lang.isString(arg) && this._components.hasOwnProperty(arg)) {
+				return arg;
+			} else {
+				for (var c in this._components) {
+					if (this._components[c] === arg) {
+						return c;
+					}
+				}
+			}
+			console.warn('Unknown component or id:', arg);
+		},
+		
+		/*
+		 * Get a subcomponent from its id
+		 * (argument can be a component instance, in which case check if is subcomponent and return it)
+		 * 
+		 * @param {String|Component} arg
+		 * @return {Component|undefined} Subcomponent
+		 */
+		_getComponent: function(arg) {
+			var id = this._getComponentId(arg);
+			if (id) {
+				return this._components[id];
+			}
+		},
+		_destroyComponent: function(component) {
+			if (component instanceof Component) {
+				component.destroy();
+			}
+		},
+		/*
+		 * Delete a subcomponent
+		 * 
+		 * @param {String|Component} arg
+		 */
+		_deleteComponent: function (arg) {
+			var id = this._getComponentId(arg);
+			this._unbindComponent(id);
+			this._destroyComponent(id);
 			delete this._components[id];
 		},
 		
-
 		destroy: function () {
 			//unregister every component and call destroy on them if available
 			_(this._components).forEach(function(component, id){
-				this._removeComponent(id);
-				component.destroy && component.destroy();
+				this._deleteComponent(id);
 			}.bind(this));
 			this.inherited(arguments);
 		}
 	});
+	return Component;
 });

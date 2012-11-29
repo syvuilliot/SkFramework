@@ -40,6 +40,14 @@ define([
 			} else {
 				this.inherited(arguments);
 			}
+		},
+		
+		_destroyComponent: function (component) {
+			if (isDijit(component)) {
+				component.destroy();
+			} else {
+				this.inherited(arguments);
+			}
 		}
 	});
 });
