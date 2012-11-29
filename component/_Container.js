@@ -24,12 +24,23 @@ define([
 			//unregister child
 			var index = this.children.indexOf(component);
 			this.children.splice(index, 1);
+			return this;
 		},
 		addChildren: function(components) {
 			components.forEach(function(component){
 				this.addChild(component);
 			}.bind(this));
 			return this;
+		},
+		removeChildren: function(components) {
+			components.forEach(function(component){
+				this.removeChild(component);
+			}.bind(this));
+			return this;
+		},
+		
+		removeAllChildren: function() {
+			return this.removeChildren(this.children);
 		},
 
 		//default implementation for SkComponents and domNodes

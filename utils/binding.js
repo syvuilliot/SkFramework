@@ -77,6 +77,17 @@ define([
 		}
 	});
 
+	binding.ValueEvent = declare(Binding, {
+		constructor: function(source, target, params){
+			// signals current state
+			params.method.bind(target)(source.get(params.sourceProp));
+			// watch changes
+			this.handlers.push(source.watch(params.sourceProp, function(prop, old, current){
+				params.method.bind(target)(current);
+			}.bind(this)));
+		}
+	});
+
 	binding.Click = declare(binding.Event, {
 		event: "click",
 	});
