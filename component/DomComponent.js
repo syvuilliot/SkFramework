@@ -16,6 +16,7 @@ define([
 		domAttrs: null,
 		
 		constructor: function() {
+			this._placedComponents = [];
 			this._placeCallsOrder = [];
 		},
 
@@ -66,6 +67,7 @@ define([
 				component = this._getComponent(component);
 				this._insertComponentIntoDom(component, options);
 				this._setComponentInDom(component, true);
+				this._placedComponents.push(component);
 			}
 			else {
 				this._placeCallsOrder.push(arguments);
@@ -100,6 +102,10 @@ define([
 				component = this._getComponent(component);
 				this._detachComponentFromDom(component);
 				this._setComponentInDom(component, false);
+				
+				// remove from _placedComponents
+				var index = this._placedComponents.indexOf(component);
+				this._placedComponents.splice(index, 1);
 			}
 		},
 		
@@ -128,7 +134,7 @@ define([
 					this._placeCallsOrder = [];
 				}
 				// Inform subcomponents of the new state
-				for (var c in this._components) {
+				for (var c in this._placedComponents) {
 					this._setComponentInDom(this._getComponent(c), value);
 				}
 			}
