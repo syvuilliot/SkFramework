@@ -1,12 +1,14 @@
 define([
 	'dojo/_base/declare',
-	'dojo/dom-construct',
+	'./DomComponent'
 ], function(
 	declare,
-	domConstruct
+	DomComponent
 ) {
-	//mixin to expose public methods to add and remove children (===contained components)
-	return declare([], {
+	/*
+	 * Component with public methods to add and remove children (contained components)
+	 */
+	return declare([DomComponent], {
 		constructor: function(){
 			this.children = [];
 		},

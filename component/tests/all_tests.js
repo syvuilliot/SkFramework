@@ -1,4 +1,5 @@
 define([
 	'./Component',
-	'./DomComponent'
+	'./DomComponent',
+	'./Container'
 ], function() {});

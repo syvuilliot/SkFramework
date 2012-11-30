@@ -1,18 +1,16 @@
 define([
 	'doh/runner',
-	'dojo/_base/declare',
-	'../DomComponent',	'../_Container'
+	'../DomComponent',	'../Container'
 ],
 function(
 	doh,
-	declare,
 	DomComponent,		Container
 ){
-    doh.register("Testing Dom-components", [
+    doh.register("Testing containers (DOM-components)", [
       	{
-	        name: "DOM-component",
+	        name: "Container",
 	        setUp: function(){
-	          	this.main = new declare([DomComponent, Container])();
+	          	this.main = new Container();
 	          	this.sub1 = new DomComponent({
           			domTag: 'h1',
 	          		domAttrs: {
@@ -29,6 +27,14 @@ function(
 	          	this.main.set('inDom');
 	          	doh.t(this.sub1.get('inDom'), "1. sub1 in DOM");
 	          	doh.t(this.sub1.domNode, "sub1 rendered");
+	          	// Remove child
+	          	this.main.removeChildren([
+	          		this.sub1
+	          	]);
+	          	doh.f(this.sub1.get('inDom'), "2. sub1 not in DOM");
+	          	// Place it again
+	          	this.main.addChild(this.sub1);
+	          	doh.t(this.sub1.get('inDom'), "3. sub1 in DOM again");
 	        }
       	}
     ]);
