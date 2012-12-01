@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>NewComponent test</title>
+	<link rel="stylesheet" href="../../../dijit/themes/claro/claro.css">
+
+</head>
+<body class="claro">
+    <script data-dojo-config="async: true, isDebug: true", src="../../../dojo/dojo.js"></script>
+    <script>
+		require([
+			"../NewComponent.js",
+			'dojo/domReady!',
+		], function(NewComponent){
+
+			window.newComponent = new NewComponent();
+			document.body.appendChild(newComponent.render());
+			newComponent.isPlaced();
+
+			window.testValue = "test";
+			newComponent.set("value", testValue);
+		});
+	</script>
+</body>
+</html>
