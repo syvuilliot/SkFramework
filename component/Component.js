@@ -28,10 +28,10 @@ define([
 				return this._presenter.set(prop, value);
 			}
 		},
-		
+
 		/*
 		 * Build a component from a configuration object
-		 * 
+		 *
 		 * configObject: can be one of the following:
 		 * 	- Class of component
 		 *  - {
@@ -50,7 +50,7 @@ define([
 			if (_.isPlainObject(configObject)) {
 				var configOptions = lang.mixin({}, configObject);
 				delete configOptions.constructor;
-				
+
 				return new configObject.constructor(lang.mixin(configOptions, options));
 			}
 			else {
@@ -59,18 +59,22 @@ define([
 			}
 		},
 
+		generateId: function() {
+			return "comp"+(Math.floor(Math.random() * 1000000)).toString();
+		},
+
 		/*
 		 * Register sub-components
 		 */
 		_addComponent: function(component, id){
-			//TODO: generate an id if none is provided
+			id = id || this.generateId();
 			this._components[id] = component;
 			return component;
 		},
-		
+
 		/*
 		 * Add several components at once
-		 * 
+		 *
 		 *  - components: {
 		 * 		id1: configObject1,
 		 * 		id2: configObject2,
@@ -82,10 +86,10 @@ define([
 				this._addComponent(this._buildComponent(components[id]), id);
 			}.bind(this));
 		},
-		
+
 		/*
 		 * Create bindings with a subcomponent
-		 * 
+		 *
 		 * @param {Component} component
 		 * @param {Array} bindings	Binding handlers
 		 */
@@ -100,7 +104,7 @@ define([
 		},
 		/*
 		 * Create bindings with several subcomponents
-		 * 
+		 *
 		 * @param {Object} bindings	Binding handlers indexed by subcomponent's id
 		 */
 		_bindComponents: function(bindings) {
@@ -108,7 +112,7 @@ define([
 				this._bindComponent(id, bindings[id]);
 			}
 		},
-		
+
 		_unbindComponent: function(component) {
 			var id = this._getComponentId(component);
 			array.forEach(this._bindings[id], function(handle) {
@@ -116,10 +120,10 @@ define([
 			});
 			delete this._bindings[id];
 		},
-		
+
 		/*
 		 * Get a subcomponent's id from its id or itself
-		 * 
+		 *
 		 * @param {String|Component} arg
 		 * @return {String} Id of subcomponent
 		 */
@@ -127,19 +131,19 @@ define([
 			if (lang.isString(arg) && this._components.hasOwnProperty(arg)) {
 				return arg;
 			} else {
-				for (var c in this._components) {
-					if (this._components[c] === arg) {
-						return c;
+				for (var id in this._components) {
+					if (this._components[id] === arg) {
+						return id;
 					}
 				}
 			}
 			console.warn('Unknown component or id:', arg);
 		},
-		
+
 		/*
 		 * Get a subcomponent from its id
 		 * (argument can be a component instance, in which case check if is subcomponent and return it)
-		 * 
+		 *
 		 * @param {String|Component} arg
 		 * @return {Component|undefined} Subcomponent
 		 */
@@ -156,7 +160,7 @@ define([
 		},
 		/*
 		 * Delete a subcomponent
-		 * 
+		 *
 		 * @param {String|Component} arg
 		 */
 		_deleteComponent: function (arg) {
@@ -165,7 +169,7 @@ define([
 			this._destroyComponent(id);
 			delete this._components[id];
 		},
-		
+
 		destroy: function () {
 			//unregister every component and call destroy on them if available
 			_(this._components).forEach(function(component, id){
