@@ -16,7 +16,7 @@
 
 			window.newComponent = new NewComponent();
 			document.body.appendChild(newComponent.render());
-			newComponent.isPlaced();
+			newComponent.set('inDom');
 
 			window.testValue = "test";
 			newComponent.set("value", testValue);
