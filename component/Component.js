@@ -154,7 +154,7 @@ define([
 			}
 		},
 		_destroyComponent: function(component) {
-			if (component instanceof Component) {
+			if (component.destroy) {
 				component.destroy();
 			}
 		},
@@ -165,8 +165,9 @@ define([
 		 */
 		_deleteComponent: function (arg) {
 			var id = this._getComponentId(arg);
+			var comp = this._getComponent(id);
 			this._unbindComponent(id);
-			this._destroyComponent(id);
+			this._destroyComponent(comp);
 			delete this._components[id];
 		},
 
