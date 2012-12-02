@@ -88,7 +88,7 @@ define([
 		},
 
 		/*
-		 * Create bindings with a subcomponent
+		 * Register binding handlers for a subcomponent that  will be canceled when deleting the subcomponent
 		 *
 		 * @param {Component} component
 		 * @param {Array} bindings	Binding handlers
@@ -103,7 +103,7 @@ define([
 			}
 		},
 		/*
-		 * Create bindings with several subcomponents
+		 * Register bindings for several subcomponents
 		 *
 		 * @param {Object} bindings	Binding handlers indexed by subcomponent's id
 		 */
