@@ -1,8 +1,12 @@
 define([
-	'require',
 	"dojo/_base/declare",
 	"dojo/_base/lang",
-], function(require, declare, lang){
+	"SkFramework/utils/statefulSync",
+	"dojo/on",
+	"dojo/dom-style",
+
+
+], function(declare, lang, statefulSync, on, domStyle){
 
 	var binding = {};
 
@@ -50,13 +54,13 @@ define([
 		update: function(source, target, params){
 			var value = source.get(params.sourceProp);
 			var prop = params.targetProp;
-			target.set ? target.set(prop, value) : target[prop] = value; 
+			target.set ? target.set(prop, value) : target[prop] = value;
 		},
 	});
 
 	binding.Stateful2InnerHtml = declare(binding.Value, {
 		update: function(source, target, params){
-			target.innerHTML = source.get(params.sourceProp); 
+			target.innerHTML = source.get(params.sourceProp);
 		},
 	});
 
@@ -65,14 +69,12 @@ define([
 		constructor: function(source, target, params){
 			var mapping = {};
 			mapping[params.sourceProp] = params.targetProp;
-			var statefulSync = require("SkFramework/utils/statefulSync");
 			this.handlers.push(statefulSync(source, target, mapping));
 		}
 	});
 
 	binding.Event = declare(Binding, {
 		constructor: function(source, target, params){
-			var on = require("dojo/on");
 			this.handlers.push(on(source, this.event, target[params.method].bind(target)));
 		}
 	});
@@ -100,7 +102,6 @@ define([
 		},
 		update: function(source, target, params){
 			var sourcePropValue = source.get(params.sourceProp); //we don't rely on current
-			var domStyle = require("dojo/dom-style");
 			domStyle.set(target.domNode, "display", (params.not ? !sourcePropValue : sourcePropValue) ? "block" : "none");
 		},
 	});
