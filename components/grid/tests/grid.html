@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Repeater test</title>
+	<link rel="stylesheet" href="../../../../dijit/themes/claro/claro.css">
+	<script>
+
+	curl = {
+		packages: {
+			curl: { path: '../../../../curl/src/curl/'},
+			"put-selector": {path: "../../../../put-selector"},
+			frb: {
+				path: '../../../../frb',
+				config: {
+					moduleLoader: 'curl/loader/cjsm11'
+				}
+			},
+			collections: {
+				path: '../../../../collections',
+				config: {
+					moduleLoader: 'curl/loader/cjsm11'
+				}
+			},
+			dojo : {path: "../../../../dojo"},
+			dijit : {path: "../../../../dijit"},
+			lodash : {path: "../../../../lodash"},
+			compose: {path: "../../../../compose"},
+			SkFramework: {path: "../../../../SkFramework"},
+		},
+		preloads: [
+			'curl/shim/dojo16'
+		]
+	};
+
+	</script>
+</head>
+<body class="claro">
+	<script src="../../../../curl/src/curl.js"></script>
+	<script>
+		curl([
+			"../Grid",
+		], function(Grid){
+
+			window.grid = new Grid({
+			});
+			document.body.appendChild(grid.render());
+			grid.set('inDom');
+
+			syv = {name: "Sylvain", child: "false", sexe: "M"};
+			aur = {name: "Aurélie", child: "false", sexe:"F"};
+			ant = {name: "Antonin", child: true, sexe:"M"};
+			leo = {name: "Léonie", child: true, sexe:"F"};
+			collection = [syv, aur, ant];
+
+			grid.set("value", collection);
+			grid.set("config", [
+				{label: "Nom", property: "name"},
+				{label: "Sexe", property: "sexe"},
+			]);
+
+		});
+	</script>
+</body>
+</html>

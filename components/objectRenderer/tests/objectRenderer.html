@@ -58,8 +58,8 @@
 			window.personRendererComponents = personRenderer._components;
 			window.personRendererDomChildren = personRenderer.domNode.children;
 
-			syv = {name: "Sylvain", age: 31, sexe: "M"};
-			aur = {name: "Aurélie", age: 30, sexe:"F"};
+			syv = {name: "Sylvain", age: 31, sexe: "M", address: {street: "République", city: "Choisy"}};
+			aur = {name: "Aurélie", age: 30, sexe:"F", address: {street: "République", city: "Choisy"}};
 
 			function assertComponentAndDomUpdated (){
 				//check that _components is updated
@@ -204,6 +204,11 @@
 			// add and remove values in config
 			config.splice(1,2, {property: "age", componentConstructor: NumberInput}, {property: "sexe", componentConstructor: Input});
 			assertComponentAndDomInputUpdated();
+
+			//use nested property
+			config.push({property: "address.city", componentConstructor: Input});
+			console.assert(personRenderer._componentsCollection[3].domNode.value === "Choisy");
+			config.splice(3,1);
 
 			// change the value
 			personRenderer.set("value", aur);
