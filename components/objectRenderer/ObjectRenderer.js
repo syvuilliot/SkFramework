@@ -32,9 +32,9 @@ define([
 			};
 			this._bindComponent(comp, bindingRemover);
 		},
-		createComponent: function(value){
-			var constructor = value.componentConstructor || this.componentConstructor;
-			var args = value.componentConstructorArguments || this.componentConstructorArguments;
+		createComponent: function(configLine){
+			var constructor = configLine.componentConstructor || this.componentConstructor;
+			var args = configLine.componentConstructorArguments || this.componentConstructorArguments;
 			var comp = new constructor(args);
 			return comp;
 		},

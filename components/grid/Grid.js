@@ -32,11 +32,37 @@ define([
 		}
 	});
 
+
+	var BodyCell = declare(DomComponent, {
+		domTag: "td",
+		constructor: function(params){
+			if (params.renderer){
+				var renderer = new params.renderer(params.rendererArgs);
+				this._addComponent(renderer, "renderer");
+				this._placeComponent(renderer);
+				this._cancelValueBinding = bind(renderer._presenter, params.rendererValueProp || "value", {
+					"<->": "value",
+					source: this._presenter,
+				});
+			} else {
+				this._cancelValueBinding = bind(this, "domNode.innerHTML", {"<-": "_presenter.value"});
+
+			}
+		},
+		destroy: function(){
+			this._cancelValueBinding();
+			this.inherited(arguments);
+		},
+	});
+
 	var BodyRow = declare(ObjectRenderer, {
 			domTag: "tr",
-			componentConstructorArguments: {
-				domTag: "td",
-			},
+			createComponent: function(configLine){
+				return new BodyCell({
+					renderer: configLine.renderer,
+					rendererArgs: configLine.rendererArgs,
+				});
+			}
 	});
 
 	var TableBody = declare(Repeater, {
@@ -45,15 +71,15 @@ define([
 		_addItemComponent : function(value, index){
 			this.inherited(arguments);
 			//create binding between this._presenter.config and component._presenter.config
-			var comp = this._componentsCollection[index];
-			var cancelConfigBinding = bind(comp._presenter, "config", {
+			var row = this._componentsCollection[index];
+			var cancelConfigBinding = bind(row._presenter, "config", {
 				"<-": "config",
 				source: this._presenter
 			});
 			var bindingRemover = {
 				remove: function(){cancelConfigBinding();},
 			};
-			this._bindComponent(comp, bindingRemover);
+			this._bindComponent(row, bindingRemover);
 		},
 
 	});

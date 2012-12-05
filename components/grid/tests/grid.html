@@ -2,7 +2,7 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<title>Repeater test</title>
+	<title>Grid test</title>
 	<link rel="stylesheet" href="../../../../dijit/themes/claro/claro.css">
 	<script>
 
@@ -40,24 +40,42 @@
 	<script>
 		curl([
 			"../Grid",
-		], function(Grid){
+			"dojo/_base/declare",
+			"SkFramework/component/DomComponent",
+			"frb/bind",
+			"SkFramework/components/form/Input",
+		], function(Grid, declare, DomComponent, bind, Input){
 
 			window.grid = new Grid({
 			});
 			document.body.appendChild(grid.render());
 			grid.set('inDom');
 
-			syv = {name: "Sylvain", child: "false", sexe: "M"};
-			aur = {name: "Aurélie", child: "false", sexe:"F"};
-			ant = {name: "Antonin", child: true, sexe:"M"};
-			leo = {name: "Léonie", child: true, sexe:"F"};
+			syv = {name: "Sylvain", age: 31, sexe: "M"};
+			aur = {name: "Aurélie", age: 30, sexe:"F"};
+			ant = {name: "Antonin", age: 2, sexe:"M"};
+			leo = {name: "Léonie", age: 0, sexe:"F"};
 			collection = [syv, aur, ant];
 
+
 			grid.set("value", collection);
-			grid.set("config", [
-				{label: "Nom", property: "name"},
+			config = [
+				{label: "Nom", property: "name", renderer: Input},
 				{label: "Sexe", property: "sexe"},
-			]);
+			];
+			grid.set("config", config);
+
+			// add column
+			config.push({label: "Age", property: "age"});
+
+			// add row
+			collection.push(leo);
+
+			// sort collection
+			// collection.reverse();
+
+			// sort columns
+			// config.reverse();
 
 		});
 	</script>
