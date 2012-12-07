@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Form components test</title>
+	<script>
+	curl = {
+		baseUrl: '../../../..',
+		paths: {
+			curl: { path: 'curl/src/curl'},
+
+		},
+		packages: {
+			frb: {
+				path: 'frb',
+				config: {
+					moduleLoader: 'curl/loader/cjsm11'
+				}
+			},
+			collections: {
+				path: 'collections',
+				config: {
+					moduleLoader: 'curl/loader/cjsm11'
+				}
+			},
+		},
+		preloads: [
+			'curl/shim/dojo16'
+		]
+	};
+
+	</script>
+</head>
+<body>
+	<script src="../../../../curl/src/curl.js"></script>
+	<script>
+		curl([
+			"frb/bind",
+			"put-selector/put",
+			"dojo/on",
+			"SkFramework/components/form/Input",
+			"SkFramework/components/form/NumberInput",
+			"SkFramework/components/form/Checkbox",
+			"SkFramework/components/form/Select",
+
+		], function(bind, put, on, Input, NumberInput, Checkbox, Select){
+
+
+			// test with value setted at construction time
+			input = new Input({value: "test0"});
+			put(document.body, input.render());
+			input.set("inDom", true);
+			on(put(document.body, "button", "reset value"), "click", function(){
+				input.set("value", "test0");
+			});
+			bind(put(document.body, "div"), "innerHTML", {
+				"<-": "value",
+				source: input._presenter
+			});
+
+
+			// test with value setted after rendering but before dom insertion
+			input1 = new Input();
+			input1.set("value", "test1");
+			document.body.appendChild(input1.render());
+			input1.set("inDom", true);
+			on(put(document.body, "button", "reset value"), "click", function(){
+				input1.set("value", "test1");
+			});
+			bind(document.body.appendChild(document.createElement("div")), "innerHTML", {
+				"<-": "value",
+				source: input1._presenter
+			});
+
+
+			// test with value setted after dom insertion
+			input2 = new Input();
+			document.body.appendChild(input2.render());
+			input2.set("inDom", true);
+			input2.set("value", "test2");
+			on(put(document.body, "button", "reset value"), "click", function(){
+				input2.set("value", "test2");
+			});
+			bind(document.body.appendChild(document.createElement("div")), "innerHTML", {
+				"<-": "value",
+				source: input2._presenter
+			});
+
+
+			// test number input
+			numberInput = new NumberInput({value: 10});
+			document.body.appendChild(numberInput.render());
+			numberInput.set("inDom", true);
+			on(put(document.body, "button", "reset value"), "click", function(){
+				numberInput.set("value", 10);
+			});
+			bind(document.body.appendChild(document.createElement("div")), "innerHTML", {
+				"<-": "value",
+				source: numberInput._presenter
+			});
+			// check that typeof numberInput.get("value") === "number"
+			// check that user can enter decimal numbers
+
+
+			// test checkbox input
+			checkboxInput = new Checkbox({value: true});
+			document.body.appendChild(checkboxInput.render());
+			checkboxInput.set("inDom", true);
+			on(put(document.body, "button", "reset value"), "click", function(){
+				checkboxInput.set("value", true);
+			});
+			bind(document.body.appendChild(document.createElement("div")), "innerHTML", {
+				"<-": "value",
+				source: checkboxInput._presenter
+			});
+
+
+			// test select input
+
+
+			selectInput = new Select({value: true});
+			document.body.appendChild(selectInput.render());
+			selectInput.set("inDom", true);
+			on(put(document.body, "button", "reset value"), "click", function(){
+				selectInput.set("value", true);
+			});
+			bind(document.body.appendChild(document.createElement("div")), "innerHTML", {
+				"<-": "value",
+				source: selectInput._presenter
+			});
+
+		});
+	</script>
+</body>
+</html>

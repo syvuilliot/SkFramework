@@ -29,6 +29,7 @@ define([
 	return declare([DomComponent, _WithDom, _WithDijit], {
 		domAttrs: {
 		},
+		collectionProperty: "value",
 		//default class for sub components that binds its value to its innerHTML
 		componentConstructor: declare(DomComponent, {
 			_render: function(){
@@ -47,32 +48,38 @@ define([
 			//create presenter
 			this._presenter = new Presenter();
 
-			//bind this to presenter value to call swap method
 			this._componentsCollection = [];
-			this._cancelValueBinding = bind(this, ".*", {"<-": "_presenter.value"});
+			//bind this to presenter value to call swap method
+			this._cancelCollectionBinding = bind(this, ".*", {"<-": "_presenter."+this.collectionProperty});
 
 		},
 		swap: function(start, length, values){
 			// console.log("swap called", arguments);
 			// delete components
 			for(var i=0; i<length; i++){
-				var component = this._componentsCollection[start];
-				if(component) {//TODO: prevent frb from detecting own properties
-					this._componentsCollection.splice(start, 1);
-					this._deleteComponent(component);
-				}
+				this._deleteItemComponent(start);
 			}
 			// add components
-			values.forEach(function(value, index, collection){
-				var component = this.createComponent(value, index, collection);
-				this._componentsCollection.splice(start+index, 0, component);
-				this._addComponent(component);
-				this._placeComponent(component, start + index);
+			values.forEach(function(value, index){
+				this._addItemComponent(value, start+index);
 			}.bind(this));
 		},
 		clear: function(){
 			// console.log("clear called", arguments);
 			//delete all components
+		},
+		_addItemComponent : function(value, index){
+			var component = this.createComponent(value);
+			this._componentsCollection.splice(index, 0, component);
+			this._addComponent(component);
+			this._placeComponent(component, index);
+		},
+		_deleteItemComponent: function(index){
+			var component = this._componentsCollection[index];
+			if(component) {//TODO: prevent frb from detecting own properties
+				this._componentsCollection.splice(index, 1);
+				this._deleteComponent(component);
+			}
 		},
 		createComponent: function(value){
 			var args = this.componentConstructorArguments;
@@ -81,7 +88,7 @@ define([
 			return comp;
 		},
 		destroy: function(){
-			this._cancelValueBinding();
+			this._cancelCollectionBinding();
 			this.inherited(arguments);
 		},
 
