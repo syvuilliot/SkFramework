@@ -25,6 +25,7 @@ function(
 		    name: "Sub-components",
 	        setUp: function() {
 	        	this.main = new Component();
+	        	this.main._sub2 = "occupied";
 	        	this.sub1 = new Component();
 	        	this.main._addComponents({
 	        		sub1: this.sub1,
@@ -51,6 +52,8 @@ function(
 	        },
 	        runTest: function() {
 	        	doh.is(this.main._getComponent('sub1'), this.sub1, "sub1 registered");
+	        	doh.is(this.main._sub1, this.sub1, "sub1 accessible with private attribute");
+	        	doh.is(this.main._sub2, 'occupied', "'_sub2' private attribute previously set, not overwritten");
 	        	doh.f(this.main._getComponent('unknown'), "unknown component don't get returned");
 	        	doh.is(this.main._getComponentId(this.sub1), 'sub1', "find out component's id");
 	        	doh.f(this.main._getComponentId('unknown'), "unknown id don't get returned");
@@ -58,11 +61,13 @@ function(
 	        	// Remove sub1
 	        	this.main._deleteComponent(this.sub1);
 	        	doh.f(this.main._getComponent('sub1'), "sub1 has correctly been removed");
+	        	doh.is(this.main._sub1, undefined, "sub1's private attribute has been removed");
 	        	doh.f(this.main._bindings.sub1, "sub1's binding has correctly been removed");
 	        	doh.t(this.sub1BindingRemoved, "sub1's binding has correctly been deactivated");
 	        	// Remove sub2
 	        	this.main._deleteComponent('sub2');
 	        	doh.f(this.main._getComponent('sub2'), "sub2 has correctly been removed");
+	        	doh.is(this.main._sub2, 'occupied', "'_sub2' private attribute still there");
 	        	doh.f(this.main._bindings.sub2, "sub2's binding has correctly been removed");
 	        	doh.t(this.sub2BindingRemoved, "sub2's binding has correctly been deactivated");
 	        	// Destroy main component

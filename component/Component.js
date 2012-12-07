@@ -10,6 +10,7 @@ define([
 		constructor: function(){
 			this._presenter = new Stateful();
 			this._components = {};
+			this._hardRefs = {};
 			this._bindings = {};
 		},
 
@@ -68,10 +69,22 @@ define([
 		 * 
 		 * @param {Component}	component	Subcomponent to be added
 		 * @param {String}		[id]		Id of component
+		 * @param {Object}		[options]
+		 * 		Registering options:
+		 * 			- noHardRef: prevent creation of a private attribute for quick access to the subcomponent (ex: this._sub1)
 		 */
-		_addComponent: function(component, id){
+		_addComponent: function(component, id, options){
 			id = id || this.generateId();
 			this._components[id] = component;
+			
+			if (!options || !options.noHardRef) {
+				var ref = '_' + id;
+				if (this[ref] === undefined) {
+					this[ref] = component;
+					this._hardRefs[id] = ref;
+				}
+			}
+			
 			return component;
 		},
 
@@ -84,7 +97,7 @@ define([
 		 * 		...
 		 * 	  }
 		 */
-		_addComponents: function(components) {
+		_addComponents: function(components, options) {
 			Object.keys(components).forEach(function(id){
 				this._addComponent(this._buildComponent(components[id]), id);
 			}.bind(this));
@@ -161,6 +174,7 @@ define([
 				return this._components[id];
 			}
 		},
+		
 		/*
 		 * Destroy a subcomponent
 		 * 
@@ -182,6 +196,9 @@ define([
 			this._unbindComponent(id);
 			this._destroyComponent(id);
 			delete this._components[id];
+			if (id in this._hardRefs) {
+				delete this[this._hardRefs[id]];
+			}
 		},
 		/*
 		 * Destroy itself and its subcomponents
