@@ -106,8 +106,15 @@ define([
 	});
 
 	binding.ObservableQueryResult= declare(binding.Value, {
-		update: function(source, target, params){
+		init: function() {
+			this._observeHandlers = [];
+			this.inherited(arguments);
+		},
+		update: function(source, target, params) {
+			this._unbindObserve();
+			
 			var queryResult = source[params.sourceProp];
+			params.initMethod && target[params.initMethod](queryResult);
 			if (queryResult && queryResult.forEach) {
 				//init
 				queryResult.forEach(function(value){
@@ -116,7 +123,7 @@ define([
 			}
 			if (queryResult && queryResult.observe) {
 				//observe
-				this.handlers.push(queryResult.observe(function(item, from, to){
+				this._observeHandlers.push(queryResult.observe(function(item, from, to){
 					if (to < 0){ //item removed
 						target[params.removeMethod](item, item.id);//TODO: use getIdentity
 					}
@@ -126,6 +133,15 @@ define([
 				}, true));
 			}
 		},
+		_unbindObserve: function() {
+			this._observeHandlers.forEach(function(handler){
+				handler.remove();
+			});
+		},
+		remove: function() {
+			this.inherited(arguments);
+			this._unbindObserve();
+		}
 	});
 
 
