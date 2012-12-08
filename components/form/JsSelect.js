@@ -12,11 +12,9 @@ define([
 		domTag: "option",
 		constructor: function(params){
 			this._cancelLabelBinding = bind(this, "domNode.label", {"<-": "_presenter.value."+params.labelProp});
-			this._cancelValueBinding = bind(this, "domNode.value", {"<-": "_presenter.value."+params.valueProp});
 		},
 		destroy: function(){
 			this._cancelLabelBinding();
-			this._cancelValueBinding();
 			this.inherited(arguments);
 		},
 	});
@@ -28,14 +26,18 @@ define([
 		constructor: function(params){
 			this.componentConstructorArguments = {
 				labelProp: params.labelProp || "label",
-				valueProp: params.valueProp || "value",
 			};
-		},
-		_render: function(){
-			this.inherited(arguments);
-			this._cancelValueBinding = bind(this, "domNode.value", {
+			this._cancelValueBinding = bind(this, "domNode.selectedIndex", {
 				"<->": "_presenter.value",
-				// trace: true,
+				convert: function(value){
+					var options = this._presenter.options;
+					return options ? options.indexOf(value) : -1;
+				},
+				revert: function(selectedIndex){
+					var options = this._presenter.options;
+					return options ? options[selectedIndex] : undefined;
+				},
+				trace: true,
 			});
 		},
 		destroy: function(){
