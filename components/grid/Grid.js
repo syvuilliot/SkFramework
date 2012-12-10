@@ -5,6 +5,7 @@ define([
 	'SkFramework/component/Presenter',
 	'SkFramework/utils/binding',
 	"put-selector/put",
+	"dojo/on",
 	'frb/bind',
 	"SkFramework/components/repeater/Repeater",
 	"SkFramework/components/objectRenderer/ObjectRenderer",
@@ -16,6 +17,7 @@ define([
 	PresenterBase,
 	binding,
 	put,
+	on,
 	bind,
 	Repeater,
 	ObjectRenderer
@@ -80,7 +82,22 @@ define([
 				remove: function(){cancelConfigBinding();},
 			};
 			this._bindComponent(row, bindingRemover);
+			// selection behavior
+			// TODO: move into a separate mixin
+			on(row.domNode, "click", function(){
+				this.select(index);
+			}.bind(this));
 		},
+		select: function(index){
+			this.set("selected", this.get(this.collectionProperty)[index]);
+			// console.log("selected value", this.get("selected"));
+			var oldSelectedRow = this.get("selectedRow");
+			oldSelectedRow && put(oldSelectedRow.domNode, "!selected"); // remove selected class on old selected row
+			var newSelectedRow = this._componentsCollection[index];
+			this.set("selectedRow", newSelectedRow);
+			put(newSelectedRow.domNode, ".selected");
+			// console.log("selected row", this.get("selectedRow"));
+		}
 
 	});
 
@@ -115,6 +132,10 @@ define([
 				source: this._presenter,
 				"<-": "config",
 			});
+			var cancelBodySelectedBinding = bind($.body._presenter, "selected", {
+				source: this._presenter,
+				"<->": "selected",
+			});
 
 			this._bindComponents({
 				headRow: {
@@ -124,6 +145,7 @@ define([
 					remove: function(){
 						cancelBodyValueBinding();
 						cancelBodyConfigBinding();
+						cancelBodySelectedBinding();
 					}
 				}
 			});
@@ -134,6 +156,9 @@ define([
 			]));
 			this._placeComponent($.body);
 		},
+		select: function(index){
+			return this._components.body.select(index);
+		}
 
 	});
 });
