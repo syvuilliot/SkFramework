@@ -85,18 +85,35 @@ define([
 			// selection behavior
 			// TODO: move into a separate mixin
 			on(row.domNode, "click", function(){
-				this.select(index);
+				this.select(row);
 			}.bind(this));
 		},
-		select: function(index){
-			this.set("selected", this.get(this.collectionProperty)[index]);
-			// console.log("selected value", this.get("selected"));
+		select: function(value){
+			var row;
+			switch (typeof value){
+				// search by index
+				case "number":
+					row = this._componentsCollection[value];
+					break;
+				// if object is a known row component
+				case "object":
+					if (this._componentsCollection.has(value)) {
+						row = value;
+						break;
+					}
+				// else try to find the value in the values collection
+				default:
+					var index = this.get(this.collectionProperty).indexOf(value);
+					// if nothing is found, row is set to undefined whiwh equivalent to selected nothing
+					row = index >= 0 ? this._componentsCollection[index] : undefined;
+			}
 			var oldSelectedRow = this.get("selectedRow");
 			oldSelectedRow && put(oldSelectedRow.domNode, "!selected"); // remove selected class on old selected row
-			var newSelectedRow = this._componentsCollection[index];
-			this.set("selectedRow", newSelectedRow);
-			put(newSelectedRow.domNode, ".selected");
+			this.set("selectedRow", row ? row : undefined);
+			row && put(row.domNode, ".selected");
 			// console.log("selected row", this.get("selectedRow"));
+			this.set("selected", row ? row.get("value") : undefined);
+			// console.log("selected value", this.get("selected"));
 		}
 
 	});
