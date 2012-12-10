@@ -24,7 +24,7 @@ define([
 			var comp = this._componentsCollection[index];
 			var prop = value.property;
 			var cancelValueBinding = bind(comp._presenter, "value", {
-				"<->": "value."+prop,
+				"<->": prop ? "value."+prop : "value", // if prop is undefined, bind the whole value
 				source: this._presenter
 			});
 			var bindingRemover = {
