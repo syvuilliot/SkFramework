@@ -52,7 +52,7 @@ define([
 		 * @param {String|Component} component Component instance or id
 		 * @param options: placement options (to be defined)
 		 */
-		_placeComponent: function(component, options) {
+		_insertComponent: function(component, options) {
 			if (this.inDom) {
 				component = this._getComponent(component);
 				this._insertComponentIntoDom(component, options);
@@ -62,15 +62,6 @@ define([
 			else {
 				this._placeCallsOrder.push(arguments);
 			}
-		},
-		
-		/*
-		 * Place sub-components in bulk
-		 */
-		_placeComponents: function(components, options) {
-			components.forEach(function(component) {
-				this._placeComponent(component);
-			}.bind(this));
 		},
 		
 		/*
@@ -87,7 +78,7 @@ define([
 		 * 
 		 * - component: component instance or name
 		 */
-		_unplaceComponent: function(component) {
+		_detachComponent: function(component) {
 			if (this.domNode) {
 				component = this._getComponent(component);
 				this._detachComponentFromDom(component);
@@ -97,15 +88,6 @@ define([
 				var index = this._placedComponents.indexOf(component);
 				this._placedComponents.splice(index, 1);
 			}
-		},
-		
-		/*
-		 * Unplace several sub-components
-		 */
-		_unplaceComponents: function(components, options) {
-			components.forEach(function(component) {
-				this._unplaceComponent(component);
-			}.bind(this));
 		},
 
 		inDom: false,
@@ -119,7 +101,7 @@ define([
 					// this component has been inserted in DOM document
 					// insert its children for real now
 					this._placeCallsOrder.forEach(function(args) {
-						this._placeComponent.apply(this, args);
+						this._insertComponent.apply(this, args);
 					}.bind(this));
 					this._placeCallsOrder = [];
 				}
@@ -128,13 +110,7 @@ define([
 					this._setComponentInDom(this._placedComponents[c], value);
 				}
 			}
-		},
-		
-		_deleteComponent: function (component) {
-			this._unplaceComponent(component);
-			this.inherited(arguments);
 		}
-
 	});
 	return DomComponent;
 });
