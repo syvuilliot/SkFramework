@@ -114,6 +114,8 @@ define([
 			// console.log("selected row", this.get("selectedRow"));
 			this.set("selected", row ? row.get("value") : undefined);
 			// console.log("selected value", this.get("selected"));
+			this.set("selectedIndex", row ? this._componentsCollection.indexOf(row) : -1);
+			// console.log("selected index", this.get("selectedIndex"));
 		}
 
 	});
@@ -153,6 +155,10 @@ define([
 				source: this._presenter,
 				"<->": "selected",
 			});
+			var cancelBodySelectedIndexBinding = bind($.body._presenter, "selectedIndex", {
+				source: this._presenter,
+				"<->": "selectedIndex",
+			});
 
 			this._bindComponents({
 				headRow: {
@@ -163,6 +169,7 @@ define([
 						cancelBodyValueBinding();
 						cancelBodyConfigBinding();
 						cancelBodySelectedBinding();
+						cancelBodySelectedIndexBinding();
 					}
 				}
 			});
