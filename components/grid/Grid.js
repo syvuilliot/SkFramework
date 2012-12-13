@@ -64,7 +64,13 @@ define([
 					renderer: configLine.renderer,
 					rendererArgs: configLine.rendererArgs,
 				});
-			}
+			},
+			_render: function(){
+				this.inherited(arguments);
+				this.own(on(this.domNode, "click", function(){
+					this.emit("selected");
+				}.bind(this)));
+			},
 	});
 
 	var TableBody = declare(Repeater, {
@@ -84,9 +90,9 @@ define([
 			this._bindComponent(row, bindingRemover);
 			// selection behavior
 			// TODO: move into a separate mixin
-			on(row.domNode, "click", function(){
+			this.own(on(row, "selected", function(){
 				this.select(row);
-			}.bind(this));
+			}.bind(this)));
 		},
 		select: function(value){
 			var row;
