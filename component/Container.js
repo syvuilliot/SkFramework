@@ -42,7 +42,7 @@ define([
 		},
 		
 		removeAllChildren: function() {
-			return this.removeChildren(this.children);
+			return this.removeChildren(this.children.slice());
 		},
 
 		//default implementation for SkComponents and domNodes
