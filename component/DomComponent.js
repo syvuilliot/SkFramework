@@ -1,16 +1,16 @@
 define([
 	'dojo/_base/declare',
 	'dojo/dom-construct',
-	'./Component'
+	'./Component',	'./_Placing'
 ], function(
 	declare,
 	domConstruct,
-	Component
+	Component,		_Placing
 ) {
 	/*
 	 * Component using a DOM-node as view
 	 */
-	var DomComponent = declare([Component], {
+	var DomComponent = declare([Component, _Placing], {
 		domNode: null,
 		domTag: "div",
 		domAttrs: null,
@@ -52,7 +52,7 @@ define([
 		 * @param {String|Component} component Component instance or id
 		 * @param options: placement options (to be defined)
 		 */
-		_insertComponent: function(component, options) {
+		_doPlaceComponent: function(component, options) {
 			if (this.inDom) {
 				component = this._getComponent(component);
 				this._insertComponentIntoDom(component, options);
@@ -78,7 +78,7 @@ define([
 		 * 
 		 * - component: component instance or name
 		 */
-		_detachComponent: function(component) {
+		_doUnplaceComponent: function(component) {
 			if (this.domNode) {
 				component = this._getComponent(component);
 				this._detachComponentFromDom(component);
@@ -101,7 +101,7 @@ define([
 					// this component has been inserted in DOM document
 					// insert its children for real now
 					this._placeCallsOrder.forEach(function(args) {
-						this._insertComponent.apply(this, args);
+						this._doPlaceComponent.apply(this, args);
 					}.bind(this));
 					this._placeCallsOrder = [];
 				}

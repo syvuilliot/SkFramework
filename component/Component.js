@@ -12,7 +12,6 @@ define([
 			this._components = {};
 			this._hardRefs = {};
 			this._bindings = {};
-			this._placement = [];
 		},
 
 		get: function(prop) {
@@ -177,87 +176,11 @@ define([
 		},
 		
 		/*
-		 * Placing implementation to be overriden by subclasses
-		 * 
-		 * @param {Component|String}	component			Component or id
-		 * @param {String|Object}		[options="last"]	Placement options
-		 */
-		_insertComponent: function(component, options) {
-			// To be implemented in subclasses
-		},
-		
-		/*
-		 * Place a subcomponent
-		 * 
-		 * @param {Component|String}	component			Component or id
-		 * @param {String|Object}		[options="last"]	Placement options
-		 */
-		_placeComponent: function(component, options) {
-			options = options || 'last';
-			var comp = this._getComponent(component);
-			if (comp) {
-				this._insertComponent(comp);
-				this._placement.push(comp);
-			}
-		},
-		
-		/*
-		 * Place several subcomponents
-		 * 
-		 * @param {Array}			components			List of Component objects and/or ids
-		 * @param {String|Object}	[options="last"]	Placement options
-		 */
-		_placeComponents: function(components, options) {
-			options = options || 'last';
-			for (var c in components) {
-				this._placeComponent(components[c], options);
-			}
-		},
-		
-		/*
-		 * Unplacing implementation to be overriden by subclasses
-		 * 
-		 * @param {Component|String}	component			Component or id
-		 */
-		_detachComponent: function(component) {
-			// To be implemented in subclasses
-		},
-		
-		/*
-		 * Unplace a subcomponent
-		 * 
-		 * @param {Component|String}	component	Component or id
-		 */
-		_unplaceComponent: function(component) {
-			var comp = this._getComponent(component);
-			if (comp) {
-				// remove from _placement
-				var index = this._placement.indexOf(comp);
-				if (index > -1) {
-					this._detachComponent(comp);
-					this._placement.splice(index, 1);
-				}
-			}
-		},
-		
-		/*
-		 * Unplace several subcomponents
-		 * 
-		 * @param {Array}			components			List of Component objects and/or ids
-		 */
-		_unplaceComponents: function(components) {
-			for (var c in components) {
-				this._unplaceComponent(components[c]);
-			}
-		},
-		
-		/*
 		 * Destroy a subcomponent
 		 * 
-		 * @param {Component|String}	component	Component or id
+		 * @param {Component|String}	component	Component
 		 */
 		_destroyComponent: function(component) {
-			var comp = this._getComponent(component);
 			if (component instanceof Component) {
 				component.destroy();
 			}
@@ -270,8 +193,8 @@ define([
 		_deleteComponent: function (component) {
 			var id = this._getComponentId(component);
 			this._unbindComponent(id);
-			this._unplaceComponent(id);
-			this._destroyComponent(id);
+			var comp = this._getComponent(id);
+			this._destroyComponent(comp);
 			delete this._components[id];
 			if (id in this._hardRefs) {
 				delete this[this._hardRefs[id]];
