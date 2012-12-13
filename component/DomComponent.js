@@ -2,17 +2,17 @@ define([
 	'dojo/_base/declare',
 	'dojo/dom-construct',
 	'put-selector/put',
-	'./Component'
+	'./Component',	'./_Placing'
 ], function(
 	declare,
 	domConstruct,
 	put,
-	Component
+	Component,		_Placing
 ) {
 	/*
 	 * Component using a DOM-node as view
 	 */
-	var DomComponent = declare([Component], {
+	var DomComponent = declare([Component, _Placing], {
 		domNode: null,
 		domTag: "div",
 		domAttrs: null,
@@ -32,7 +32,6 @@ define([
 		_render: function() {
 			// this.domNode = domConstruct.create(this.domTag, this.domAttrs);
 			this.domNode = this.domAttrs ? put(this.domTag, this.domAttrs) : put(this.domTag);
-
 		},
 
 		/*
@@ -52,11 +51,11 @@ define([
 
 		/*
 		 * Place sub-components' views in its own view
-		 *
+		 * 
 		 * @param {String|Component} component Component instance or id
 		 * @param options: placement options (to be defined)
 		 */
-		_placeComponent: function(component, options) {
+		_doPlaceComponent: function(component, options) {
 			if (this.inDom) {
 				component = this._getComponent(component);
 				this._insertComponentIntoDom(component, options);
@@ -66,15 +65,6 @@ define([
 			else {
 				this._placeCallsOrder.push(arguments);
 			}
-		},
-
-		/*
-		 * Place sub-components in bulk
-		 */
-		_placeComponents: function(components, options) {
-			components.forEach(function(component) {
-				this._placeComponent(component);
-			}.bind(this));
 		},
 
 		/*
@@ -88,10 +78,10 @@ define([
 
 		/*
 		 * Unplace sub-components' views from its own view
-		 *
+		 * 
 		 * - component: component instance or name
 		 */
-		_unplaceComponent: function(component) {
+		_doUnplaceComponent: function(component) {
 			if (this.domNode) {
 				component = this._getComponent(component);
 				this._detachComponentFromDom(component);
@@ -101,15 +91,6 @@ define([
 				var index = this._placedComponents.indexOf(component);
 				this._placedComponents.splice(index, 1);
 			}
-		},
-
-		/*
-		 * Unplace several sub-components
-		 */
-		_unplaceComponents: function(components, options) {
-			components.forEach(function(component) {
-				this._unplaceComponent(component);
-			}.bind(this));
 		},
 
 		inDom: false,
@@ -123,7 +104,7 @@ define([
 					// this component has been inserted in DOM document
 					// insert its children for real now
 					this._placeCallsOrder.forEach(function(args) {
-						this._placeComponent.apply(this, args);
+						this._doPlaceComponent.apply(this, args);
 					}.bind(this));
 					this._placeCallsOrder = [];
 				}
@@ -132,13 +113,7 @@ define([
 					this._setComponentInDom(this._placedComponents[c], value);
 				}
 			}
-		},
-
-		_deleteComponent: function (component) {
-			this._unplaceComponent(component);
-			this.inherited(arguments);
 		}
-
 	});
 	return DomComponent;
 });

@@ -65,6 +65,39 @@ define([
 		},
 
 		/*
+		 * Get a subcomponent's id
+		 *
+		 * @param {Component|String}	component	Component or id
+		 * @return {String} Id of subcomponent
+		 */
+		_getComponentId: function(component) {
+			if (lang.isString(component) && this._components.hasOwnProperty(component)) {
+				return component;
+			} else {
+				for (var id in this._components) {
+					if (this._components[id] === component) {
+						return id;
+					}
+				}
+			}
+			console.warn('Unknown component or id:', component);
+		},
+
+		/*
+		 * Get a subcomponent from its id
+		 * (argument can be a component instance, in which case check if is subcomponent and return it)
+		 *
+		 * @param {Component|String}	component	Component or id
+		 * @return {Component|undefined} Subcomponent
+		 */
+		_getComponent: function(component) {
+			var id = this._getComponentId(component);
+			if (id) {
+				return this._components[id];
+			}
+		},
+		
+		/*
 		 * Register sub-components
 		 * 
 		 * @param {Component}	component	Subcomponent to be added
@@ -141,47 +174,13 @@ define([
 			});
 			delete this._bindings[id];
 		},
-
-		/*
-		 * Get a subcomponent's id
-		 *
-		 * @param {Component|String}	component	Component or id
-		 * @return {String} Id of subcomponent
-		 */
-		_getComponentId: function(component) {
-			if (lang.isString(component) && this._components.hasOwnProperty(component)) {
-				return component;
-			} else {
-				for (var id in this._components) {
-					if (this._components[id] === component) {
-						return id;
-					}
-				}
-			}
-			console.warn('Unknown component or id:', component);
-		},
-
-		/*
-		 * Get a subcomponent from its id
-		 * (argument can be a component instance, in which case check if is subcomponent and return it)
-		 *
-		 * @param {Component|String}	component	Component or id
-		 * @return {Component|undefined} Subcomponent
-		 */
-		_getComponent: function(component) {
-			var id = this._getComponentId(component);
-			if (id) {
-				return this._components[id];
-			}
-		},
 		
 		/*
 		 * Destroy a subcomponent
 		 * 
-		 * @param {Component|String}	component	Component or id
+		 * @param {Component|String}	component	Component
 		 */
 		_destroyComponent: function(component) {
-			var comp = this._getComponent(component);
 			if (component instanceof Component) {
 				component.destroy();
 			}
@@ -194,12 +193,24 @@ define([
 		_deleteComponent: function (component) {
 			var id = this._getComponentId(component);
 			this._unbindComponent(id);
-			this._destroyComponent(id);
+			var comp = this._getComponent(id);
+			this._destroyComponent(comp);
 			delete this._components[id];
 			if (id in this._hardRefs) {
 				delete this[this._hardRefs[id]];
 			}
 		},
+		/*
+		 * Delete several subcomponents
+		 *
+		 * @param {Array}	components	Array of components objects
+		 */
+		_deleteComponents: function (components) {
+			components.forEach(function(comp) {
+				this._deleteComponent(comp);
+			}.bind(this));
+		},
+		
 		/*
 		 * Destroy itself and its subcomponents
 		 */

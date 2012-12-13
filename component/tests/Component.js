@@ -26,11 +26,14 @@ function(
 	        setUp: function() {
 	        	this.main = new Component();
 	        	this.main._sub2 = "occupied";
+	        	
 	        	this.sub1 = new Component();
+	        	this.unknown = new Component();
+
 	        	this.main._addComponents({
 	        		sub1: this.sub1,
-	        		sub2: this.sub2,
-	        		sub3: this.sub3
+	        		sub2: new Component(),
+	        		sub3: new Component()
 	        	});
 	        	this.main._bindComponents({
 	        		sub1: {	// Fake binding
@@ -57,7 +60,7 @@ function(
 	        	doh.f(this.main._getComponent('unknown'), "unknown component don't get returned");
 	        	doh.is(this.main._getComponentId(this.sub1), 'sub1', "find out component's id");
 	        	doh.f(this.main._getComponentId('unknown'), "unknown id don't get returned");
-	        	doh.f(this.main._getComponentId(this.main), "asking for unknown component's id returns nothing");
+	        	doh.f(this.main._getComponentId(this.unknown), "asking for id of an unknown component returns nothing");
 	        	// Remove sub1
 	        	this.main._deleteComponent(this.sub1);
 	        	doh.f(this.main._getComponent('sub1'), "sub1 has correctly been removed");
