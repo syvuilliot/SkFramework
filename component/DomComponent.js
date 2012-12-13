@@ -9,6 +9,10 @@ define([
 	put,
 	Component,		_Placing
 ) {
+	var isDomCmp = function(cmp) {
+		return cmp instanceof DomComponent;
+	}
+	
 	/*
 	 * Component using a DOM-node as view
 	 */
@@ -21,6 +25,15 @@ define([
 			this._placedComponents = [];
 			this._placeCallsOrder = [];
 		},
+		
+		_addComponent: function() {
+			var cmp = this.inherited(arguments);
+			if (isDomCmp(cmp)) {
+				// add CSS class matching the component id, hyphenated
+				var cmpId = this._getComponentId(cmp);
+				cmpId && cmp.addClass(cmpId.replace(/([a-z])([A-Z])/, '$1-$2').toLowerCase());
+			}
+		},
 
 		render: function() {
 			if (!this.domNode) {
@@ -30,21 +43,25 @@ define([
 		},
 
 		_render: function() {
-			// this.domNode = domConstruct.create(this.domTag, this.domAttrs);
 			this.domNode = this.domAttrs ? put(this.domTag, this.domAttrs) : put(this.domTag);
+		},
+		
+		addClass: function(className) {
+			this.domTag += '.' + className;
+			this.domNode && put(this.domNode, '.' + className);
 		},
 
 		/*
 		 * Insert component's view into its own DOM-node
 		 */
 		_insertComponentIntoDom: function(component, options) {
-			if (component instanceof DomComponent) {
+			if (isDomCmp(component)) {
 				domConstruct.place(component.render(), this.domNode, options);
 			}
 		},
 
 		_setComponentInDom: function(component, value) {
-			if (component instanceof DomComponent) {
+			if (isDomCmp(component)) {
 				component.set('inDom', value);
 			}
 		},
@@ -71,7 +88,7 @@ define([
 		 * Detach component's view from its own DOM-node
 		 */
 		_detachComponentFromDom: function (component) {
-			if (component instanceof DomComponent) {
+			if (isDomCmp(component)) {
 				this.domNode.removeChild(component.domNode);
 			}
 		},
