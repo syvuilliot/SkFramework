@@ -1,10 +1,12 @@
 define([
 	'dojo/_base/declare',
 	'dojo/dom-construct',
+	'put-selector/put',
 	'./Component'
 ], function(
 	declare,
 	domConstruct,
+	put,
 	Component
 ) {
 	/*
@@ -14,23 +16,25 @@ define([
 		domNode: null,
 		domTag: "div",
 		domAttrs: null,
-		
+
 		constructor: function() {
 			this._placedComponents = [];
 			this._placeCallsOrder = [];
 		},
-		
+
 		render: function() {
 			if (!this.domNode) {
 				this._render();
 			}
 			return this.domNode;
 		},
-		
+
 		_render: function() {
-			this.domNode = domConstruct.create(this.domTag, this.domAttrs);
+			// this.domNode = domConstruct.create(this.domTag, this.domAttrs);
+			this.domNode = this.domAttrs ? put(this.domTag, this.domAttrs) : put(this.domTag);
+
 		},
-		
+
 		/*
 		 * Insert component's view into its own DOM-node
 		 */
@@ -39,7 +43,7 @@ define([
 				domConstruct.place(component.render(), this.domNode, options);
 			}
 		},
-		
+
 		_setComponentInDom: function(component, value) {
 			if (component instanceof DomComponent) {
 				component.set('inDom', value);
@@ -48,7 +52,7 @@ define([
 
 		/*
 		 * Place sub-components' views in its own view
-		 * 
+		 *
 		 * @param {String|Component} component Component instance or id
 		 * @param options: placement options (to be defined)
 		 */
@@ -63,7 +67,7 @@ define([
 				this._placeCallsOrder.push(arguments);
 			}
 		},
-		
+
 		/*
 		 * Place sub-components in bulk
 		 */
@@ -72,7 +76,7 @@ define([
 				this._placeComponent(component);
 			}.bind(this));
 		},
-		
+
 		/*
 		 * Detach component's view from its own DOM-node
 		 */
@@ -81,10 +85,10 @@ define([
 				this.domNode.removeChild(component.domNode);
 			}
 		},
-		
+
 		/*
 		 * Unplace sub-components' views from its own view
-		 * 
+		 *
 		 * - component: component instance or name
 		 */
 		_unplaceComponent: function(component) {
@@ -92,13 +96,13 @@ define([
 				component = this._getComponent(component);
 				this._detachComponentFromDom(component);
 				this._setComponentInDom(component, false);
-				
+
 				// remove from _placedComponents
 				var index = this._placedComponents.indexOf(component);
 				this._placedComponents.splice(index, 1);
 			}
 		},
-		
+
 		/*
 		 * Unplace several sub-components
 		 */
@@ -129,7 +133,7 @@ define([
 				}
 			}
 		},
-		
+
 		_deleteComponent: function (component) {
 			this._unplaceComponent(component);
 			this.inherited(arguments);

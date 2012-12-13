@@ -114,9 +114,7 @@
 				source: checkboxInput._presenter
 			});
 
-
 			// test select input
-			window.put = put;
 			syv = {name: "Sylvain", age: 31, sexe: "M"};
 			aur = {name: "Aurelie", age: 30, sexe:"F"};
 			ant = {name: "Antonin", age: 2, sexe:"M"};
@@ -124,6 +122,35 @@
 			collection = [syv, aur, ant];
 
 			selectInput = new Select({
+				options: [
+					{id: "syv", name: "Sylvain"},
+					{id: "aur", name: "Aurélie"},
+					{id: "ant", name: "Antonin"},
+				],
+				labelProp: "name",
+				valueProp: "id",
+			});
+			document.body.appendChild(selectInput.render());
+			selectInput.set("inDom", true);
+			on(put(document.body, "button", "reset value"), "click", function(){
+				selectInput.set("value", "aur");
+			});
+			bind(document.body.appendChild(document.createElement("div")), "innerHTML", {
+				"<-": "value",
+				source: selectInput._presenter
+			});
+			selectInput.set("value", "aur");
+
+
+
+			// test js select
+/*			syv = {name: "Sylvain", age: 31, sexe: "M"};
+			aur = {name: "Aurelie", age: 30, sexe:"F"};
+			ant = {name: "Antonin", age: 2, sexe:"M"};
+			leo = {name: "Léonie", age: 0, sexe:"F"};
+			collection = [syv, aur, ant];
+
+			selectInput = new JsSelect({
 				// options must be set at creation time and cannot be changed after
 				options: collection,
 				// labelProp must be set at creation time and cannot be changed after
@@ -141,6 +168,8 @@
 				source: selectInput._presenter
 			});
 			selectInput.set("value", aur);
+*/
+
 
 		});
 	</script>

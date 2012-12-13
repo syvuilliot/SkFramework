@@ -5,6 +5,7 @@ define([
 	'SkFramework/component/Presenter',
 	'SkFramework/utils/binding',
 	"put-selector/put",
+	"dojo/on",
 	'frb/bind',
 	"SkFramework/components/repeater/Repeater",
 	"SkFramework/components/objectRenderer/ObjectRenderer",
@@ -16,6 +17,7 @@ define([
 	PresenterBase,
 	binding,
 	put,
+	on,
 	bind,
 	Repeater,
 	ObjectRenderer
@@ -80,7 +82,41 @@ define([
 				remove: function(){cancelConfigBinding();},
 			};
 			this._bindComponent(row, bindingRemover);
+			// selection behavior
+			// TODO: move into a separate mixin
+			on(row.domNode, "click", function(){
+				this.select(row);
+			}.bind(this));
 		},
+		select: function(value){
+			var row;
+			switch (typeof value){
+				// search by index
+				case "number":
+					row = this._componentsCollection[value];
+					break;
+				// if object is a known row component
+				case "object":
+					if (this._componentsCollection.has(value)) {
+						row = value;
+						break;
+					}
+				// else try to find the value in the values collection
+				default:
+					var index = this.get(this.collectionProperty).indexOf(value);
+					// if nothing is found, row is set to undefined whiwh equivalent to selected nothing
+					row = index >= 0 ? this._componentsCollection[index] : undefined;
+			}
+			var oldSelectedRow = this.get("selectedRow");
+			oldSelectedRow && put(oldSelectedRow.domNode, "!selected"); // remove selected class on old selected row
+			this.set("selectedRow", row ? row : undefined);
+			row && put(row.domNode, ".selected");
+			// console.log("selected row", this.get("selectedRow"));
+			this.set("selected", row ? row.get("value") : undefined);
+			// console.log("selected value", this.get("selected"));
+			this.set("selectedIndex", row ? this._componentsCollection.indexOf(row) : -1);
+			// console.log("selected index", this.get("selectedIndex"));
+		}
 
 	});
 
@@ -115,6 +151,14 @@ define([
 				source: this._presenter,
 				"<-": "config",
 			});
+			var cancelBodySelectedBinding = bind($.body._presenter, "selected", {
+				source: this._presenter,
+				"<->": "selected",
+			});
+			var cancelBodySelectedIndexBinding = bind($.body._presenter, "selectedIndex", {
+				source: this._presenter,
+				"<->": "selectedIndex",
+			});
 
 			this._bindComponents({
 				headRow: {
@@ -124,6 +168,8 @@ define([
 					remove: function(){
 						cancelBodyValueBinding();
 						cancelBodyConfigBinding();
+						cancelBodySelectedBinding();
+						cancelBodySelectedIndexBinding();
 					}
 				}
 			});
@@ -134,6 +180,9 @@ define([
 			]));
 			this._placeComponent($.body);
 		},
+		select: function(index){
+			return this._components.body.select(index);
+		}
 
 	});
 });
