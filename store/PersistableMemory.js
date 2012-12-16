@@ -52,7 +52,7 @@ define([
 		save: function(){
 			var serialize = function(instance){
 				var constructorId = this.getConstructorId(instance);
-				rawItem = copyOwnProperties(instance, {});
+				var rawItem = JSON.parse(JSON.stringify(instance));
 				rawItem[this.constructorIdProperty] = constructorId;
 				return rawItem;
 			};
