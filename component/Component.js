@@ -30,6 +30,15 @@ define([
 			}
 		},
 
+		watch: function(prop, handler) {
+			// if only one argument (no prop specified) apply watch on this and not on _presenter
+			if (prop in this || !arguments[1]) {
+				return this.inherited(arguments);
+			} else {
+				return this._presenter.watch.apply(this._presenter, arguments);
+			}
+		},
+
 		/*
 		 * Build a component from a configuration object
 		 *
@@ -96,10 +105,10 @@ define([
 				return this._components[id];
 			}
 		},
-		
+
 		/*
 		 * Register sub-components
-		 * 
+		 *
 		 * @param {Component}	component	Subcomponent to be added
 		 * @param {String}		[id]		Id of component
 		 * @param {Object}		[options]
@@ -109,7 +118,7 @@ define([
 		_addComponent: function(component, id, options){
 			id = id || this.generateId();
 			this._components[id] = component;
-			
+
 			if (!options || !options.noHardRef) {
 				var ref = '_' + id;
 				if (this[ref] === undefined) {
@@ -117,7 +126,7 @@ define([
 					this._hardRefs[id] = ref;
 				}
 			}
-			
+
 			return component;
 		},
 
@@ -174,10 +183,10 @@ define([
 			});
 			delete this._bindings[id];
 		},
-		
+
 		/*
 		 * Destroy a subcomponent
-		 * 
+		 *
 		 * @param {Component|String}	component	Component
 		 */
 		_destroyComponent: function(component) {
@@ -210,7 +219,7 @@ define([
 				this._deleteComponent(comp);
 			}.bind(this));
 		},
-		
+
 		/*
 		 * Destroy itself and its subcomponents
 		 */
