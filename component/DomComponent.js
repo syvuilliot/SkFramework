@@ -12,7 +12,7 @@ define([
 	var isDomCmp = function(cmp) {
 		return cmp instanceof DomComponent;
 	}
-	
+
 	/*
 	 * Component using a DOM-node as view
 	 */
@@ -25,7 +25,7 @@ define([
 			this._placedComponents = [];
 			this._placeCallsOrder = [];
 		},
-		
+
 		_addComponent: function() {
 			var cmp = this.inherited(arguments);
 			if (isDomCmp(cmp)) {
@@ -45,7 +45,7 @@ define([
 		_render: function() {
 			this.domNode = this.domAttrs ? put(this.domTag, this.domAttrs) : put(this.domTag);
 		},
-		
+
 		addClass: function(className) {
 			this.domTag += '.' + className;
 			this.domNode && put(this.domNode, '.' + className);
@@ -68,7 +68,7 @@ define([
 
 		/*
 		 * Place sub-components' views in its own view
-		 * 
+		 *
 		 * @param {String|Component} component Component instance or id
 		 * @param options: placement options (to be defined)
 		 */
@@ -89,13 +89,13 @@ define([
 		 */
 		_detachComponentFromDom: function (component) {
 			if (isDomCmp(component)) {
-				this.domNode.removeChild(component.domNode);
+				if (component.domNode) this.domNode.removeChild(component.domNode);
 			}
 		},
 
 		/*
 		 * Unplace sub-components' views from its own view
-		 * 
+		 *
 		 * - component: component instance or name
 		 */
 		_doUnplaceComponent: function(component) {
