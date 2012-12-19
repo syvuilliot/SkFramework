@@ -130,18 +130,14 @@
 
 
 			// test select input
-			syv = {name: "Sylvain", age: 31, sexe: "M"};
-			aur = {name: "Aurelie", age: 30, sexe:"F"};
-			ant = {name: "Antonin", age: 2, sexe:"M"};
-			leo = {name: "Léonie", age: 0, sexe:"F"};
+			syv = {id: "syv", name: "Sylvain", age: 31, sexe: "M"};
+			aur = {id: "aur", name: "Aurelie", age: 30, sexe:"F"};
+			ant = {id: "ant", name: "Antonin", age: 2, sexe:"M"};
+			leo = {id: "leo", name: "Léonie", age: 0, sexe:"F"};
 			collection = [syv, aur, ant];
 
 			selectInput = new Select({
-				options: [
-					{id: "syv", name: "Sylvain"},
-					{id: "aur", name: "Aurélie"},
-					{id: "ant", name: "Antonin"},
-				],
+				options: collection,
 				labelProp: "name",
 				valueProp: "id",
 			});
@@ -156,6 +152,8 @@
 			});
 			selectInput.set("value", "aur");
 
+			collection.push(leo); // check that the options list is updated
+			collection.splice(1, 1); // check that the option list is updated (aur removed)
 
 
 			// test js select
