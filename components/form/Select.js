@@ -39,7 +39,7 @@ define([
 			});
 		},
 		destroy: function(){
-			this._cancelValueBinding();
+			this._cancelValueBinding && this._cancelValueBinding(); // should be in _unrender
 			this.inherited(arguments);
 		},
 	});
