@@ -46,21 +46,23 @@ define([
 	});
 
 	binding.Value = declare(Binding, {
-		constructor: function(source, target, params){
+		constructor: function(source, target, params) {
 			this.handlers.push(source.watch(params.sourceProp, function(prop, old, current){
-				this.update(source, target, params);
+				this.update(old, this.source.get(this.sourceProp));
 			}.bind(this)));
 		},
-		update: function(source, target, params){
-			var value = source.get(params.sourceProp);
-			var prop = params.targetProp;
-			target.set ? target.set(prop, value) : target[prop] = value;
+		init: function() {
+			this.update(undefined, this.source.get(this.sourceProp));
 		},
+		update: function(oldValue, currentValue){
+			var prop = this.targetProp;
+			this.target.set ? this.target.set(prop, currentValue) : this.target[prop] = currentValue;
+		}
 	});
 
 	binding.Stateful2InnerHtml = declare(binding.Value, {
-		update: function(source, target, params){
-			target.innerHTML = source.get(params.sourceProp);
+		update: function(old, current){
+			this.target.innerHTML = this.source.get(this.sourceProp);
 		},
 	});
 
@@ -111,27 +113,26 @@ define([
 			this._observeHandlers = [];
 			this.inherited(arguments);
 		},
-		update: function(source, target, params) {
+		update: function(old, current) {
 			this._unbindObserve();
 			
-			var queryResult = source[params.sourceProp];
-			params.initMethod && target[params.initMethod](queryResult);
-			if (queryResult && queryResult.forEach) {
+			this.initMethod && this.target[this.initMethod](old, current);
+			if (current && current.forEach) {
 				//init
-				queryResult.forEach(function(value){
-					target[params.addMethod](value, value.id);//TODO: use getIdentity
-				});
+				current.forEach(function(value) {
+					this.target[this.addMethod](value, value.id);//TODO: use getIdentity
+				}.bind(this));
 			}
-			if (queryResult && queryResult.observe) {
+			if (current && current.observe) {
 				//observe
-				this._observeHandlers.push(queryResult.observe(function(item, from, to){
+				this._observeHandlers.push(current.observe(function(item, from, to) {
 					if (to < 0){ //item removed
-						target[params.removeMethod](item, item.id);//TODO: use getIdentity
+						this.target[this.removeMethod](item, item.id);//TODO: use getIdentity
 					}
 					if (from < 0){ //item added
-						target[params.addMethod](item, item.id);//TODO: use getIdentity
+						this.target[this.addMethod](item, item.id);//TODO: use getIdentity
 					}
-				}, true));
+				}.bind(this), true));
 			}
 		},
 		_unbindObserve: function() {
