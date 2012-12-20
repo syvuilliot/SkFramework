@@ -2,11 +2,13 @@ define([
 	'dojo/_base/declare',
 	'dojo/dom-construct',
 	'put-selector/put',
+	'../utils/string',
 	'./Component',	'./_Placing'
 ], function(
 	declare,
 	domConstruct,
 	put,
+	str,
 	Component,		_Placing
 ) {
 	var isDomCmp = function(cmp) {
@@ -25,14 +27,14 @@ define([
 			this._placedComponents = [];
 			this._placeCallsOrder = [];
 		},
-
-		_addComponent: function() {
+		
+		_addComponent: function(cmp, id) {
 			var cmp = this.inherited(arguments);
 			if (isDomCmp(cmp)) {
 				// add CSS class matching the component id, hyphenated
-				var cmpId = this._getComponentId(cmp);
-				cmpId && cmp.addClass(cmpId.replace(/([a-z])([A-Z])/, '$1-$2').toLowerCase());
+				id && cmp.addClass(str.hyphenate(id));
 			}
+			return cmp;
 		},
 
 		render: function() {

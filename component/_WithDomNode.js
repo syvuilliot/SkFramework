@@ -1,9 +1,13 @@
 define([
 	'dojo/_base/declare',
-	'dojo/dom-construct'
+	'dojo/dom-construct',
+	'put-selector/put',
+    '../utils/string'
 ], function(
 	declare,
-	domConstruct
+	domConstruct,
+	put,
+	str
 ) {
 	/*
 	 * Mixin adding support for DOM-nodes as sub-components
@@ -13,6 +17,15 @@ define([
 	};
 	
 	return declare([], {
+	    _addComponent: function(cmp, id) {
+            var cmp = this.inherited(arguments);
+            if (isDomNode(cmp)) {
+                // add CSS class matching the component id, hyphenated
+                id && put(cmp, '.' + str.hyphenate(id));
+            }
+            return cmp;
+        },
+        
 		_insertComponentIntoDom: function(component, option) {
 			if (isDomNode(component)) {
 				domConstruct.place(component, this.domNode, option);
