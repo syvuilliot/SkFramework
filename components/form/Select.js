@@ -38,6 +38,18 @@ define([
 				// trace: true,
 			});
 		},
+		swap: function(){
+			this.inherited(arguments);
+			// HACK: ensure that domNode.value is always in sync
+			if (this.domNode){
+				this.domNode.value = this.get("value");
+			}
+		},
+		_insertComponentIntoDom: function(){
+			this.inherited(arguments);
+			// HACK: ensure that domNode.value is always in sync
+			this.domNode.value = this.get("value");
+		},
 		destroy: function(){
 			this._cancelValueBinding && this._cancelValueBinding(); // should be in _unrender
 			this.inherited(arguments);

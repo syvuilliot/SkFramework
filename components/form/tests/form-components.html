@@ -137,10 +137,12 @@
 			collection = [syv, aur, ant];
 
 			selectInput = new Select({
-				options: collection,
+				// options: collection,
 				labelProp: "name",
 				valueProp: "id",
 			});
+			selectInput.set("value", undefined);
+			selectInput.set("options", collection);
 			document.body.appendChild(selectInput.render());
 			selectInput.set("inDom", true);
 			on(put(document.body, "button", "reset value"), "click", function(){
@@ -150,10 +152,9 @@
 				"<-": "value",
 				source: selectInput._presenter
 			});
-			selectInput.set("value", "aur");
 
-			collection.push(leo); // check that the options list is updated
-			collection.splice(1, 1); // check that the option list is updated (aur removed)
+			// collection.push(leo); // check that the options list is updated
+			// collection.splice(1, 1); // check that the option list is updated (aur removed)
 
 
 			// test js select
