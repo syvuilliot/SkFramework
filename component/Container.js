@@ -25,7 +25,9 @@ define([
 			this._unplaceChild(component);
 			//unregister child
 			var index = this.children.indexOf(component);
-			this.children.splice(index, 1);
+			if (index > -1) {
+				this.children.splice(index, 1);
+			}
 			return this;
 		},
 		addChildren: function(components) {
@@ -35,14 +37,11 @@ define([
 			return this;
 		},
 		removeChildren: function(components) {
+			components = components || this.children.slice();
 			components.forEach(function(component){
 				this.removeChild(component);
 			}.bind(this));
 			return this;
-		},
-		
-		removeAllChildren: function() {
-			return this.removeChildren(this.children.slice());
 		},
 
 		//default implementation for SkComponents and domNodes
