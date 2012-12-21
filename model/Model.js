@@ -178,8 +178,14 @@
 				var query = {'instanceof': relation.sourceModel};
 				query[relation.sourcePropertyName] = this;
 				var result = relation.sourceModel.store.query(query);
-				result.add = result.put = function(sourceInstance){
-					return sourceInstance.set(relation.sourcePropertyName, targetInstance);
+				originalPut = result.put;
+				// any item added to this collection will have a relation to targetInstance
+				// is that really necessary ?
+				result.put = function(sourceInstance){
+					if (sourceInstance.get(relation.sourcePropertyName) !== targetInstance){
+						sourceInstance.set(relation.sourcePropertyName, targetInstance);
+					}
+					return originalPut.apply(result, arguments);
 				};
 				return result;
 			};
@@ -195,7 +201,7 @@
 
 	Model.addMany2ManyRelation = function(relationDef){
 		var IntermediaryModel = Model.extend();
-		
+
 		IntermediaryModel.addRelationTo(relationDef.targetModel, {
 			sourcePropertyName: relationDef.sourceAddRemoveName,
 			targetPropertyName: relationDef.targetGetName+"Relations",
@@ -204,7 +210,7 @@
 			sourcePropertyName: relationDef.targetAddRemoveName,
 			targetPropertyName: relationDef.sourceGetName+"Relations",
 		});
-		
+
 		//add a getter on target Model
 		relationDef.targetModel.prototype["_"+relationDef.targetGetName+"Getter"] = function(){
 			var relations = this.get(relationDef.targetGetName+"Relations");
@@ -215,7 +221,7 @@
 			relations.observe(function(relation, from, to){
 				if (to < 0) {
 					sourceInstances.remove(relation.get(relationDef.targetAddRemoveName).getIdentity());
-				} 
+				}
 				if (from < 0) {
 					sourceInstances.put(relation.get(relationDef.targetAddRemoveName));
 				}
@@ -241,7 +247,7 @@
 			});
 		};
 
-		
+
 
 		relationDef.sourceModel.prototype["_"+relationDef.sourceGetName+"Getter"] = function(){
 			var relations = this.get(relationDef.sourceGetName+"Relations");
@@ -252,10 +258,10 @@
 			relations.observe(function(rel, from, to){
 				if (to < 0) {
 					targetInstances.remove(rel.get(relationDef.sourceAddRemoveName).getIdentity());
-				} 
+				}
 				if (from < 0) {
 					targetInstances.put(rel.get(relationDef.sourceAddRemoveName));
-				} 
+				}
 			});
 			return targetInstances.query();
 		};
@@ -296,7 +302,7 @@
 
 		return IntermediaryModel;
 	};
-	
+
 	Model.initNewStore();
 	return Model;
 });
