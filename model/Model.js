@@ -163,6 +163,11 @@
 		}
 	);
 	Model.addRelation = function(relation){
+		// relation.sourceModel ("many" side in "one2many", ex: Todo)
+		// relation.sourcePropertyName (ex: assignee)
+		// relation.targetModel ("one" side in "one2many", ex: Person)
+		// relation.targetPropertyName (ex: todos)
+
 		//ajoute un getter sur la classe Model source
 		var getterName = "_"+relation.sourcePropertyName+"Getter";
 		if (!relation.sourceModel.prototype[getterName]){
@@ -178,7 +183,7 @@
 				var query = {'instanceof': relation.sourceModel};
 				query[relation.sourcePropertyName] = this;
 				var result = relation.sourceModel.store.query(query);
-				originalPut = result.put;
+				var originalPut = result.put;
 				// any item added to this collection will have a relation to targetInstance
 				// is that really necessary ?
 				result.put = function(sourceInstance){
@@ -197,6 +202,21 @@
 				this[relation.sourcePropertyName] = typeof value === "string" ? value : value.getIdentity();
 			};
 		}
+
+		// augment target class store remove method to delete also related items
+		var targetStore = relation.targetModel.store;
+		var originalRemove = targetStore.remove;
+		targetStore.remove = function(id){
+			var item = targetStore.get(id);
+			if (item instanceof relation.targetModel){
+				var relatedInstances = item.get(relation.targetPropertyName);
+				relatedInstances.forEach(function(instance){
+					instance.delete();
+				});
+			}
+			originalRemove.apply(targetStore, arguments);
+		};
+
 	};
 
 	Model.addMany2ManyRelation = function(relationDef){
