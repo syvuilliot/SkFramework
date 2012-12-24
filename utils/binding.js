@@ -77,7 +77,8 @@ define([
 
 	binding.Event = declare(Binding, {
 		constructor: function(source, target, params){
-			this.handlers.push(on(source, this.event, target[params.method].bind(target)));
+			var callback = (params.method instanceof Function) ? params.method : target[params.method];
+			this.handlers.push(on(source, this.event, callback.bind(target)));
 		}
 	});
 
