@@ -53,6 +53,11 @@ define([
 			this.domNode && put(this.domNode, '.' + className);
 		},
 
+		removeClass: function(className) {
+			this.domTag = this.domTag.replace(RegExp('\.' + className + '(\..*)*$'), '$1');
+			this.domNode && put(this.domNode, '!.' + className);
+		},
+
 		/*
 		 * Insert component's view into its own DOM-node
 		 */
