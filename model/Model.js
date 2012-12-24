@@ -163,6 +163,11 @@
 		}
 	);
 	Model.addRelation = function(relation){
+		// relation.sourceModel ("many" side in "one2many", ex: Todo)
+		// relation.sourcePropertyName (ex: assignee)
+		// relation.targetModel ("one" side in "one2many", ex: Person)
+		// relation.targetPropertyName (ex: todos)
+
 		//ajoute un getter sur la classe Model source
 		var getterName = "_"+relation.sourcePropertyName+"Getter";
 		if (!relation.sourceModel.prototype[getterName]){
@@ -178,8 +183,14 @@
 				var query = {'instanceof': relation.sourceModel};
 				query[relation.sourcePropertyName] = this;
 				var result = relation.sourceModel.store.query(query);
-				result.add = result.put = function(sourceInstance){
-					return sourceInstance.set(relation.sourcePropertyName, targetInstance);
+				var originalPut = result.put;
+				// any item added to this collection will have a relation to targetInstance
+				// is that really necessary ?
+				result.put = function(sourceInstance){
+					if (sourceInstance.get(relation.sourcePropertyName) !== targetInstance){
+						sourceInstance.set(relation.sourcePropertyName, targetInstance);
+					}
+					return originalPut.apply(result, arguments);
 				};
 				return result;
 			};
@@ -191,11 +202,26 @@
 				this[relation.sourcePropertyName] = typeof value === "string" ? value : value.getIdentity();
 			};
 		}
+
+		// augment target class store remove method to delete also related items
+		var targetStore = relation.targetModel.store;
+		var originalRemove = targetStore.remove;
+		targetStore.remove = function(id){
+			var item = targetStore.get(id);
+			if (item instanceof relation.targetModel){
+				var relatedInstances = item.get(relation.targetPropertyName);
+				relatedInstances.forEach(function(instance){
+					instance.delete();
+				});
+			}
+			originalRemove.apply(targetStore, arguments);
+		};
+
 	};
 
 	Model.addMany2ManyRelation = function(relationDef){
 		var IntermediaryModel = Model.extend();
-		
+
 		IntermediaryModel.addRelationTo(relationDef.targetModel, {
 			sourcePropertyName: relationDef.sourceAddRemoveName,
 			targetPropertyName: relationDef.targetGetName+"Relations",
@@ -204,7 +230,7 @@
 			sourcePropertyName: relationDef.targetAddRemoveName,
 			targetPropertyName: relationDef.sourceGetName+"Relations",
 		});
-		
+
 		//add a getter on target Model
 		relationDef.targetModel.prototype["_"+relationDef.targetGetName+"Getter"] = function(){
 			var relations = this.get(relationDef.targetGetName+"Relations");
@@ -215,7 +241,7 @@
 			relations.observe(function(relation, from, to){
 				if (to < 0) {
 					sourceInstances.remove(relation.get(relationDef.targetAddRemoveName).getIdentity());
-				} 
+				}
 				if (from < 0) {
 					sourceInstances.put(relation.get(relationDef.targetAddRemoveName));
 				}
@@ -241,7 +267,7 @@
 			});
 		};
 
-		
+
 
 		relationDef.sourceModel.prototype["_"+relationDef.sourceGetName+"Getter"] = function(){
 			var relations = this.get(relationDef.sourceGetName+"Relations");
@@ -252,10 +278,10 @@
 			relations.observe(function(rel, from, to){
 				if (to < 0) {
 					targetInstances.remove(rel.get(relationDef.sourceAddRemoveName).getIdentity());
-				} 
+				}
 				if (from < 0) {
 					targetInstances.put(rel.get(relationDef.sourceAddRemoveName));
-				} 
+				}
 			});
 			return targetInstances.query();
 		};
@@ -296,7 +322,7 @@
 
 		return IntermediaryModel;
 	};
-	
+
 	Model.initNewStore();
 	return Model;
 });

@@ -31,13 +31,19 @@ define([
 			},
 			load: function(){
 				var createInstance = function(rawItem){
-					var constructor = this.getConstructor(rawItem[this.constructorIdProperty]);
-					delete rawItem[this.constructorIdProperty];
-					return new constructor(rawItem);
 				};
 				var jsondata = localStorage[this.storageKey];
 				if (jsondata){
-					var data = JSON.parse(jsondata).map(createInstance.bind(this));
+					var data = [];
+					JSON.parse(jsondata).forEach(function(rawItem){
+						var constructor = this.getConstructor(rawItem[this.constructorIdProperty]);
+						if (typeof constructor !== "function") {
+							console.warn("No constructor provided for item", rawItem);
+						} else {
+							delete rawItem[this.constructorIdProperty];
+							data.push(new constructor(rawItem));
+						}
+					}.bind(this));
 					store.setData(data);
 				}
 			},

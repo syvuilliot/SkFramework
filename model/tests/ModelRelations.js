@@ -7,7 +7,7 @@
 	"SkFramework/store/Constructor",
 	"SkFramework/store/LocalStorage",
 	"SkFramework/store/SimpleQueryEngineGet",
-	"SkFramework/store/RqlQueryEngineGet",	
+	"SkFramework/store/RqlQueryEngineGet",
 ], function(doh, identical, Model, create, Memory, Constructor, LocalStorage, SimpleQueryEngineGet, RqlQueryEngineGet){
 
 	doh.i = doh.identical = function(expected, actual, sortArrays, hint){
@@ -42,11 +42,11 @@
 				return this.super.describe.call(this) + " and I work as " + this.get("job");
 			},
 		});
-		
+
 		window.Todo = create(Model, function Todo(){ //need to give a constructor name for Constructor(new LocalStorage) to work
 				Model.apply(this, arguments);
 		});
-		
+
 		window.Tag = create(Model, function Tag(){ //need to give a constructor name for Constructor(new LocalStorage) to work
 				Model.apply(this, arguments);
 		});
@@ -54,14 +54,14 @@
 		window.TodoTagRelation = create(Model, function TodoTagRelation(){ //need to give a constructor name for Constructor(new LocalStorage) to work
 				Model.apply(this, arguments);
 		});
-		
+
 		Todo.addRelationTo(Person, {
 			sourcePropertyName: "responsible",
 			targetPropertyName: "todos",
 			min: 1,
 			max: 1,
 		});
-		
+
 		TodoTagRelation.addRelationTo(Tag, {
 			sourcePropertyName: "tag",
 			targetPropertyName: "todosRelations",
@@ -120,7 +120,7 @@
 */	}
 
 	//************* Instances
-	function setUpInstances(){		
+	function setUpInstances(){
 		window.syv = new Employee({
 			id: "1",
 			name: "Syv",
@@ -137,43 +137,43 @@
 		// ant.add("father", syv);
 		// ant.add("mother", aur);
 		ant.save();
-		
+
 		// aur.add("conjoint", syv);
 		// aur.save();
-		
+
 		window.todo1 = new Todo({
 			id: "2",
 			title: "Concevoir la couche Model",
 		});
 		todo1.set("responsible", syv);
 		todo1.save();
-		
+
 		window.todo2 = new Todo({id: "3", title: "Concevoir la couche UI"});
 		todo2.set("responsible", syv);
 		todo2.save();
-		
+
 		window.todo3 = new Todo({title:"Lancer Maponaute"}).save();
 		// todo3.set("user", ket);
 		// todo3.save();
 		ket.get("todos").add(todo3).save();
-		
+
 		window.testTag = new Tag({label: "test"}).save();
 		window.coolTag = new Tag({label: "cool"}).save();
 		window.topTag = new Tag({label: "top"}).save();
-		
+
 		var todoTagRel1 = new TodoTagRelation({
 			todo: todo1,
 			tag: testTag
 		}).save();
 		todo1.get("tagsRelations").add(todoTagRel1).save();
-		
+
 		todo1.add("tags", coolTag).save();
 
 		testTag.get("todosRelations").add(new TodoTagRelation({todo: todo2})).save();
 	}
-	
+
 //******* Tests
-	
+
 	testSet = {
 		"Simple getter": function(t){
 			t.i(30, syv.get("age"), "syv should be 30");
@@ -199,14 +199,15 @@
 		"Thirty years old": function(t){
 			t.i([syv, aur], Model.store.query({age: 30}).slice(), true);
 		},
+		// TODO: add remove tests to check that related instances are also removed
 	/*
 	console.log("Le conjoint de syv est:", syv.get("conjoint"));
 	console.log("Le conjoint de Aurélie est:", aur.get("conjoint"));
 	console.log("Les enfants de Aurélie sont:", aur.get("children"));
 	*/
-		
+
 	};
-	
+
 	doh.register("Tests with Memory store", testSet, function setUp(){
 		// Model.store = new Memory({
 		// 	queryEngine: SimpleQueryEngineGet,
@@ -214,7 +215,7 @@
 		setUpModels();
 		setUpInstances();
 	});
-	
+
 	doh.register("Tests with LocalStorage store", testSet, function setUp(){
 		setUpModels();
 		Model.store = Constructor(new LocalStorage({
@@ -231,5 +232,5 @@
 		Model.store.clear();
 		setUpInstances();
 	});
-	
+
 });
