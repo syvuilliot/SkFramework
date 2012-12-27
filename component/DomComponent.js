@@ -90,6 +90,24 @@ define([
 				this._placeCallsOrder.push(arguments);
 			}
 		},
+		
+		/*
+		 * Process sizing of a sub-component
+		 */
+		_sizeComponent: function(component) {
+			if (isDomCmp(component)) {
+				component.size();
+			}
+		},
+		
+		/*
+		 * Self-sizing
+		 */
+		size: function() {
+			for (var c in this._placedComponents) {
+				this._sizeComponent(this._placedComponents[c]);
+			}
+		},
 
 		/*
 		 * Detach component's view from its own DOM-node
