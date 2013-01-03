@@ -194,6 +194,14 @@ define([
 				component.destroy();
 			}
 		},
+		
+		_unregisterComponent: function(id) {
+			delete this._components[id];
+			if (id in this._hardRefs) {
+				delete this[this._hardRefs[id]];
+			}
+		},
+		
 		/*
 		 * Delete a subcomponent
 		 *
@@ -204,11 +212,9 @@ define([
 			this._unbindComponent(id);
 			var comp = this._getComponent(id);
 			this._destroyComponent(comp);
-			delete this._components[id];
-			if (id in this._hardRefs) {
-				delete this[this._hardRefs[id]];
-			}
+			this._unregisterComponent(id);
 		},
+		
 		/*
 		 * Delete several subcomponents
 		 *
