@@ -30,8 +30,6 @@ define([
 				return r;
 			},
 			load: function(){
-				var createInstance = function(rawItem){
-				};
 				var jsondata = localStorage[this.storageKey];
 				if (jsondata){
 					var data = [];
@@ -54,9 +52,15 @@ define([
 					rawItem[this.constructorIdProperty] = constructorId;
 					return rawItem;
 				};
-				var jsondata = store.query().map(serialize.bind(this));
-				localStorage[this.storageKey] = JSON.stringify(jsondata);
-			}
+				var rawData = store.query().map(serialize.bind(this));
+				localStorage[this.storageKey] = JSON.stringify(rawData);
+			},
+			getJSON: function(){
+				return localStorage[this.storageKey];
+			},
+			setJSON: function(json){
+				localStorage[this.storageKey] = json;
+			},
 		});
 		return lang.mixin(wrappedStore, options);
 	};
