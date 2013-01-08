@@ -14,10 +14,12 @@ define([
 		},
 
 		addChild: function(component, position){
-			//register child
-			this.children.push(component);
-			//place it
-			this._placeChild(component, position);
+			if (this.children.indexOf(component) == -1) {
+				//register child
+				this.children.push(component);
+				//place it
+				this._placeChild(component, position);
+			}
 			return this;
 		},
 		removeChild: function (component) {
