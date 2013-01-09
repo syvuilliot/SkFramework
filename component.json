@@ -1,0 +1,10 @@
+{
+  "name": "ks",
+  "version": "0.1.0",
+  "dependencies": {
+    "dojo": "1.8.3",
+    "dijit": "1.8.3",
+    "lodash": "#1.0.0-rc.3",
+    "put-selector": "kriszyp/put-selector#0.3.2"
+  }
+}
