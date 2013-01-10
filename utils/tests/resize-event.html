@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Resize event on DOM elements</title>
+	
+</head>
+<body>
+    <script data-dojo-config="async: true, isDebug: true" src="/dojo/dojo.js"></script>
+    <script>
+    	require([
+    		'../onResize.js'
+    	], function(onResize) {
+    		var textarea = document.body.appendChild(document.createElement('textarea'));
+    		window.onResizeHandler = onResize(textarea, function() {
+    			console.log('resize');
+    		}, {
+    			delay: 250
+    		});
+    	});
+	</script>
+</body>
+</html>
