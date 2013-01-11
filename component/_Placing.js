@@ -3,12 +3,13 @@ define([
 ], function(
 	declare
 ) {
+	"use strict";
 	/*
 	 * Mixin adding placement API for Component
 	 */
 	return declare([], {
 		constructor: function() {
-			this._placement = [];
+			this._placedComponents = [];
 		},
 		
 		/*
@@ -17,7 +18,7 @@ define([
 		 * @param {Component}	component	Component
 		 */
 		_placeIndex: function(component) {
-			return this._placement.indexOf(component);
+			return this._placedComponents.indexOf(component);
 		},
 		
 		/*
@@ -38,18 +39,20 @@ define([
 		 */
 		_placeComponent: function(component, options) {
 			options = (options === undefined) ? 'last' : options;
-			var comp = this._getComponent(component);
+			var comp = this._getComponent(component),
+				index;
+			
 			if (comp) {
-				var index = this._placeIndex(comp);
+				index = this._placeIndex(comp);
 				if (index > -1) {
 					// Component already placed, remove it from array
-					this._placement.splice(index, 1);
+					this._placedComponents.splice(index, 1);
 				}
-				if (options == 'last') {
-					this._placement.push(comp);
+				if (options === 'last') {
+					this._placedComponents.push(comp);
 				} else {
 					// options should be an index
-					this._placement.splice(options, 0, comp);
+					this._placedComponents.splice(options, 0, comp);
 				}
 				this._doPlaceComponent(comp, options);
 			}
@@ -62,7 +65,8 @@ define([
 		 * @param {String|Object}	[options="last"]	Placement options
 		 */
 		_placeComponents: function(components, options) {
-			for (var c in components) {
+			var c;
+			for (c = 0; c < components.length; c++) {
 				this._placeComponent(components[c], options);
 			}
 		},
@@ -82,13 +86,14 @@ define([
 		 * @param {Component|String}	component	Component or id
 		 */
 		_unplaceComponent: function(component) {
-			var comp = this._getComponent(component);
+			var comp = this._getComponent(component),
+				index;
 			if (comp) {
-				// remove from _placement
-				var index = this._placeIndex(comp);
+				index = this._placeIndex(comp);
 				if (index > -1) {
-					this._placement.splice(index, 1);
 					this._doUnplaceComponent(comp);
+					// remove from _placedComponents
+					this._placedComponents.splice(index, 1);
 				}
 			}
 		},
@@ -99,7 +104,8 @@ define([
 		 * @param {Array}			components			List of Component objects and/or ids
 		 */
 		_unplaceComponents: function(components) {
-			for (var c in components) {
+			var c;
+			for (c = 0; c < components.length; c++) {
 				this._unplaceComponent(components[c]);
 			}
 		},

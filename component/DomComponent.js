@@ -1,11 +1,11 @@
 define([
-	'dojo/_base/declare',
+	'dojo/_base/declare',	'dojo/dom',
 	'dojo/dom-construct',
 	'put-selector/put',
 	'../utils/string',
 	'./Component',	'./_Placing'
 ], function(
-	declare,
+	declare,				dom,
 	domConstruct,
 	put,
 	str,
@@ -13,7 +13,7 @@ define([
 ) {
 	var isDomCmp = function(cmp) {
 		return cmp instanceof DomComponent;
-	}
+	};
 
 	/*
 	 * Component using a DOM-node as view
@@ -23,39 +23,32 @@ define([
 		domTag: "div",
 		domAttrs: null,
 
+		/*
+		 * Whether or not this component is part of the main DOM tree
+		 */
+		inDom: false,
+
 		constructor: function() {
-			this._placedComponents = [];
-			this._placeCallsOrder = [];
+			if (!this.domNode) {
+				this.domNode = this.domAttrs ? put(this.domTag, this.domAttrs) : put(this.domTag);
+			} else if (this.domNode.parentNode) {
+				this.set('inDom', true);
+			}
+		},
+		
+		_domNodeSetter: function(node) {
+			this.domNode = dom.byId(node);
 		},
 		
 		_addComponent: function(cmp, id) {
-			var cmp = this.inherited(arguments);
-			if (isDomCmp(cmp)) {
+			var comp = this.inherited(arguments);
+			if (isDomCmp(comp)) {
 				// add CSS class matching the component id, hyphenated
-				id && cmp.addClass(str.hyphenate(id));
+				if (id) {
+					comp.addClass(str.hyphenate(id));
+				}
 			}
-			return cmp;
-		},
-
-		render: function() {
-			if (!this.domNode) {
-				this._render();
-			}
-			return this.domNode;
-		},
-
-		_render: function() {
-			this.domNode = this.domAttrs ? put(this.domTag, this.domAttrs) : put(this.domTag);
-		},
-
-		addClass: function(className) {
-			this.domTag += '.' + className;
-			this.domNode && put(this.domNode, '.' + className);
-		},
-
-		removeClass: function(className) {
-			this.domTag = this.domTag.replace(RegExp('\.' + className + '(\..*)*$'), '$1');
-			this.domNode && put(this.domNode, '!.' + className);
+			return comp;
 		},
 
 		/*
@@ -67,28 +60,34 @@ define([
 			}
 		},
 
-		_setComponentInDom: function(component, value) {
+		/*
+		 * Detach component's view from its own DOM-node
+		 */
+		_detachComponentFromDom: function (component) {
 			if (isDomCmp(component)) {
-				component.set('inDom', value);
+				this.domNode.removeChild(component.domNode);
 			}
 		},
 
 		/*
 		 * Place sub-components' views in its own view
 		 *
-		 * @param {String|Component} component Component instance or id
-		 * @param options: placement options (to be defined)
+		 * @param {Component}	component	Component instance
+		 * @param {Integer|String}		options		Placement options (TODO: to be specified)
 		 */
 		_doPlaceComponent: function(component, options) {
-			if (this.inDom) {
-				component = this._getComponent(component);
-				this._insertComponentIntoDom(component, options);
-				this._setComponentInDom(component, true);
-				this._placedComponents.push(component);
-			}
-			else {
-				this._placeCallsOrder.push(arguments);
-			}
+			this._insertComponentIntoDom(component, options);
+			this._setComponentInDom(component, this.get('inDom'));
+		},
+
+		/*
+		 * Unplace sub-components' views from its own view
+		 *
+		 * @param {Component}	component	Component instance
+		 */
+		_doUnplaceComponent: function(component) {
+			this._detachComponentFromDom(component);
+			this._setComponentInDom(component, false);
 		},
 		
 		/*
@@ -100,60 +99,62 @@ define([
 			}
 		},
 		
+		_inDomSetter: function(value) {
+			if (value === undefined) {
+				value = true;
+			}
+			if (value !== this.inDom) {
+				this.inDom = value;
+				// Inform subcomponents of the new state
+				for (c = 0; c < this._placedComponents.length; c++) {
+					this._setComponentInDom(this._placedComponents[c], value);
+				}
+			}
+		},
+
+		/*
+		 * Inform sub-component whether it is part of the main DOM tree
+		 */
+		_setComponentInDom: function(component, value) {
+			if (isDomCmp(component)) {
+				component.set('inDom', value);
+			}
+		},
+		
+		/*
+		 * Public methods
+		 */
+
+		/*
+		 * Deprecated, use this.domNode instead
+		 */
+		render: function() {
+			return this.domNode;
+		},
+
+		/*
+		 * Add a CSS class to DOM node
+		 */
+		addClass: function(className) {
+			this.domTag += '.' + className;
+			put(this.domNode, '.' + className);
+		},
+
+		/*
+		 * Remove a CSS class from DOM node
+		 */
+		removeClass: function(className) {
+			this.domTag = this.domTag.replace(new RegExp('\.' + className + '(\..*)*$'), '$1');
+			put(this.domNode, '!.' + className);
+		},
+		
 		/*
 		 * Self-sizing
 		 */
 		size: function() {
-			for (var c in this._placedComponents) {
+			var c;
+			for (c = 0; c < this._placedComponents.length; c++) {
 				this._sizeComponent(this._placedComponents[c]);
-			}
-		},
-
-		/*
-		 * Detach component's view from its own DOM-node
-		 */
-		_detachComponentFromDom: function (component) {
-			if (isDomCmp(component)) {
-				if (component.domNode) this.domNode.removeChild(component.domNode);
-			}
-		},
-
-		/*
-		 * Unplace sub-components' views from its own view
-		 *
-		 * - component: component instance or name
-		 */
-		_doUnplaceComponent: function(component) {
-			if (this.domNode) {
-				component = this._getComponent(component);
-				this._detachComponentFromDom(component);
-				this._setComponentInDom(component, false);
-
-				// remove from _placedComponents
-				var index = this._placedComponents.indexOf(component);
-				this._placedComponents.splice(index, 1);
-			}
-		},
-
-		inDom: false,
-		_inDomSetter: function(value) {
-			if (value === undefined) {
-				value = true;
-			};
-			if (value != this.inDom) {
-				this.inDom = value;
-				if (value) {
-					// this component has been inserted in DOM document
-					// insert its children for real now
-					this._placeCallsOrder.forEach(function(args) {
-						this._doPlaceComponent.apply(this, args);
-					}.bind(this));
-					this._placeCallsOrder = [];
-				}
-				// Inform subcomponents of the new state
-				for (var c in this._placedComponents) {
-					this._setComponentInDom(this._placedComponents[c], value);
-				}
 			}
 		}
 	});
