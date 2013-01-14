@@ -7,11 +7,16 @@ define([
 	Stateful,			Evented,		Destroyable
 ) {
 	var Component = declare([Stateful, Evented, Destroyable], {
+		_initPresenter: function() {
+			return new Stateful();
+		},
+		
 		constructor: function(params) {
+			this._presenter = this._initPresenter();
+			
 			// Sets constructor params right now, not in postcript()
 			if (params) { this.set(params); }
 			
-			this._presenter = new Stateful();
 			this._components = {};
 			this._hardRefs = {};
 			this._bindings = {};
