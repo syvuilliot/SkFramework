@@ -3,7 +3,6 @@ define([
 ], function(
 	declare
 ) {
-	"use strict";
 	/*
 	 * Mixin adding placement API for Component
 	 */
