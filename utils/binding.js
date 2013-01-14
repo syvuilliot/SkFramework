@@ -1,11 +1,9 @@
 define([
 	"dojo/_base/declare",
 	"dojo/_base/lang",
-	"SkFramework/utils/statefulSync",
+	"./statefulSync",
 	"dojo/on",
-	"dojo/dom-style",
-
-
+	"dojo/dom-style"
 ], function(declare, lang, statefulSync, on, domStyle){
 
 	var binding = {};
