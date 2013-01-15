@@ -158,18 +158,22 @@ define([
 		},
 
 		/*
-		 * Register binding handlers for a subcomponent that  will be canceled when deleting the subcomponent
+		 * Register binding handlers for a subcomponent that will be canceled when deleting the subcomponent
 		 *
 		 * @param {Component|String}	component	Component or id
 		 * @param {Array}				bindings	Binding handlers
+		 * @param {String}				[name]		Name of binding, useful for future reference
 		 */
-		_bindComponent: function(component, bindings) {
+		_bindComponent: function(component, bindings, name) {
 			var id = this._getComponentId(component);
 			if (id) {
 				if (!lang.isArray(bindings)) {
 					bindings = [bindings];
 				}
-				this._bindings[id] = this.own.apply(this, bindings);
+				if (!this._bindings.hasOwnProperty(id)) {
+					this._bindings[id] = {};
+				}
+				this._bindings[id][name] = this.own.apply(this, bindings);
 			}
 		},
 		/*
@@ -187,13 +191,22 @@ define([
 		 * Remove bindings of a subcomponent
 		 *
 		 * @param {Component|String}	component	Component or id
+		 * @param {String}				[name]		Name of binding to remove
 		 */
-		_unbindComponent: function(component) {
-			var id = this._getComponentId(component);
-			array.forEach(this._bindings[id], function(handle) {
+		_unbindComponent: function(component, name) {
+			var id = this._getComponentId(component),
+				bindings = this._bindings[id] && this._bindings[id][name];
+
+			array.forEach(bindings, function(handle) {
 				handle.remove();
 			});
-			delete this._bindings[id];
+			if (name) {
+				if (this._bindings[id]) {
+					delete this._bindings[id][name];
+				}
+			} else {
+				delete this._bindings[id];
+			}
 		},
 
 		/*

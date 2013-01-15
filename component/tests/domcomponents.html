@@ -4,7 +4,6 @@
 	<meta charset="utf-8">
 	<title>Dynamic creation of DOM components and subcomponents</title>
 	
-	<script src="/SkFramework/utils/harmony-collections.js" type="text/javascript"></script>
 	<style>
 		.dgrid-header {
 			font-size: 36px;
@@ -32,7 +31,7 @@
 			window.main = new Component();
 			main._addComponents({
 				displayTitleBtn: put('button', "Place/unplace title"),
-				registerTitleBtn: put('button', "Add/remove title"),
+				registerTitleBtn: put('button', "Add/delete title"),
 				grid: Grid({ columns: ['Title'] }),
 				displayGridBtn: put('button', "Place/unplace grid")
 			});
@@ -59,7 +58,7 @@
 			var titleRegistered = false;
 			on(main._components.registerTitleBtn, 'click', function() {
 				if (titleRegistered) {
-					main._removeComponent('title');
+					main._deleteComponent('title');
 				} else {
 					main._addComponents({
 						title: put('h1', "Test")

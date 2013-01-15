@@ -1,13 +1,11 @@
 define([
-	'dojo/_base/declare',	'dojo/dom',
-	'dojo/dom-construct',
-	'put-selector/put',
+	'dojo/_base/declare',
+	'dojo/dom',	'dojo/dom-construct',	'put-selector/put',
 	'../utils/string',
 	'./Component',	'./_Placing'
 ], function(
-	declare,				dom,
-	domConstruct,
-	put,
+	declare,
+	dom,		domConstruct,			put,
 	str,
 	Component,		_Placing
 ) {
@@ -27,6 +25,9 @@ define([
 		 * Whether or not this component is part of the main DOM tree
 		 */
 		inDom: false,
+		
+		width: undefined,
+		height: undefined,
 
 		constructor: function() {
 			if (!this.domNode) {
@@ -78,6 +79,7 @@ define([
 		_doPlaceComponent: function(component, options) {
 			this._insertComponentIntoDom(component, options);
 			this._setComponentInDom(component, this.get('inDom'));
+			this._childSizeChanged();
 		},
 
 		/*
@@ -88,6 +90,7 @@ define([
 		_doUnplaceComponent: function(component) {
 			this._detachComponentFromDom(component);
 			this._setComponentInDom(component, false);
+			this._childSizeChanged();
 		},
 		
 		/*
@@ -95,7 +98,7 @@ define([
 		 */
 		_sizeComponent: function(component) {
 			if (isDomCmp(component)) {
-				component.size();
+				component.updateSize();
 			}
 		},
 		
@@ -110,6 +113,9 @@ define([
 				for (c = 0; c < this._placedComponents.length; c += 1) {
 					this._setComponentInDom(this._placedComponents[c], value);
 				}
+				if (value) {
+					this.updateSize(false);
+				}
 			}
 		},
 
@@ -119,6 +125,12 @@ define([
 		_setComponentInDom: function(component, value) {
 			if (isDomCmp(component)) {
 				component.set('inDom', value);
+				if (value) {
+					// listen for size changes on child
+					this._bindComponent(component, component.on('sizechange', this._childSizeChanged.bind(this)), 'sizechange');
+				} else {
+					this._unbindComponent(component, 'sizechange');
+				}
 			}
 		},
 		
@@ -149,13 +161,48 @@ define([
 			put(this.domNode, '!.' + className);
 		},
 		
-		/*
-		 * Self-sizing
-		 */
-		size: function() {
+		_childSizeChanged: function() {
+			if (this._sizing) { return; }
+			
+			this.updateSize(false);
+			this._updateChildrenSize();
+		},
+		
+		_updateChildrenSize: function() {
+			this._sizing = true;
 			var c;
 			for (c = 0; c < this._placedComponents.length; c += 1) {
 				this._sizeComponent(this._placedComponents[c]);
+			}
+			this._sizing = false;
+		},
+		
+		/*
+		 * Self-sizing
+		 */
+		updateSize: function(sizeDescendants) {
+			if (this._sizing || ! this.inDom) { return; }
+			
+			sizeDescendants = (sizeDescendants === undefined) ? true : sizeDescendants;
+			var c,
+				sizeChanged = false,
+				newWidth = this.domNode.offsetWidth,
+				newHeight = this.domNode.offsetHeight;
+				
+			if (this.get('width') !== newWidth) {
+				this.set('width', newWidth);
+				sizeChanged = true;
+			}
+			if (this.get('height') !== newHeight) {
+				this.set('height', newHeight);
+				sizeChanged = true;
+			}
+			
+			if (sizeChanged) {
+				if (sizeDescendants) {
+					this._updateChildrenSize();
+				}
+				this.emit('sizechange');
 			}
 		}
 	});
