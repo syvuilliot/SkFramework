@@ -106,7 +106,8 @@ define([
 			if (value !== this.inDom) {
 				this.inDom = value;
 				// Inform subcomponents of the new state
-				for (c = 0; c < this._placedComponents.length; c++) {
+				var c;
+				for (c = 0; c < this._placedComponents.length; c += 1) {
 					this._setComponentInDom(this._placedComponents[c], value);
 				}
 			}
@@ -153,7 +154,7 @@ define([
 		 */
 		size: function() {
 			var c;
-			for (c = 0; c < this._placedComponents.length; c++) {
+			for (c = 0; c < this._placedComponents.length; c += 1) {
 				this._sizeComponent(this._placedComponents[c]);
 			}
 		}
