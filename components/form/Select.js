@@ -30,9 +30,6 @@ define([
 				labelProp: params.labelProp || "label",
 				valueProp: params.valueProp || "value",
 			};
-		},
-		_render: function(){
-			this.inherited(arguments);
 			this._cancelValueBinding = bind(this, "domNode.value", {
 				"<->": "_presenter.value",
 				// trace: true,
