@@ -65,8 +65,7 @@ define([
 					rendererArgs: configLine.rendererArgs,
 				});
 			},
-			_render: function(){
-				this.inherited(arguments);
+			constructor: function(){
 				this.own(on(this.domNode, "click", function(){
 					this.emit("selected");
 				}.bind(this)));

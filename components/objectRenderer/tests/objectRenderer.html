@@ -45,7 +45,6 @@
 			"frb/bind",
 			"dojo/on",
 			"frb/dom",
-			'dojo/domReady!',
 		], function(ObjectRenderer, declare, DomComponent, bind, on){
 
 			window.personRenderer = new ObjectRenderer({
@@ -154,8 +153,7 @@
 
 			Input = declare(DomComponent, {
 				domTag: "input",
-				_render: function(){
-					this.inherited(arguments);
+				constructor: function(){
 					this._cancelValueBinding = bind(this, "domNode.value", {"<->": "_presenter.value"});
 				},
 				destroy: function(){
@@ -167,8 +165,7 @@
 				domAttrs: {
 					type: "number",
 				},
-				_render: function(){
-					this.inherited(arguments);
+				constructor: function(){
 					this._cancelValueBinding();//cancel binding from Input
 					this._cancelValueBinding = bind(this, "+domNode.value", {"<->": "_presenter.value"});//coerce to number
 				},

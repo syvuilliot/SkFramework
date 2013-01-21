@@ -45,7 +45,7 @@
 			"frb/bind",
 			"dojo/on",
 			"frb/dom",
-			'dojo/domReady!',
+			// 'dojo/domReady!',
 		], function(Repeater, declare, DomComponent, bind, on){
 
 			window.repeater = new Repeater({
@@ -124,8 +124,7 @@
 
 			InputComponent = declare(DomComponent, {
 				domTag: "input",
-				_render: function(){
-					this.inherited(arguments);
+				constructor: function(){
 					this._cancelValueBinding = bind(this, "domNode.value", {"<->": "_presenter.value.name"});
 				},
 				destroy: function(){

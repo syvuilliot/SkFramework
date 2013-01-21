@@ -32,8 +32,7 @@ define([
 		collectionProperty: "value",
 		//default class for sub components that binds its value to its innerHTML
 		componentConstructor: declare(DomComponent, {
-			_render: function(){
-				this.inherited(arguments);
+			constructor: function(){
 				this._cancelValueBinding = bind(this, "domNode.innerHTML", {"<-": "_presenter.value"});
 			},
 			destroy: function(){
@@ -83,8 +82,8 @@ define([
 		},
 		createComponent: function(value){
 			var args = this.componentConstructorArguments;
-			args.value = value;
 			var comp = new this.componentConstructor(args);
+			comp.set("value", value);
 			return comp;
 		},
 		destroy: function(){
