@@ -17,6 +17,13 @@ define([
 	};
 	
 	return declare([], {
+		_isComponentSupported: function(component) {
+			if (isDomNode(component)) {
+				return true;
+			}
+			return this.inherited(arguments);
+		},
+		
 	    _addComponent: function(cmp, id) {
             var cmp = this.inherited(arguments);
             if (isDomNode(cmp)) {

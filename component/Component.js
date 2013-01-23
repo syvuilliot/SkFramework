@@ -6,6 +6,10 @@ define([
 	declare,				lang,				array,
 	Stateful,			Evented,		Destroyable
 ) {
+	function isComponent(component) {
+		return component instanceof Component;
+	}
+	
 	var Component = declare([Stateful, Evented, Destroyable], {
 		_initPresenter: function() {
 			return new Stateful();
@@ -50,34 +54,28 @@ define([
 				return this._presenter.watch.apply(this._presenter, arguments);
 			}
 		},
+		
+		/*
+		 * Check whether a component is supported as a sub-component
+		 * 
+		 * @param {Object}	component	Component instance
+		 * @return {Boolean}	True if supported, False otherwise
+		 */
+		_isComponentSupported: function(component) {
+			return isComponent(component);
+		},
 
 		/*
 		 * Build a component from a configuration object
 		 *
-		 * configObject: can be one of the following:
-		 * 	- Class of component
-		 *  - {
-		 * 		constructor: Class,
-		 * 		classOption1: ...,
-		 * 		classOption2: ...,
-		 * 		...
-		 *    }
-		 * 	- instance of component (return as is)
+		 * @param {Object|Factory} componentDef		component instance or factory
 		 */
-		_buildComponent: function(configObject, options) {
-			if (configObject instanceof Function) {
-				// configObject is a class
-				return new configObject(options);
-			}
-			if (_.isPlainObject(configObject)) {
-				var configOptions = lang.mixin({}, configObject);
-				delete configOptions.constructor;
-
-				return new configObject.constructor(lang.mixin(configOptions, options));
-			}
-			else {
-				// configObject is an instance
-				return configObject;
+		_buildComponent: function(componentDef, options) {
+			if (componentDef instanceof Function) {
+				return componentDef();
+			} else {
+				// componentDef is an instance
+				return componentDef;
 			}
 		},
 
@@ -92,8 +90,17 @@ define([
 		 * @return {String} Id of subcomponent
 		 */
 		_getComponentId: function(component) {
-			if (lang.isString(component) && this._components.hasOwnProperty(component)) {
-				return component;
+			if (lang.isString(component)) {
+				// argument is an id
+				if (this._components.hasOwnProperty(component)) {
+					// a component is registered with this id
+					return component;
+				} else {
+					
+					if (this._autoAddComponent(component)) {
+						return component;
+					}
+				}
 			} else {
 				for (var id in this._components) {
 					if (this._components[id] === component) {
@@ -127,7 +134,12 @@ define([
 		 * 		Registering options:
 		 * 			- noHardRef: prevent creation of a private attribute for quick access to the subcomponent (ex: this._sub1)
 		 */
-		_addComponent: function(component, id, options){
+		_addComponent: function(component, id, options) {
+			component = this._buildComponent(component);
+			if (!this._isComponentSupported(component)) {
+				console.warn("Unsupported component", component);
+			}
+			
 			id = id || this.generateId();
 			this._components[id] = component;
 
@@ -153,10 +165,25 @@ define([
 		 */
 		_addComponents: function(components, options) {
 			Object.keys(components).forEach(function(id){
-				this._addComponent(this._buildComponent(components[id]), id);
+				this._addComponent(components[id], id);
 			}.bind(this));
 		},
-
+		
+		/*
+		 * Auto-register a component declared as a private attribute on self
+		 * @param {String}		[id]		Id of component
+		 * @return {Component|undefined}	Subcomponent if success
+		 */
+		_autoAddComponent: function(id) {
+			// check whether a private property on self matches given id
+			var attrName = '_' + id;
+			if (this[attrName]) {
+				var cmp = this[attrName];
+				this[attrName] = undefined;
+				return this._addComponent(cmp, id);
+			}
+		},
+		
 		/*
 		 * Register binding handlers for a subcomponent that will be canceled when deleting the subcomponent
 		 *
@@ -215,7 +242,7 @@ define([
 		 * @param {Component|String}	component	Component
 		 */
 		_destroyComponent: function(component) {
-			if (component instanceof Component) {
+			if (isComponent(component)) {
 				component.destroy();
 			}
 		},

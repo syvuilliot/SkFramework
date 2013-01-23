@@ -13,6 +13,13 @@ define([
 	};
 	
 	return declare([], {
+		_isComponentSupported: function(component) {
+			if (isDijit(component)) {
+				return true;
+			}
+			return this.inherited(arguments);
+		},
+		
 		_insertComponentIntoDom: function(component, option) {
 			if (isDijit(component)) {
 				dom.place(component.domNode, this.domNode, option);
