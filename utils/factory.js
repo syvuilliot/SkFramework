@@ -9,7 +9,7 @@ define([
 		};
 	};
 	
-	fn.new = fn.new_ = function() {
+	fn.new_ = function() {
 		var args = arguments;
 		return function() {
 			return new (Function.prototype.bind.apply(args[0], args));

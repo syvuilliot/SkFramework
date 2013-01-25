@@ -11,12 +11,14 @@ define([
 	}
 	
 	var Component = declare([Stateful, Evented, Destroyable], {
-		_initPresenter: function() {
+		_presenter: function() {
 			return new Stateful();
 		},
 		
 		constructor: function(params) {
-			this._presenter = this._initPresenter();
+			if (this._presenter instanceof Function) {
+				this._presenter = this._presenter();
+			}
 			
 			// Sets constructor params right now, not in postcript()
 			if (params) { this.set(params); }
@@ -63,20 +65,6 @@ define([
 		 */
 		_isComponentSupported: function(component) {
 			return isComponent(component);
-		},
-
-		/*
-		 * Build a component from a configuration object
-		 *
-		 * @param {Object|Factory} componentDef		component instance or factory
-		 */
-		_buildComponent: function(componentDef, options) {
-			if (componentDef instanceof Function) {
-				return componentDef();
-			} else {
-				// componentDef is an instance
-				return componentDef;
-			}
 		},
 
 		generateId: function() {
@@ -128,14 +116,16 @@ define([
 		/*
 		 * Register sub-components
 		 *
-		 * @param {Component}	component	Subcomponent to be added
+		 * @param {Component|Function} component	Component instance to be added. Can also be a function returning a component instance.
 		 * @param {String}		[id]		Id of component
 		 * @param {Object}		[options]
 		 * 		Registering options:
 		 * 			- noHardRef: prevent creation of a private attribute for quick access to the subcomponent (ex: this._sub1)
 		 */
 		_addComponent: function(component, id, options) {
-			component = this._buildComponent(component);
+			if (component instanceof Function) {
+				component = component();
+			}
 			if (!this._isComponentSupported(component)) {
 				console.warn("Unsupported component", component);
 			}
