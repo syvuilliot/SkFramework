@@ -170,7 +170,9 @@ define([
 				if (!this._bindings.hasOwnProperty(id)) {
 					this._bindings[id] = {};
 				}
-				this._bindings[id][name] = this.own.apply(this, bindings);
+				this._bindings[id][name] = this.own.apply(this, bindings.map(function(binding) {
+					return binding instanceof Function ? binding() : binding;
+				}));
 			}
 		},
 		/*
