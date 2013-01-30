@@ -83,11 +83,6 @@ define([
 				if (this._components.hasOwnProperty(component)) {
 					// a component is registered with this id
 					return component;
-				} else {
-					
-					if (this._autoAddComponent(component)) {
-						return component;
-					}
 				}
 			} else {
 				for (var id in this._components) {
@@ -157,21 +152,6 @@ define([
 			Object.keys(components).forEach(function(id){
 				this._addComponent(components[id], id);
 			}.bind(this));
-		},
-		
-		/*
-		 * Auto-register a component declared as a private attribute on self
-		 * @param {String}		[id]		Id of component
-		 * @return {Component|undefined}	Subcomponent if success
-		 */
-		_autoAddComponent: function(id) {
-			// check whether a private property on self matches given id
-			var attrName = '_' + id;
-			if (this[attrName]) {
-				var cmp = this[attrName];
-				this[attrName] = undefined;
-				return this._addComponent(cmp, id);
-			}
 		},
 		
 		/*
