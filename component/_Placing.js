@@ -1,6 +1,8 @@
 define([
+	'lodash/lodash',
 	'dojo/_base/declare'
 ], function(
+	_,
 	declare
 ) {
 	/*
@@ -38,8 +40,20 @@ define([
 		 */
 		_placeComponent: function(component, options) {
 			options = (options === undefined) ? 'last' : options;
-			var comp = this._getComponent(component),
+			var comp,
 				index;
+			if (_(component).isPlainObject()) {
+				for (var ctnrId in component) {
+					var container = this._getComponent(ctnrId);
+					if (container) {
+						comp = container.addChildren(this._getComponents(component[ctnrId]));
+					}
+					// only one key is consumed, since object configuration is supposed to represent one container
+					break;
+				}
+			} else {
+				comp = this._getComponent(component);
+			}
 			
 			if (comp) {
 				index = this._placeIndex(comp);
@@ -56,17 +70,18 @@ define([
 				this._doPlaceComponent(comp, options);
 			}
 		},
-		
+
 		/*
 		 * Place several subcomponents
 		 * 
-		 * @param {Array}			components			List of Component objects and/or ids
+		 * @param {Array}			config				Placement configuration
 		 * @param {String|Object}	[options="last"]	Placement options
 		 */
-		_placeComponents: function(components, options) {
-			var c;
-			for (c = 0; c < components.length; c++) {
-				this._placeComponent(components[c], options);
+		_placeComponents: function(config, options) {
+			var c, item, container, ctnrId;
+			for (c = 0; c < config.length; c++) {
+				item = config[c];
+				this._placeComponent(item, options);
 			}
 		},
 		
