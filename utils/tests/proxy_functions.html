@@ -123,7 +123,16 @@
 			syvAdditional.address.city = "Choisy le roi";
 			console.assert(fullSyv.address.city === "Choisy le roi");
 
-
+			// that we can encapsulate in yet another proxy to expose only one property for example
+			fullSyvProxy = {
+				syv: fullSyv,
+			};
+			proxy.prop(fullSyvProxy, "syv", "name");
+			fullSyvProxy.name = "syv";
+			console.assert(fullSyvProxy.name === "syv");
+			console.assert(fullSyv.name === "syv");
+			console.assert(syv.name === "syv");
+			console.assert(fullSyvProxy.age === undefined);
 
 		});
 
