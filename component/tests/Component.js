@@ -73,7 +73,7 @@ define([
 			// Remove sub2
 			this.main._deleteComponent('sub2');
 			
-			doh.f(this.main._components.sub2, "sub2 has correctly been removed");
+			doh.f(this.main._registeredComponents.sub2, "sub2 has correctly been removed");
 			doh.is(this.main._sub2, 'occupied', "'_sub2' private attribute still there");
 			doh.f(this.main._bindings.sub2, "sub2's binding has correctly been removed");
 			doh.t(this.sub2BindingRemoved, "sub2's binding has correctly been deactivated");

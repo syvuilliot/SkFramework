@@ -15,21 +15,34 @@ define([
 			return new Stateful();
 		},
 		
+		/*
+		 * Components definitions
+		 */
+		_components: {},
+		
 		constructor: function(params) {
-			if (this._presenter instanceof Function) {
-				this._presenter = this._presenter();
-			}
+			this._presenter = this._getFactoryResult(this._presenter);
 			
 			// Sets constructor params right now, not in postcript()
 			if (params) { this.set(params); }
 			
-			this._components = {};
+			this._registeredComponents = {};
 			this._hardRefs = {};
 			this._bindings = {};
 		},
 		
 		postscript: function() {
 			// Don't do anything, constructor params are already set
+		},
+		
+		/*
+		 * 
+		 */
+		_getFactoryResult: function(factory) {
+			if (factory instanceof Function) {
+				return factory.bind(this)();
+			}
+			return factory;
 		},
 
 		get: function(prop) {
@@ -78,20 +91,29 @@ define([
 		 * @return {String} Id of subcomponent
 		 */
 		_getComponentId: function(component) {
+			var id, cmp;
 			if (lang.isString(component)) {
 				// argument is an id
-				if (this._components.hasOwnProperty(component)) {
+				if (this._registeredComponents.hasOwnProperty(component)) {
 					// a component is registered with this id
-					return component;
+					id = component;
+				} else {
+					// no component registered with this id,
+					// see if 
+					cmp = this._addComponent(component);
+					if (cmp) {
+						id = component;
+					}
 				}
+				return id;
 			} else {
-				for (var id in this._components) {
-					if (this._components[id] === component) {
+				for (id in this._registeredComponents) {
+					if (this._registeredComponents[id] === component) {
 						return id;
 					}
 				}
+				console.warn('Unknown component', component);
 			}
-			console.warn('Unknown component or id:', component);
 		},
 
 		/*
@@ -104,8 +126,25 @@ define([
 		_getComponent: function(component) {
 			var id = this._getComponentId(component);
 			if (id) {
-				return this._components[id];
+				return this._registeredComponents[id];
 			}
+		},
+		
+		/*
+		 * Get a list of subcomponents
+		 * 
+		 * @param {Array}	components	List of component instances or ids
+		 * @return {Array}	List of subcomponent instances
+		 */
+		_getComponents: function(components) {
+			var result = [];
+			for (var c in components) {
+				var cmp = this._getComponent(components[c]);
+				if (cmp) {
+					result.push(cmp);
+				}
+			}
+			return result;
 		},
 
 		/*
@@ -118,15 +157,23 @@ define([
 		 * 			- noHardRef: prevent creation of a private attribute for quick access to the subcomponent (ex: this._sub1)
 		 */
 		_addComponent: function(component, id, options) {
-			if (component instanceof Function) {
-				component = component();
+			if (lang.isString(component)) {
+				// argument is supposed to be an id, check if defined in _components
+				if (this._components.hasOwnProperty(component)) {
+					return this._addComponent(this._components[component], component);
+				} else {
+					console.warn('Unknown id', component);
+					return;
+				}
 			}
+			
+			component = this._getFactoryResult(component);
 			if (!this._isComponentSupported(component)) {
 				console.warn("Unsupported component", component);
 			}
 			
 			id = id || this.generateId();
-			this._components[id] = component;
+			this._registeredComponents[id] = component;
 
 			if (!options || !options.noHardRef) {
 				var ref = '_' + id;
@@ -164,15 +211,14 @@ define([
 		_bindComponent: function(component, bindings, name) {
 			var id = this._getComponentId(component);
 			if (id) {
+				bindings = this._getFactoryResult(bindings);
 				if (!lang.isArray(bindings)) {
 					bindings = [bindings];
 				}
 				if (!this._bindings.hasOwnProperty(id)) {
 					this._bindings[id] = {};
 				}
-				this._bindings[id][name] = this.own.apply(this, bindings.map(function(binding) {
-					return binding instanceof Function ? binding() : binding;
-				}));
+				this._bindings[id][name] = this.own.apply(this, bindings);
 			}
 		},
 		/*
@@ -220,7 +266,7 @@ define([
 		},
 		
 		_unregisterComponent: function(id) {
-			delete this._components[id];
+			delete this._registeredComponents[id];
 			if (id in this._hardRefs) {
 				delete this[this._hardRefs[id]];
 			}
@@ -255,7 +301,7 @@ define([
 		 */
 		destroy: function () {
 			//unregister every component and call destroy on them if available
-			_(this._components).forEach(function(component, id){
+			_(this._registeredComponents).forEach(function(component, id){
 				this._deleteComponent(id);
 			}.bind(this));
 			this.inherited(arguments);
