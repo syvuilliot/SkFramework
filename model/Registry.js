@@ -16,6 +16,7 @@ define([
 		// workaround because bind cannot be updated with curl
 		var array = this.asArray = [];
 		var valueChanging = null;
+		this._queries = new Map();
 		this.addBeforeMapChangeListener(function(value){
 			valueChanging = value;
 		});
@@ -50,7 +51,7 @@ define([
 		source: null,
 		// regsitered queries
 		// ressources returned by registered queries will be considered active in registry
-		_queries: new Map(),
+		_queries: null,
 		// register query (object or string)
 		addQuery: function(query){
 			this._queries.set(query, []);
@@ -62,18 +63,23 @@ define([
 		// update local data with a query to the (remote) source
 		fetch: function(query){
 			// TODO: if no query is specified, fetch all registered queries
-			when(this.source.query(query), function(result){
+			var resultOrPromise = this.source.query(query);
+			when(resultOrPromise, function(result){
 				var queryRessources = [];
-				this._queries.set(query, queryRessources);
 				result.forEach(function(rawItem){
 					// create or update instance and register it
 					var t = this.createOrUpdate(rawItem);
 					// register it also with the query
 					queryRessources.push(t);
 				}.bind(this));
-				this.clean();
+				// keep a reference to queryRessources for registered queries
+				if (this._queries.has(query)) {
+					this._queries.set(query, queryRessources);
+				}
+				// this.clean(); // confirm that should be removed
 
 			}.bind(this));
+			return resultOrPromise;
 		},
 		// send local changes to the remote source
 		// TODO:
