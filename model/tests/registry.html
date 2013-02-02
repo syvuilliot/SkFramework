@@ -38,11 +38,29 @@
             'SkFramework/model/Registry',
             'frb/bind',
             "dojo/store/Memory",
+            "compose/compose",
+            "dojo/Deferred",
         ], function(
             Registry,
             bind,
-            Memory
+            Memory,
+            compose,
+            Deferred
         ) {
+            // asyncMemory
+            var AsyncMemory = compose(Memory, {
+                query: compose.around(function(baseQuery){
+                    return function(queryParams){
+                        // console.log("query called", arguments);
+                        results = baseQuery.call(this, queryParams);
+                        dfd = new Deferred();
+                        setTimeout(function(){
+                            dfd.resolve(results);
+                        }, 2000);
+                        return dfd;
+                    }
+                }),
+            });
 
             // Person Constructor
             function Person(fullName){
@@ -130,7 +148,7 @@
                 target: "/mydomain/tasks",
             });
 */
-            dataSource = new Memory({
+            dataSource = new AsyncMemory({
                 data: [{
                     id: "A",
                     done: false,
@@ -215,7 +233,10 @@
             // delete ressource
             dataSource.remove("B");
             tasksRegistry.fetch(query);
+            tasksRegistry.clean();
             console.assert(!tasksRegistry.has("B"), "La tache B ne doit plus être présente");
+
+            console.log("End of tests. (if no error were thrown, that's a success)");
         });
 	</script>
 </body>

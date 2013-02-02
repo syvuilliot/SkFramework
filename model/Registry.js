@@ -76,8 +76,6 @@ define([
 				if (this._queries.has(query)) {
 					this._queries.set(query, queryRessources);
 				}
-				// this.clean(); // confirm that should be removed
-
 			}.bind(this));
 			return resultOrPromise;
 		},
