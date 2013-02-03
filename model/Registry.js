@@ -54,7 +54,9 @@ define([
 		_queries: null,
 		// register query (object or string)
 		addQuery: function(query){
-			this._queries.set(query, []);
+			if (!this._queries.has(query)) {
+				this._queries.set(query, []);
+			}
 		},
 		// unregister query
 		removeQuery: function(query){
