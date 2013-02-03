@@ -18,6 +18,7 @@ define([
 				this[target][targetProp || prop] = value;
 			},
 			enumerable: true,
+			configurable: true,
 		});
 	}
 	function proxyMethod (proxy, target, prop, targetProp){
@@ -26,6 +27,7 @@ define([
 				return this[target][targetProp || prop].apply(this[target], arguments);
 			},
 			enumerable: true,
+			configurable: true,
 		});
 	}
 	function proxyProperties (proxy, target, props){
