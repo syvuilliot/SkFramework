@@ -19,6 +19,7 @@ define([
 		 * Components definitions
 		 */
 		_components: {},
+		_bindings: {},
 		
 		constructor: function(params) {
 			this._presenter = this._getFactoryResult(this._presenter);
@@ -181,6 +182,10 @@ define([
 					this[ref] = component;
 					this._hardRefs[id] = ref;
 				}
+			}
+			
+			if (this._bindings.hasOwnProperty(id)) {
+				this._bindComponent(component, this._bindings[id]);
 			}
 
 			return component;
