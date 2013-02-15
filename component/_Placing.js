@@ -32,6 +32,45 @@ define([
 			// To be implemented in subclasses
 		},
 		
+		
+		_getAssembledComponent: function(config) {
+			var comp, index, ctnrId, container;
+			if (_(config).isPlainObject()) {
+				for (ctnrId in config) {
+					container = this._getComponent(ctnrId);
+					if (container) {
+						comp = container.addChildren(this._getAssembledComponents(config[ctnrId]));
+					}
+					// only one key is consumed, since object configuration is supposed to represent only one container
+					break;
+				}
+			} else {
+				comp = this._getComponent(config);
+			}
+			return comp;
+		},
+		
+		/*
+		 * Get a component or list of components with potential children already placed
+		 * 
+		 * @param {String|Object|Array}	config	Placement configuration
+		 */
+		_getAssembledComponents: function(config) {
+			if (!(config instanceof Array)) {
+				return this._getAssembledComponent(config);
+			}
+			
+			var result = [],
+				item, i;
+			for (i = 0; i < config.length; i++) {
+				item = this._getAssembledComponent(config[i]);
+				if (item !== undefined) {
+					result.push(item);
+				}
+			}
+			return result;
+		},
+		
 		/*
 		 * Place a subcomponent
 		 * 
@@ -40,20 +79,8 @@ define([
 		 */
 		_placeComponent: function(component, options) {
 			options = (options === undefined) ? 'last' : options;
-			var comp,
+			var comp = this._getAssembledComponents(component),
 				index;
-			if (_(component).isPlainObject()) {
-				for (var ctnrId in component) {
-					var container = this._getComponent(ctnrId);
-					if (container) {
-						comp = container.addChildren(this._getComponents(component[ctnrId]));
-					}
-					// only one key is consumed, since object configuration is supposed to represent one container
-					break;
-				}
-			} else {
-				comp = this._getComponent(component);
-			}
 			
 			if (comp) {
 				index = this._placeIndex(comp);
@@ -78,9 +105,9 @@ define([
 		 * @param {String|Object}	[options="last"]	Placement options
 		 */
 		_placeComponents: function(config, options) {
-			var c, item, container, ctnrId;
+			var c, item;
 			for (c = 0; c < config.length; c++) {
-				item = config[c];
+				item = config[c]; 
 				this._placeComponent(item, options);
 			}
 		},

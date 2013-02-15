@@ -99,7 +99,7 @@ define([
 					id = component;
 				} else {
 					// no component registered with this id,
-					// see if 
+					// see if _addComponent() returns anything
 					cmp = this._addComponent(component);
 					if (cmp) {
 						id = component;
