@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Ressources registry tests</title>
+
+    <script>
+
+	curl = {
+        baseUrl: '../../..',
+		packages: {
+			curl: { path: '../curl/src/curl/'},
+			frb: {
+				path: '../frb',
+				config: {
+					moduleLoader: 'curl/loader/cjsm11'
+				}
+			},
+			collections: {
+				path: '../collections',
+				config: {
+					moduleLoader: 'curl/loader/cjsm11'
+				}
+			}
+		},
+		preloads: [
+			'curl/shim/dojo16'
+		]
+	};
+
+	</script>
+  </head>
+
+<body>
+    <script src="../../../curl/src/curl.js"></script>
+    <script>
+        curl([
+            'SkFramework/model/Registry',
+            'frb/bind',
+            "dojo/store/Memory",
+            "compose/compose",
+            "dojo/Deferred",
+        ], function(
+            Registry,
+            bind,
+            Memory,
+            compose,
+            Deferred
+        ) {
+            // asyncMemory
+            var AsyncMemory = compose(Memory, {
+                query: compose.around(function(baseQuery){
+                    return function(queryParams){
+                        // console.log("query called", arguments);
+                        results = baseQuery.call(this, queryParams);
+                        dfd = new Deferred();
+                        setTimeout(function(){
+                            dfd.resolve(results);
+                        }, 2000);
+                        return dfd;
+                    }
+                }),
+            });
+
+            // Person Constructor
+            function Person(fullName){
+                this.fullName = fullName || "prenom nom";
+            }
+            Object.defineProperty(Person.prototype, "fullName", {
+                get: function(){
+                    return this.firstName + " " + this.lastName;
+                },
+                // just for fun
+                set: function(value){
+                    var names = value.split(" ");
+                    this.firstName = names[0];
+                    this.lastName = names[1];
+                }
+            });
+
+
+            // Task constructor
+            function Task(label, done, assignee){
+                this.label = label || "";
+                this.done = done || false;
+                this.assignee = assignee;
+            }
+            Object.defineProperty(Task.prototype, "label", {
+                set: function(value){
+                    if (this.done) {
+                        throw "Cannot change label of a closed task";
+                    } else {
+                        this._label = value;
+                    }
+                },
+                get : function(){
+                    return this._label;
+                }
+            });
+
+
+            personRegistry = new Registry();
+            // create a person instance from persisted data and register it
+            personRegistry.createOrUpdate = function(args){
+                // a person instance has no id, only the person registry has this notion of id
+                var id = args.id;
+                var person = new Person(args.fullName);
+                // create reverse relation (read only)
+/*              does not work actually because it require a newer version of "frb" which require a newer version of "collections" that cannot be loaded by curl
+                // TODO: keep a reference to binder canceler in person registry to call it when needed
+                bind(person, "tasks", {
+                    source: tasksRegistry,
+                    "<-": "values().filter{assignee = $}",
+                    // parameters: person,
+                });
+*/
+                bind(person, "tasks", {
+                    source: tasksRegistry,
+                    "<-": "asArray.filter{assignee = $}",
+                    parameters: person,
+                });
+                this.set(id, person);
+                return person;
+            };
+
+
+            tasksRegistry = new Registry();
+            // create or update a task and register it from persisted data
+            tasksRegistry.createOrUpdate = function(args){
+                // a task instance has no id, only the tasks registry has this notion of id
+                var id = args.id;
+                var assignee = personRegistry.get(args && args.assigneeID);
+                var task;
+                if (this.has(id)){
+                    // update
+                    task = this.get(id);
+                    if (task.label !== args.label) {task.label = args.label};
+                    task.done = args.done;
+                    task.assignee = assignee;
+                } else {
+                    // create
+                    task = new Task(args && args.label, args && args.done, assignee);
+                    this.set(id, task);
+                }
+                return task;
+            };
+/*            dataSource = new JsonRest({
+                target: "/mydomain/tasks",
+            });
+*/
+            dataSource = new AsyncMemory({
+                data: [{
+                    id: "A",
+                    done: false,
+                    label: "Tache A",
+                    assigneeID: "1",
+                }, {
+                    id: "B",
+                    done: false,
+                    label: "Tache B",
+                    assigneeID: "1"
+
+                }]
+            });
+            tasksRegistry.source = dataSource;
+
+
+            // create data locally
+            tasksRegistry.createOrUpdate({
+                id: "A",
+                done: false,
+                label: "Tache A",
+                assigneeID: "1"
+            });
+            person1 = personRegistry.get("1");
+            person1.firstName = "person1";
+
+
+            taskA = tasksRegistry.get("A");
+            console.assert(taskA.assignee instanceof Person, "assignee must be an instance of Person");
+            console.assert(taskA.assignee === person1, "the assignee of taskA must be person1");
+            console.assert(person1.tasks[0] === taskA, "person1 must be assigned taskA");
+
+            taskB = tasksRegistry.createOrUpdate({
+                id: "B",
+                done: false,
+                label: "Tache B",
+                assigneeID: "1"
+            });
+            console.assert(person1.tasks[1] === taskB, "person1 must be assigned taskB");
+
+            tasksRegistry.delete("A");
+            console.assert(person1.tasks.length === 1 && person1.tasks[0] === taskB, "person1 must be assigned taskB only");
+
+            taskB.assignee = "toto";
+            console.assert(person1.tasks.length === 0, "person1 must be assigned no tasks");
+
+
+            // fetch data
+            var query = {};
+            tasksRegistry.fetch(query);
+            console.assert(tasksRegistry.get("A") && tasksRegistry.get("B"), "Les taches A et B doivent être présentes");
+
+            // unregister query and clean registry
+            tasksRegistry.removeQuery(query);
+            tasksRegistry.clean();
+            console.assert(!tasksRegistry.has("A") && !tasksRegistry.has("B"), "Les taches A et B ne doivent plus être présentes");
+
+
+            // fetch, change data on server and fetch again
+            tasksRegistry.fetch(query);
+            console.assert(tasksRegistry.get("A") && tasksRegistry.get("B"), "Les taches A et B doivent être présentes");
+            // add ressource
+            dataSource.put({
+                id: "C",
+                done: true,
+                label: "Tache C",
+                assigneeID: "2"
+            });
+            taskA = tasksRegistry.get("A");
+            tasksRegistry.fetch(query);
+            console.assert(tasksRegistry.get("A") && tasksRegistry.get("B") && tasksRegistry.get("C"), "Les taches A, B et C doivent être présentes");
+            console.assert(tasksRegistry.get("A") === taskA, "La tache A doit rester le même objet");
+            // update ressource
+            dataSource.put({
+                id: "A",
+                done: true,
+                label: "Tache A modifiée",
+                assigneeID: "1"
+            });
+            tasksRegistry.fetch(query);
+            console.assert(tasksRegistry.get("A") === taskA, "La tache A doit rester le même objet");
+            // delete ressource
+            dataSource.remove("B");
+            tasksRegistry.fetch(query);
+            tasksRegistry.clean();
+            console.assert(!tasksRegistry.has("B"), "La tache B ne doit plus être présente");
+
+            console.log("End of tests. (if no error were thrown, that's a success)");
+        });
+	</script>
+</body>
+</html>
