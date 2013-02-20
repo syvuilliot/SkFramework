@@ -28,8 +28,8 @@ define([
 			if (params) { this.set(params); }
 			
 			this._registeredComponents = {};
+			this._registeredBindings = {};
 			this._hardRefs = {};
-			this._bindings = {};
 		},
 		
 		postscript: function() {
@@ -184,6 +184,7 @@ define([
 				}
 			}
 			
+			// if a binding has been declared for this component, enable it
 			if (this._bindings.hasOwnProperty(id)) {
 				this._bindComponent(component, this._bindings[id]);
 			}
@@ -220,10 +221,10 @@ define([
 				if (!lang.isArray(bindings)) {
 					bindings = [bindings];
 				}
-				if (!this._bindings.hasOwnProperty(id)) {
-					this._bindings[id] = {};
+				if (!this._registeredBindings.hasOwnProperty(id)) {
+					this._registeredBindings[id] = {};
 				}
-				this._bindings[id][name] = this.own.apply(this, bindings);
+				this._registeredBindings[id][name] = this.own.apply(this, bindings);
 			}
 		},
 		/*
@@ -245,17 +246,17 @@ define([
 		 */
 		_unbindComponent: function(component, name) {
 			var id = this._getComponentId(component),
-				bindings = this._bindings[id] && this._bindings[id][name];
+				bindings = this._registeredBindings[id] && this._registeredBindings[id][name];
 
 			array.forEach(bindings, function(handle) {
 				handle.remove();
 			});
 			if (name) {
-				if (this._bindings[id]) {
-					delete this._bindings[id][name];
+				if (this._registeredBindings[id]) {
+					delete this._registeredBindings[id][name];
 				}
 			} else {
-				delete this._bindings[id];
+				delete this._registeredBindings[id];
 			}
 		},
 
