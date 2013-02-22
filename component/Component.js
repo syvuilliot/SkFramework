@@ -172,17 +172,17 @@ define([
 			if (!this._isComponentSupported(component)) {
 				console.warn("Unsupported component", component);
 			}
-			
-			id = id || this.generateId();
-			this._registeredComponents[id] = component;
 
-			if (!options || !options.noHardRef) {
+			if (id && (!options || !options.noHardRef)) {
 				var ref = '_' + id;
 				if (this[ref] === undefined) {
 					this[ref] = component;
 					this._hardRefs[id] = ref;
 				}
 			}
+			
+			id = id || this.generateId();
+			this._registeredComponents[id] = component;
 			
 			// if a binding has been declared for this component, enable it
 			if (this._bindings.hasOwnProperty(id)) {
