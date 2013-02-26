@@ -4,37 +4,18 @@
 	<meta charset="utf-8">
 	<title>Form components test</title>
 	<script>
-	curl = {
-		baseUrl: '../../../..',
-		paths: {
-			curl: { path: 'curl/src/curl'},
-
-		},
-		packages: {
-			frb: {
-				path: 'frb',
-				config: {
-					moduleLoader: 'curl/loader/cjsm11'
-				}
-			},
-			collections: {
-				path: 'collections',
-				config: {
-					moduleLoader: 'curl/loader/cjsm11'
-				}
-			},
-		},
-		preloads: [
-			'curl/shim/dojo16'
-		]
-	};
-
 	</script>
 </head>
 <body>
-	<script src="../../../../curl/src/curl.js"></script>
+	<script src="../../../../dojo/dojo.js"></script>
+
 	<script>
-		curl([
+		require({
+			paths: {
+				frb: "../frb-amd",
+				collections: "../collections-amd",
+			}
+		}, [
 			"frb/bind",
 			"put-selector/put",
 			"dojo/on",
@@ -141,8 +122,8 @@
 				labelProp: "name",
 				valueProp: "id",
 			});
-			selectInput.set("value", undefined);
 			selectInput.set("options", collection);
+			selectInput.set("value", undefined);
 			document.body.appendChild(selectInput.render());
 			selectInput.set("inDom", true);
 			on(put(document.body, "button", "reset value"), "click", function(){
