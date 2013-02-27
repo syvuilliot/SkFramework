@@ -49,7 +49,7 @@ define([
 
 			this._componentsCollection = [];
 			//bind this to presenter value to call swap method
-			this._cancelCollectionBinding = bind(this, ".*", {"<-": "_presenter."+this.collectionProperty});
+			this._cancelCollectionBinding = bind(this, ".rangeContent()", {"<-": "_presenter."+this.collectionProperty});
 
 		},
 		swap: function(start, length, values){

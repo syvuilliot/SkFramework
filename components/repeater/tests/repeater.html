@@ -4,42 +4,17 @@
 	<meta charset="utf-8">
 	<title>Repeater test</title>
 	<link rel="stylesheet" href="../../../../dijit/themes/claro/claro.css">
-	<script>
-
-	curl = {
-		packages: {
-			curl: { path: '../../../../curl/src/curl/'},
-			"put-selector": {path: "../../../../put-selector"},
-			frb: {
-				path: '../../../../frb',
-				config: {
-					moduleLoader: 'curl/loader/cjsm11'
-				}
-			},
-			collections: {
-				path: '../../../../collections',
-				config: {
-					moduleLoader: 'curl/loader/cjsm11'
-				}
-			},
-			dojo : {path: "../../../../dojo"},
-			dijit : {path: "../../../../dijit"},
-			lodash : {path: "../../../../lodash"},
-			compose: {path: "../../../../compose"},
-			SkFramework: {path: "../../../../SkFramework"},
-		},
-		preloads: [
-			'curl/shim/dojo16'
-		]
-	};
-
-	</script>
 </head>
 <body class="claro">
-	<script src="../../../../curl/src/curl.js"></script>
+	<script src="../../../../dojo/dojo.js"></script>
 	<script>
-		curl([
-			"../Repeater",
+		require({
+			paths: {
+				frb: "../frb-amd",
+				collections: "../collections-amd",
+			}
+		},[
+			"../Repeater.js",
 			"dojo/_base/declare",
 			"SkFramework/component/DomComponent",
 			"frb/bind",

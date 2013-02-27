@@ -119,11 +119,12 @@
 
 			selectInput = new Select({
 				// options: collection,
+				// value: "aur",
 				labelProp: "name",
 				valueProp: "id",
 			});
 			selectInput.set("options", collection);
-			selectInput.set("value", undefined);
+			selectInput.set("value", "aur");
 			document.body.appendChild(selectInput.render());
 			selectInput.set("inDom", true);
 			on(put(document.body, "button", "reset value"), "click", function(){
