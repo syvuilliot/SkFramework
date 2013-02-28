@@ -1,6 +1,6 @@
 define([
 	"compose/compose",
-	"collections/Map",
+	"collections/map",
 ], function(
 	compose,
 	Map

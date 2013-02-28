@@ -5,6 +5,7 @@
     "dojo": "1.8.3",
     "dijit": "1.8.3",
     "lodash": "#1.0.0-rc.3",
-    "put-selector": "kriszyp/put-selector#0.3.2"
+    "put-selector": "kriszyp/put-selector#0.3.2",
+    "compose": "kriszyp/compose#0.2.2",
   }
 }
