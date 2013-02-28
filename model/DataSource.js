@@ -1,145 +1,224 @@
 define([
-	
+	"compose/compose",
+	"collections/Map",
 ], function(
-	
+	compose,
+	Map
 ) {
-	return {
+	return compose(function DataSource(args){
+			this.source = args && args.source;
+			this._rsc2id = new Map();
+			this._id2rsc = new Map();
+			this._rsc2usersCount = new Map();
+		},
+		{
 		/*
 		 * (Injected function)
 		 * Create a new (empty) resource
-		 * 
+		 *
 		 * @return {Object}	resource
 		 */
-		create: function() {},
+		createResource: function(data) {},
 		/*
 		 * (Injected function)
-		 * Merge raw data into a resource
-		 * 
-		 * @param {Object}	data		Raw data from data source
+		 * Update a resource with provided data and resolve relations
+		 *
 		 * @param {Object}	resource	Resource to update
+		 * @param {Object}	data		Raw data from data source
 		 */
-		merge: function(data, resource) {},
-		
+		updateResource: function(resource, data) {
+			// si resource est une collection, il faut résoudre ses éléments, c'est à dire transformer les id en ressources
+		},
+		forgetResource: function(resource) {
+			// lors qu'une ressource n'est plus utilisée, il faut déclarer ne plus avoir besoin des resources liées et la désenregistrer
+
+		},
+
 		/*
 		 * (Injected function)
 		 * Serialize a resource as raw data
-		 * 
+		 *
 		 * @param {Object}	resource	Resource
 		 * @return {Object}	Raw data
 		 */
-		serialize: function(resource) {},
-		
+		serializeResource: function(resource) {},
+
+		/*
+		 * Reference to a data source
+		 * In this implementation, the source should conform to the dojo/store API
+		 */
+		_source: undefined,
+
+		/*
+		 * Index of resources by id
+		 */
+		_id2rsc: null,
+
 		/*
 		 * Mapping between resources and data source ids
+		 * only needed if the id is not directly available on the resource
 		 */
-		_registry: new Registry(),
-		
+		_rsc2id: null,
+
 		/*
 		 * Add resource to registry with given id
 		 */
-		register: function(resource, id) {
+		register: function(rsc, id) {
+			this._id2rsc.set(id, rsc);
+			this._rsc2id.set(rsc, id);
 		},
-		
+
 		/*
 		 * Remove resource from registry
 		 */
-		unregister: function(resource) {
+		unregister: function(rsc) {
+			var id = this.getId(rsc);
+			this._id2rsc.delete(id);
+			this._rsc2id.delete(rsc);
 		},
-		
+
+		/*
+		* helper fonctions used by the application to delegate following the number of users of a resource
+		* when a ressource is no more used, the mapping can be forgoten to liberate memory consumption
+		* if the resource is needed after that, a new reference will be created
+		*/
+		using: function(rsc) {
+			var usersCount = this._rsc2usersCount.get(rsc) || 0;
+			this._rsc2usersCount.set(rsc, usersCount + 1);
+		},
+		noMoreUsing: function(rsc) {
+			var usersCount = this._rsc2usersCount.get(rsc) || 0;
+			usersCount--;
+			this._rsc2usersCount.set(rsc, usersCount);
+			if (usersCount <= 0) {
+				this.unregister(rsc);
+				this._rsc2usersCount.delete(rsc);
+			}
+		},
+		_rsc2usersCount: null,
+
+
+
 		/*
 		 * Get a resource or collection from registry or create a new one
-		 * 
+		 *
 		 * @param {Object}	id	Parameters identifying a resource or collection
 		 * @return {Object}	resource or collection
 		 */
-		get: function(id) {
-			var resource = this._registry.get(id);
+		getResource: function(id) {
+			var resource = this._id2rsc.get(id);
 			if (!resource) {
-				resource = this.register(this.create(), id);
+				resource = this.createResource();
+				this.register(resource, id);
 			}
 			return resource;
 		},
-		
+
+		hasResource: function(rsc) {
+			return this._rsc2id.has(rsc);
+		},
+
 		/*
 		 * Search for id of resource in the registry
-		 * 
+		 *
 		 * @return {Object|undefined}	Id or nothing if not found
 		 */
 		getId: function(resource) {
-			this._registry.getKey(resource);
+			return this._rsc2id.get(resource);
+			// une autre option serait : return resource.id;
 		},
-		
+
 		/*
 		 * Fetch data for the resource from data source
-		 * 
+		 *
 		 * @param {Object}	resource	Resource
 		 * @return {Promise}	Promise of data
 		 */
 		fetch: function(resource) {
 			var id = this.getId(resource);
 			if (!id) { return; }
-			
-			return this._requestData(id);
+			var result = this._requestData(id);
+			result.then(function(data){
+				this.updateResource(resource, data);
+			}.bind(this));
+			// TODO: implement error case
+			return result;
 		},
-		
+
 		/*
 		 * Put a resource or collection into data source
-		 * 
+		 *
 		 * @param {Object}	resource	Resource
 		 */
 		put: function(resource) {
 			var id = this.getId(resource);
-			if (!id) { return; }
-			
-			this._putData(this.serialize(resource), id);
+			var result;
+			if (id) { // updating case
+				result = this._updateData(this.serializeResource(resource), id);
+			} else { // creation case
+				result = this._createData(this.serializeResource(resource));
+				result.then(function(response){
+					this.register(resource, response.id);
+				}.bind(this));
+			}
+			// si le serveur renvoi les données de la ressource, on peut en profiter pour la mettre à jour
+			result.then(function(response){
+				if (response.data) {
+					this.updateResource(resource, response.data);
+				}
+			}.bind(this));
+			return result;
 		},
 
 		/*
 		 * Delete a resource or collection from data source
-		 * 
+		 *
 		 * @param {Object}	resource	Resource
 		 * @param {Object}	params		Parameters identifying the resource or collection
 		 */
 		'delete': function(resource) {
 			var id = this.getId(resource);
 			if (!id) { return; }
-			
-			this._deleteData(id);
+
+			return this._deleteData(id);
 		},
 
 		/*
 		 * Request raw data from data source
-		 * 
+		 *
 		 * @param {Object}	params	Parameters identifying a resource or collection
 		 * @return {Object}	raw data
 		 */
-		_requestData: function(params) {
+		_requestData: function(id) {
+			return this._source.get(id);
 		},
-		
+
 		/*
-		 * Update raw data in data source
-		 * 
+		 * Request an update of data source with raw data
+		 *
 		 * @param {Object}	data	Raw data
 		 * @param {Object}	id		Parameters identifying a resource or collection
 		 */
 		_updateData: function(data, id) {
+			return this._source.put(data, {id: id});
 		},
-		
+
 		/*
-		 * Create raw data in data source
-		 * and add new id in registry
-		 * 
+		 * Request creation of a resource in data source with raw data
+		 *
 		 * @param {Object}	data	Raw data
 		 */
-		_createData: function(data) {
+		_createData: function(data, id) {
+			return this._source.add(data, {id: id});
 		},
-		
+
 		/*
-		 * Delete resource from data source
-		 * 
+		 * Request deletion of a resource from data source
+		 *
 		 * @param {Object}	params	Parameters identifying a resource or collection
 		 */
-		_deleteData: function(params) {
+		_deleteData: function(id) {
+			return this._source.delete(id);
 		}
-	}
+	});
 });
