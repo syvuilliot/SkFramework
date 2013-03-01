@@ -1,7 +1,7 @@
 ﻿define([
 	'dojo/_base/declare',
 	'lodash/lodash',
-	'SkFramework/utils/es6-collections',
+	'../utils/es6-collections'
 ], function(declare, _) {
 	// module:
 	// summary:

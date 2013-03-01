@@ -1,6 +1,6 @@
 define([
 	"doh/runner",
-	"SkFramework/utils/identical",
+	"../../utils/identical",
 	"../Memory",
 	"dojo/_base/declare",
 	"dojo/_base/lang",

@@ -1,9 +1,9 @@
 define([
 	'dojo/_base/declare',
-	'SkFramework/component/DomComponent',	'SkFramework/component/Container',
-	'SkFramework/component/_WithDomNode',	'SkFramework/component/_WithDijit',
-	'SkFramework/component/Presenter',
-	'SkFramework/utils/binding',
+	'../../component/DomComponent',	'../../component/Container',
+	'../../component/_WithDomNode',	'../../component/_WithDijit',
+	'../../component/Presenter',
+	'../../utils/binding',
 	"put-selector/put",
 	'frb/bind',
 

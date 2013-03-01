@@ -4,7 +4,7 @@
 	"dojo/store/Memory",
 	"dojo/store/Observable",
 	'../ChainableQuery',
-	"SkFramework/utils/identical",
+	"../../utils/identical"
 ], function(doh, lang, Memory, Observable, SubQueryable, identical){
 	doh.i = doh.identical = function(expected, actual, sortArrays, hint){
 		if (! identical(expected, actual, sortArrays)){

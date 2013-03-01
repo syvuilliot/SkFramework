@@ -1,9 +1,9 @@
 define([
-    'SkFramework/model/DataSource',
+    '../DataSource',
     'frb/bind',
     "dojo/store/Memory",
     "compose/compose",
-    "dojo/Deferred",
+    "dojo/Deferred"
 ], function(
     DataSource,
     bind,

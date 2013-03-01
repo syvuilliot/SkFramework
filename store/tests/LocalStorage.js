@@ -1,6 +1,6 @@
 ﻿define([
 	"doh/runner",
-	"SkFramework/store/LocalStorage",
+	"../LocalStorage",
 ], function(doh, LocalStorage){
 	var ls = new LocalStorage();
 	doh.register("LocalStorage", [

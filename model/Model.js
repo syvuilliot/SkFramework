@@ -1,16 +1,14 @@
 ﻿define([
 	"dojo/_base/lang",
-	"SkFramework/utils/create",
+	"../utils/create",
 	"dojo/Stateful",
 	"dojo/store/Memory",
-	//"SkFramework/store/Memory",
-	"SkFramework/store/ChainableQuery",
-	"SkFramework/store/PersistableMemory",
+	"../store/ChainableQuery",
+	"../store/PersistableMemory",
 	"dojo/store/Observable",
-	"SkFramework/store/ObservableMap",
-	"SkFramework/store/SimpleQueryEngineGet",
-	"dojox/json/schema",
-	// "JSV/lib/jsv",
+	"../store/ObservableMap",
+	"../store/SimpleQueryEngineGet",
+	"dojox/json/schema"
 ], function(
 	lang,
 	create,
@@ -21,8 +19,7 @@
 	Observable,
 	ObservableMap,
 	SimpleQueryEngineGet,
-	jsonSchema,
-	jsv
+	jsonSchema
 ){
 	var jsonSchemaValidator = {
 		dojox: function(){

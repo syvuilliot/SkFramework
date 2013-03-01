@@ -1,13 +1,13 @@
 ﻿define([
 	"doh/runner",
-	"SkFramework/utils/identical",
+	"../../utils/identical",
 	"../Model",
-	"SkFramework/utils/create",
+	"../../utils/create",
 	"dojo/store/Memory",
-	"SkFramework/store/Constructor",
-	"SkFramework/store/LocalStorage",
-	"SkFramework/store/SimpleQueryEngineGet",
-	"SkFramework/store/RqlQueryEngineGet",
+	"../../store/Constructor",
+	"../../store/LocalStorage",
+	"../../store/SimpleQueryEngineGet",
+	"../../store/RqlQueryEngineGet",
 ], function(doh, identical, Model, create, Memory, Constructor, LocalStorage, SimpleQueryEngineGet, RqlQueryEngineGet){
 
 	doh.i = doh.identical = function(expected, actual, sortArrays, hint){

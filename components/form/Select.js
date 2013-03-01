@@ -1,12 +1,11 @@
 define([
 	"dojo/_base/declare",
-	"SkFramework/components/repeater/Repeater",
-	"SkFramework/component/DomComponent",
-	'SkFramework/component/Presenter',
+	"../repeater/Repeater",
+	"../../component/DomComponent",
 	"frb/bind",
 	"put-selector/put",
-	"SkFramework/utils/frb-dom",
-], function(declare, Repeater, DomComponent, PresenterBase, bind, put){
+	"../../utils/frb-dom"
+], function(declare, Repeater, DomComponent, bind, put){
 
 	var Option = declare(DomComponent, {
 		domTag: "option",

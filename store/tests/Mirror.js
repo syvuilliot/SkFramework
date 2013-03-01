@@ -1,7 +1,7 @@
 define([
 	"doh/runner",
 	"dojo/store/Memory",
-	"SkFramework/store/LocalStorage",
+	"../LocalStorage",
 	"../Mirror",
 ], function(doh, Memory, LocalStorage, Mirror){
 

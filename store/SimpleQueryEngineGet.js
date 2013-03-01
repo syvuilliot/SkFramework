@@ -1,4 +1,4 @@
-define(["dojo/_base/array", "SkFramework/utils/identical"], function(arrayUtil, identical) {
+define(["dojo/_base/array", "../utils/identical"], function(arrayUtil, identical) {
 
 return function(query, options){
 	// summary:

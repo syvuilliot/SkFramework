@@ -1,8 +1,8 @@
 define([
 	"dojo/_base/declare",
-	"SkFramework/component/DomComponent",
+	"../../component/DomComponent",
 	"frb/bind",
-	"SkFramework/utils/frb-dom",
+	"../../utils/frb-dom",
 ], function(declare, DomComponent, bind){
 
 	return declare(DomComponent, {

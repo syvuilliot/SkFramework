@@ -1,4 +1,4 @@
-define(["SkFramework/store/rql-js-get"], function(rql) {
+define(["../store/rql-js-get"], function(rql) {
 
 
 

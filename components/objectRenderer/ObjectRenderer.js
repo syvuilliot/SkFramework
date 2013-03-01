@@ -1,10 +1,9 @@
 define([
 	'dojo/_base/declare',
-	'SkFramework/utils/binding',
+	'../../utils/binding',
 	"put-selector/put",
 	'frb/bind',
-	"SkFramework/components/repeater/Repeater",
-
+	"../repeater/Repeater"
 ], function(
 	declare,
 	binding,
@@ -12,7 +11,6 @@ define([
 	bind,
 	Repeater
 ){
-
 	return declare([Repeater], {
 		collectionProperty: "config",
 
@@ -37,7 +35,6 @@ define([
 			var args = configLine.componentConstructorArguments || this.componentConstructorArguments;
 			var comp = new constructor(args);
 			return comp;
-		},
-
+		}
 	});
 });

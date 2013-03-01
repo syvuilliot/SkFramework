@@ -1,4 +1,4 @@
-define(["SkFramework/utils/create", "./Memory", "dojo/store/Observable"],
+define(["../utils/create", "./Memory", "dojo/store/Observable"],
 function(create, Memory, Observable){
 
 	// summary:

@@ -1,14 +1,14 @@
 define([
 	'dojo/_base/declare',
-	'SkFramework/component/DomComponent',	'SkFramework/component/Container',
-	'SkFramework/component/_WithDomNode',	'SkFramework/component/_WithDijit',
-	'SkFramework/component/Presenter',
-	'SkFramework/utils/binding',
+	'../../component/DomComponent',	'../../component/Container',
+	'../../component/_WithDomNode',	'../../component/_WithDijit',
+	'../../component/Presenter',
+	'../../utils/binding',
 	"put-selector/put",
 	"dojo/on",
 	'frb/bind',
-	"SkFramework/components/repeater/Repeater",
-	"SkFramework/components/objectRenderer/ObjectRenderer",
+	"../repeater/Repeater",
+	"../objectRenderer/ObjectRenderer"
 
 ], function(
 	declare,
@@ -143,31 +143,30 @@ define([
 			});
 
 			//bind components to presenter
-			var $ = this._components;
-			var cancelHeadRowValueBinding = bind($.headRow._presenter, "value", {
+			var cancelHeadRowValueBinding = bind(this._headRow._presenter, "value", {
 				source: this._presenter,
 				"<-": "config.map{label}",
 			});
-			var cancelBodyValueBinding = bind($.body._presenter, "value", {
+			var cancelBodyValueBinding = bind(this._body._presenter, "value", {
 				source: this._presenter,
 				"<-": "value",
 			});
-			var cancelBodyConfigBinding = bind($.body._presenter, "config", {
+			var cancelBodyConfigBinding = bind(this._body._presenter, "config", {
 				source: this._presenter,
 				"<-": "config",
 			});
-			var cancelBodySelectedBinding = bind($.body._presenter, "selected", {
+			var cancelBodySelectedBinding = bind(this._body._presenter, "selected", {
 				source: this._presenter,
 				"<->": "selected",
 			});
-			var cancelBodySelectedIndexBinding = bind($.body._presenter, "selectedIndex", {
+			var cancelBodySelectedIndexBinding = bind(this._body._presenter, "selectedIndex", {
 				source: this._presenter,
 				"<->": "selectedIndex",
 			});
 
 			this._bindComponents({
 				headRow: {
-					remove: function(){cancelHeadRowValueBinding();},
+					remove: function() { cancelHeadRowValueBinding(); }
 				},
 				body: {
 					remove: function(){
@@ -180,10 +179,10 @@ define([
 			});
 
 			//place components views
-			this._placeComponent($.head.addChildren([
-				$.headRow,
+			this._placeComponent(this._head.addChildren([
+				this._headRow
 			]));
-			this._placeComponent($.body);
+			this._placeComponent(this._body);
 		},
 		select: function(index){
 			return this._components.body.select(index);

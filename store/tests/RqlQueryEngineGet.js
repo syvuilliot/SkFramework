@@ -1,10 +1,10 @@
 ﻿define([
 	"doh/runner",
-	"SkFramework/utils/create",
+	"../../utils/create",
 	"dojo/store/Memory",
-	'SkFramework/store/RqlQueryEngineGet',
-	"SkFramework/utils/identical",
-	"SkFramework/model/Model",
+	'../RqlQueryEngineGet',
+	"../../utils/identical",
+	"../../model/Model",
 ], function(doh, create, Memory, RqlQueryEngine, identical, Model){
 	doh.i = doh.identical = function(expected, actual, sortArrays, hint){
 		if (! identical(expected, actual, sortArrays)){

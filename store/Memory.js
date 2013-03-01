@@ -1,4 +1,4 @@
-define(["SkFramework/utils/create", "dojo/store/util/QueryResults", "dojo/store/util/SimpleQueryEngine" /*=====, "./api/Store" =====*/],
+define(["../utils/create", "dojo/store/util/QueryResults", "dojo/store/util/SimpleQueryEngine" /*=====, "./api/Store" =====*/],
 function(create, QueryResults, SimpleQueryEngine /*=====, Store =====*/){
 
 	// summary:
