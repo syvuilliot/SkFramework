@@ -1,26 +1,17 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<meta charset="utf-8">
-	<title>NewComponent test</title>
-	<link rel="stylesheet" href="../../../dijit/themes/claro/claro.css">
-
-</head>
-<body class="claro">
-    <script data-dojo-config="async: true, isDebug: true", src="../../../dojo/dojo.js"></script>
-    <script>
-		require([
-			"../NewComponent.js",
-			'dojo/domReady!',
-		], function(NewComponent){
-
-			window.newComponent = new NewComponent();
-			document.body.appendChild(newComponent.render());
-			newComponent.set('inDom');
-
-			window.testValue = "test";
-			newComponent.set("value", testValue);
-		});
-	</script>
-</body>
-</html>
+define([
+	"../NewComponent"
+], function(NewComponent) {
+	// Attach a component on an existing node
+	var existingNode = document.createElement('div');
+	document.body.appendChild(existingNode);
+	window.newComponent1 = new NewComponent({
+		domNode: existingNode,
+		title: "Component 1"
+	});
+	
+	// Place auto-generated component's node into DOM
+	window.newComponent2 = new NewComponent();
+	document.body.appendChild(newComponent2.domNode);
+	newComponent2.set('title', "Component 2");
+	newComponent2.set('inDom');
+});
