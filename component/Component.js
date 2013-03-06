@@ -1,43 +1,32 @@
 define([
-	'lodash/lodash',
 	'dojo/_base/declare',	'dojo/_base/lang',	'dojo/_base/array',
-	'dojo/Stateful',	'dojo/Evented',	'dijit/Destroyable'
-], function(_,
+	'dojo/Evented',	'dijit/Destroyable'
+], function(
 	declare,				lang,				array,
-	Stateful,			Evented,		Destroyable
+	Evented,		Destroyable
 ) {
 	function isComponent(component) {
 		return component instanceof Component;
 	}
-	
-	var Component = declare([Stateful, Evented, Destroyable], {
-		_presenter: function() {
-			return new Stateful();
-		},
-		
-		/*
-		 * Components definitions
-		 */
-		_components: {},
-		_bindings: {},
-		
+
+	var Component = declare([Evented, Destroyable], {
 		constructor: function(params) {
-			this._presenter = this._getFactoryResult(this._presenter);
-			
-			// Sets constructor params right now, not in postcript()
-			if (params) { this.set(params); }
-			
+			this._presenter = {};
 			this._registeredComponents = {};
+			this._components = {};
 			this._registeredBindings = {};
+			this._bindings = {};
 			this._hardRefs = {};
+
+			if (params) {
+				Object.keys(params).forEach(function(key){
+					this[key] = params[key];
+				}.bind(this));
+			}
 		},
-		
-		postscript: function() {
-			// Don't do anything, constructor params are already set
-		},
-		
+
 		/*
-		 * 
+		 *
 		 */
 		_getFactoryResult: function(factory) {
 			if (factory instanceof Function) {
@@ -46,34 +35,10 @@ define([
 			return factory;
 		},
 
-		get: function(prop) {
-			if (prop in this) {
-				return this.inherited(arguments);
-			} else {
-				return this._presenter.get.apply(this._presenter, arguments);
-			}
-		},
 
-		set: function(prop, value) {
-			if (prop instanceof Object || prop in this) {
-				return this.inherited(arguments);
-			} else {
-				return this._presenter.set(prop, value);
-			}
-		},
-
-		watch: function(prop, handler) {
-			// if only one argument (no prop specified) apply watch on this and not on _presenter
-			if (prop in this || !arguments[1]) {
-				return this.inherited(arguments);
-			} else {
-				return this._presenter.watch.apply(this._presenter, arguments);
-			}
-		},
-		
 		/*
 		 * Check whether a component is supported as a sub-component
-		 * 
+		 *
 		 * @param {Object}	component	Component instance
 		 * @return {Boolean}	True if supported, False otherwise
 		 */
@@ -130,10 +95,10 @@ define([
 				return this._registeredComponents[id];
 			}
 		},
-		
+
 		/*
 		 * Get a list of subcomponents
-		 * 
+		 *
 		 * @param {Array}	components	List of component instances or ids
 		 * @return {Array}	List of subcomponent instances
 		 */
@@ -167,7 +132,7 @@ define([
 					return;
 				}
 			}
-			
+
 			component = this._getFactoryResult(component);
 			if (!this._isComponentSupported(component)) {
 				console.warn("Unsupported component", component);
@@ -180,10 +145,10 @@ define([
 					this._hardRefs[id] = ref;
 				}
 			}
-			
+
 			id = id || this.generateId();
 			this._registeredComponents[id] = component;
-			
+
 			// if a binding has been declared for this component, enable it
 			if (this._bindings.hasOwnProperty(id)) {
 				this._bindComponent(component, this._bindings[id]);
@@ -206,7 +171,7 @@ define([
 				this._addComponent(components[id], id);
 			}.bind(this));
 		},
-		
+
 		/*
 		 * Register binding handlers for a subcomponent that will be canceled when deleting the subcomponent
 		 *
@@ -270,14 +235,14 @@ define([
 				component.destroy();
 			}
 		},
-		
+
 		_unregisterComponent: function(id) {
 			delete this._registeredComponents[id];
 			if (id in this._hardRefs) {
 				delete this[this._hardRefs[id]];
 			}
 		},
-		
+
 		/*
 		 * Delete a subcomponent
 		 *
@@ -290,7 +255,7 @@ define([
 			this._destroyComponent(comp);
 			this._unregisterComponent(id);
 		},
-		
+
 		/*
 		 * Delete several subcomponents
 		 *
@@ -307,7 +272,7 @@ define([
 		 */
 		destroy: function () {
 			//unregister every component and call destroy on them if available
-			_(this._registeredComponents).forEach(function(component, id){
+			Object.keys(this._registeredComponents).forEach(function(id){
 				this._deleteComponent(id);
 			}.bind(this));
 			this.inherited(arguments);

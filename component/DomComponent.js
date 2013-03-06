@@ -25,7 +25,7 @@ define([
 		 * Whether or not this component is part of the main DOM tree
 		 */
 		inDom: false,
-		
+
 		width: undefined,
 		height: undefined,
 
@@ -36,11 +36,7 @@ define([
 				this.set('inDom', true);
 			}
 		},
-		
-		_domNodeSetter: function(node) {
-			this.domNode = dom.byId(node);
-		},
-		
+
 		_addComponent: function(cmp, id) {
 			var comp = this.inherited(arguments);
 			if (isDomCmp(comp)) {
@@ -57,7 +53,7 @@ define([
 		 */
 		_insertComponentIntoDom: function(component, options) {
 			if (isDomCmp(component)) {
-				domConstruct.place(component.render(), this.domNode, options);
+				domConstruct.place(component.domNode, this.domNode, options);
 			}
 		},
 
@@ -78,7 +74,7 @@ define([
 		 */
 		_doPlaceComponent: function(component, options) {
 			this._insertComponentIntoDom(component, options);
-			this._setComponentInDom(component, this.get('inDom'));
+			this._setComponentInDom(component, this.inDom);
 			this._childSizeChanged();
 		},
 
@@ -92,7 +88,7 @@ define([
 			this._setComponentInDom(component, false);
 			this._childSizeChanged();
 		},
-		
+
 		/*
 		 * Process sizing of a sub-component
 		 */
@@ -101,30 +97,13 @@ define([
 				component.updateSize();
 			}
 		},
-		
-		_inDomSetter: function(value) {
-			if (value === undefined) {
-				value = true;
-			}
-			if (value !== this.inDom) {
-				this.inDom = value;
-				// Inform subcomponents of the new state
-				var c;
-				for (c = 0; c < this._placedComponents.length; c += 1) {
-					this._setComponentInDom(this._placedComponents[c], value);
-				}
-				if (value) {
-					this.updateSize(false);
-				}
-			}
-		},
 
 		/*
 		 * Inform sub-component whether it is part of the main DOM tree
 		 */
 		_setComponentInDom: function(component, value) {
 			if (isDomCmp(component)) {
-				component.set('inDom', value);
+				component.inDom = value;
 				if (value) {
 					// listen for size changes on child
 					this._bindComponent(component, component.on('sizechange', this._childSizeChanged.bind(this)), 'sizechange');
@@ -133,17 +112,11 @@ define([
 				}
 			}
 		},
-		
+
 		/*
 		 * Public methods
 		 */
 
-		/*
-		 * Deprecated, use this.domNode instead
-		 */
-		render: function() {
-			return this.domNode;
-		},
 
 		/*
 		 * Add a CSS class to DOM node
@@ -160,14 +133,14 @@ define([
 			this.domTag = this.domTag.replace(new RegExp('\.' + className + '(\..*)*$'), '$1');
 			put(this.domNode, '!.' + className);
 		},
-		
+
 		_childSizeChanged: function() {
 			if (this._sizing) { return; }
-			
+
 			this.updateSize(false);
 			this._updateChildrenSize();
 		},
-		
+
 		_updateChildrenSize: function() {
 			this._sizing = true;
 			var c;
@@ -176,34 +149,64 @@ define([
 			}
 			this._sizing = false;
 		},
-		
+
 		/*
 		 * Self-sizing
 		 */
 		updateSize: function(sizeDescendants) {
 			if (this._sizing || ! this.inDom) { return; }
-			
+
 			sizeDescendants = (sizeDescendants === undefined) ? true : sizeDescendants;
 			var c,
 				sizeChanged = false,
 				newWidth = this.domNode.offsetWidth,
 				newHeight = this.domNode.offsetHeight;
-				
-			if (this.get('width') !== newWidth) {
-				this.set('width', newWidth);
+
+			if (this.width !== newWidth) {
+				this.width = newWidth;
 				sizeChanged = true;
 			}
-			if (this.get('height') !== newHeight) {
-				this.set('height', newHeight);
+			if (this.height !== newHeight) {
+				this.height = newHeight;
 				sizeChanged = true;
 			}
-			
+
 			if (sizeChanged) {
 				if (sizeDescendants) {
 					this._updateChildrenSize();
 				}
 				this.emit('sizechange');
 			}
+		}
+	});
+
+	Object.defineProperty(DomComponent.prototype, "domNode", {
+		set: function(node) {
+			this._domNode = dom.byId(node);
+		},
+		get: function(){
+			return this._domNode;
+		},
+	});
+	Object.defineProperty(DomComponent.prototype, "inDom", {
+		set: function(value) {
+			if (value === undefined) {
+				value = true;
+			}
+			if (value !== this.inDom) {
+				this._inDom = value;
+				// Inform subcomponents of the new state
+				var c;
+				for (c = 0; c < this._placedComponents.length; c += 1) {
+					this._setComponentInDom(this._placedComponents[c], value);
+				}
+				if (value) {
+					this.updateSize(false);
+				}
+			}
+		},
+		get: function(){
+			return this._inDom ? true : false;
 		}
 	});
 	return DomComponent;
