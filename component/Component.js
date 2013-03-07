@@ -11,19 +11,23 @@ define([
 
 	var Component = declare([Evented, Destroyable], {
 		constructor: function(params) {
-			this._presenter = {};
-			this._registeredComponents = {};
-			this._components = {};
-			this._registeredBindings = {};
-			this._bindings = {};
-			this._hardRefs = {};
-
 			if (params) {
 				Object.keys(params).forEach(function(key){
 					this[key] = params[key];
 				}.bind(this));
 			}
+
+			this._registeredComponents = {};
+			this._registeredBindings = {};
+			this._hardRefs = {};
+
 		},
+
+		/*
+		 * Components definitions
+		 */
+		_components: {},
+		_bindings: {},
 
 		/*
 		 *
