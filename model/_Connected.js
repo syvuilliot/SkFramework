@@ -1,0 +1,60 @@
+define([
+], function(
+) {
+	/*
+	* Mixin that allow communication with a dataSource based on resource references
+	*/
+	function Connected(args){
+		this._dataSource = args && args.dataSource; // in this implementation, dataSource should conform to the dojo store API
+		this._requestsStatus = new Map();
+	}
+
+	var proto = Connected.prototype;
+
+	proto.requestGet = function(rsc) {
+		var result = this._dataSource.get(this.getId(rsc));
+		this._logStatus(rsc, result, "get");
+		return result;
+	};
+
+	proto.requestPut = function(rsc, data) {
+		var result = this._dataSource.put(data, {
+			id: this.getId(rsc),
+		});
+		this._logStatus(rsc, result, "put");
+		return result;
+	};
+
+	proto.resquestDelete = function(rsc){
+		var result = this._dataSource.remove(this.getId(rsc));
+		this._logStatus(rsc, result, "get");
+		return result;
+	};
+
+	proto.getRequestStatus = function(rsc){
+		return this._requestsStatus.get(rsc);
+	};
+
+	proto._logStatus = function(rsc, type, result) {
+		var status = {
+			type: type,
+			startedDate: new Date(),
+			stage: "inProgress",
+			finishedDate: null,
+			response: null,
+		};
+		this._requestsStatus.set(rsc, status);
+		when(result, function(response){
+			status.stage = "success";
+			status.finishedDate = new Date();
+			status.response = response;
+		}, function(response){
+			status.stage = "error";
+			status.finishedDate = new Date();
+			status.response = response;
+		});
+	};
+
+
+	return Connected;
+});
