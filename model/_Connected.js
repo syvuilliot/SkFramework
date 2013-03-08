@@ -1,5 +1,7 @@
 define([
+	"dojo/when",
 ], function(
+	when
 ) {
 	/*
 	* Mixin that allow communication with a dataSource based on resource references
@@ -13,21 +15,22 @@ define([
 
 	proto.requestGet = function(rsc) {
 		var result = this._dataSource.get(this.getId(rsc));
-		this._logStatus(rsc, result, "get");
+		this._logStatus(rsc, "get", result);
 		return result;
 	};
 
 	proto.requestPut = function(rsc, data) {
-		var result = this._dataSource.put(data, {
-			id: this.getId(rsc),
-		});
-		this._logStatus(rsc, result, "put");
+		var options = {};
+		var id = this.getId(rsc);
+		if (id) {options.id = id;}
+		var result = this._dataSource.put(data, options);
+		this._logStatus(rsc, "put", result);
 		return result;
 	};
 
 	proto.resquestDelete = function(rsc){
 		var result = this._dataSource.remove(this.getId(rsc));
-		this._logStatus(rsc, result, "get");
+		this._logStatus(rsc, "delete", result);
 		return result;
 	};
 

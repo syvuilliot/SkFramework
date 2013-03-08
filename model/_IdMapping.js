@@ -6,7 +6,7 @@ define([
 	* It also create an abstraction to the id storage implementation, either directly on the resource or in a separate table
 	*/
 	function IdMapping(args){
-		this._idProperty = args && args._idProperty || undefined;
+		this._idProperty = args && args.idProperty || undefined;
 		if (! this._idProperty) this._rsc2id = new Map(); // only created if the id is not stored directly on the resource
 		this._id2rsc = new Map();
 	}

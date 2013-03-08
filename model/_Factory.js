@@ -19,7 +19,7 @@ define([
 	 */
 	proto.create = function(data) {
 		var rsc = this._createResource(data);
-		this.register(rsc);
+		this.register(rsc, this.getId(rsc));
 		return rsc;
 	};
 
