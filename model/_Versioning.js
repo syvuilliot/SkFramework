@@ -1,5 +1,7 @@
 define([
+	"compose/compose",
 ], function(
+	compose
 ) {
 	/*
 	* Mixin that allow storing the state of a resource multiple time and restoring it on demand
@@ -28,7 +30,8 @@ define([
 	};
 
 	proto.getStoredState = function(rsc, index) {
-		return this._statesHistories.get(rsc)[index || 0]; // get last state by default
+		var history = this._statesHistories.get(rsc);
+		return history && history[index || 0]; // get last state by default
 	};
 
 	proto.getState = function(rsc){
@@ -38,6 +41,10 @@ define([
 	proto.restoreState = function(rsc, position){
 		this.update(rsc, this.getStoredState(rsc, position));
 	};
+
+	proto.unregister = compose.after(function(rsc){
+		this._statesHistories.delete(rsc);
+	});
 
 	return Versioning;
 });

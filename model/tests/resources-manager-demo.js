@@ -159,13 +159,19 @@ define([
 	// pulling from dataSource
 	p1 = personsManager.create();
 	personsManager.setId(p1, "1");
-	personsManager.pull(p1).then(function(){
+	var promise = personsManager.pull(p1);
+	var reqStatus = personsManager.getRequestStatus(p1);
+	console.assert(reqStatus.stage === "inProgress");
+	promise.then(function(){
+		console.assert(reqStatus.stage === "success");
 		p1.firstName = "Sylvain";
 		console.log("pulling ok");
 	});
-
-
-
+	// unregistering
+	personsManager.unregister(toto);
+	console.assert(personsManager.has(toto) === false);
+	console.assert(personsManager.getStoredState(toto) === undefined);
+	console.assert(personsManager.getRequestStatus(toto) === undefined);
 
 	console.log("End of tests");
 

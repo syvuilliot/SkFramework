@@ -1,6 +1,8 @@
 define([
+	"compose/compose",
 	"dojo/when",
 ], function(
+	compose,
 	when
 ) {
 	/*
@@ -58,6 +60,9 @@ define([
 		});
 	};
 
+	proto.unregister = compose.after(function(rsc){
+		this._requestsStatus.delete(rsc);
+	});
 
 	return Connected;
 });

@@ -1,5 +1,7 @@
 define([
+	"./ResourcesManager",
 ], function(
+	ResourcesManager
 ) {
 	function Factory(args){
 		if (args) {
@@ -19,7 +21,7 @@ define([
 	 */
 	proto.create = function(data) {
 		var rsc = this._createResource(data);
-		this.register(rsc, this.getId(rsc));
+		this.register(rsc); // is that a good idea to register it automaticaly ?
 		return rsc;
 	};
 

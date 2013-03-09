@@ -1,7 +1,9 @@
 define([
+	"compose/compose",
 	"dojo/Deferred",
 	"dojo/when",
 ], function(
+	compose,
 	Deferred,
 	when
 ) {
@@ -10,7 +12,7 @@ define([
 	*/
 	function Syncable(args){
 		this._sourceMirror = new Map();
-		this._sourceMirrorRefresh = new Map();
+		this._sourceMirrorDate = new Map();
 		this._compareState = args.compare;
 		if (args.fetchResponse2data) {this._fetchResponse2data = args.fetchResponse2data;}
 		if (args.pushResponse2data) {this._pushResponse2data = args.pushResponse2data;}
@@ -71,7 +73,7 @@ define([
 
 	proto._storeSourceData = function(rsc, data){
 		this._sourceMirror.set(rsc, data);
-		this._sourceMirrorRefresh.set(rsc, new Date());
+		this._sourceMirrorDate.set(rsc, new Date());
 	};
 
 	proto.getSourceData = function(rsc){
@@ -84,7 +86,7 @@ define([
 		// -1 if a is older than b
 		// +1 if b is older than a
 		var syncStatus = {
-			sourceDataRefresh: this._sourceMirrorRefresh.get(rsc),
+			sourceDataRefresh: this._sourceMirrorDate.get(rsc),
 		};
 		switch (this._compareState(this.getState(rsc), this.getSourceData(rsc))) {
 			case 0:
@@ -115,6 +117,11 @@ define([
 		}.bind(this));
 
 	};
+
+	proto.unregister = compose.after(function(rsc){
+		this._sourceMirror.delete(rsc);
+		this._sourceMirrorDate.delete(rsc);
+	});
 
 	return Syncable;
 });
