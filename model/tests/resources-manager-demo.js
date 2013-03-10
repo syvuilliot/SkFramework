@@ -1,4 +1,5 @@
 define([
+	'SkFramework/utils/wru-amd',
 	'../ResourcesManager',
 	'../_Factory',
 	'../_IdMapping',
@@ -11,6 +12,7 @@ define([
 	"dojo/Deferred",
 	"dojo/promise/all",
 ], function(
+	wru,
 	ResourcesManager,
 	_Factory,
 	_IdMapping,
@@ -74,21 +76,6 @@ define([
 		}
 	});
 
-	//persons dataSource
-	personsDataSource = new AsyncMemory({
-		data: [{
-			id: "1",
-			fullName: "Sylvain Vuilliot",
-		}, {
-			id: "2",
-			fullName: "Quentin Vuilliot",
-		}, {
-			id: "3",
-			fullName: "Yves Vuilliot",
-		}]
-	});
-
-
 	var Manager = compose(
 		ResourcesManager,
 		_Factory,
@@ -98,83 +85,131 @@ define([
 		_Syncable
 	);
 
-	personsManager = new Manager({
-		createResource: function(data){
-			var rsc = new Person(data && data.fullName);
-			if (data && data.id) rsc.id = data.id;
-			return rsc;
-		},
-		updateResource: function(person, data){
-			person.fullName = data.fullName;
-		},
-		destroyResource: function(person){}, //nothing to do
-		dataSource: personsDataSource,
-		idProperty: "id",
-		serialize: function(person){
-			var state = {};
-			state.fullName = person.fullName;
-			if (person.id) state.id = person.id;
-			return state;
-		},
-		compare: function(appState, sourceState){
-			// in case of difference, we consider that appState should be saved
-			if (appState.fullName !== sourceState.fullName) {
-				return +1;
-			} else {
-				return 0;
-			}
-		},
-		fetchResponse2data: function(resp){
-			return resp;
-		},
-		pushResponse2id: function(resp){
-			return resp; // the memory store return only the id
-		},
-		pushResponse2data: function(resp){
-			return null; // we do not get data in push response
-		},
+	function setup(tmp){
 
-	});
+		//persons dataSource
+		tmp.personsDataSource = new AsyncMemory({
+			data: [{
+				id: "1",
+				fullName: "Sylvain Vuilliot",
+			}, {
+				id: "2",
+				fullName: "Quentin Vuilliot",
+			}, {
+				id: "3",
+				fullName: "Yves Vuilliot",
+			}]
+		});
 
-	console.log("Start of tests");
 
-	// creation and registering
-	toto=personsManager.create({
-		fullName: "Toto Cobaye"
-	});
-	console.assert(personsManager.has(toto));
-	// serialisation
-	console.assert(personsManager.getState(toto).fullName === "Toto Cobaye");
-	personsManager.storeState(toto);
-	// reverting
-	toto.firstName = "titi";
-	personsManager.restoreState(toto, 0);
-	console.assert(personsManager.getState(toto).fullName === "Toto Cobaye");
-	// saving in dataSource
-	toto.firstName = "titi";
-	personsManager.push(toto).then(function(){
-		console.assert(personsDataSource.data[3].fullName === "titi Cobaye");
-		console.log("saving ok");
-	});
-	// pulling from dataSource
-	p1 = personsManager.create();
-	personsManager.setId(p1, "1");
-	var promise = personsManager.pull(p1);
-	var reqStatus = personsManager.getRequestStatus(p1);
-	console.assert(reqStatus.stage === "inProgress");
-	promise.then(function(){
-		console.assert(reqStatus.stage === "success");
-		p1.firstName = "Sylvain";
-		console.log("pulling ok");
-	});
-	// unregistering
-	personsManager.unregister(toto);
-	console.assert(personsManager.has(toto) === false);
-	console.assert(personsManager.getStoredState(toto) === undefined);
-	console.assert(personsManager.getRequestStatus(toto) === undefined);
 
-	console.log("End of tests");
+		tmp.personsManager = new Manager({
+			createResource: function(data){
+				var rsc = new Person(data && data.fullName);
+				if (data && data.id) rsc.id = data.id;
+				return rsc;
+			},
+			updateResource: function(person, data){
+				person.fullName = data.fullName;
+			},
+			destroyResource: function(person){}, //nothing to do
+			dataSource: tmp.personsDataSource,
+			idProperty: "id",
+			serialize: function(person){
+				var state = {};
+				state.fullName = person.fullName;
+				if (person.id) state.id = person.id;
+				return state;
+			},
+			compare: function(appState, sourceState){
+				// in case of difference, we consider that appState should be saved
+				if (appState.fullName !== sourceState.fullName) {
+					return +1;
+				} else {
+					return 0;
+				}
+			},
+			fetchResponse2data: function(resp){
+				return resp;
+			},
+			pushResponse2id: function(resp){
+				return resp; // the memory store return only the id
+			},
+			pushResponse2data: function(resp){
+				return null; // we do not get data in push response
+			},
 
+		});
+
+		tmp.toto = tmp.personsManager.create({
+			fullName: "Toto Cobaye"
+		});
+
+	}
+
+	wru.test([
+		{
+			name: "creation and registering",
+			test: function (tmp) {
+				wru.assert(tmp.personsManager.has(tmp.toto));
+			},
+			setup: setup,
+		},
+		{
+			name: "serialisation",
+			setup: setup,
+			test: function(tmp){
+				wru.assert(tmp.personsManager.getState(tmp.toto).fullName === "Toto Cobaye");
+			},
+		},
+		{
+			name: "reverting",
+			setup: setup,
+			test: function (tmp) {
+				tmp.personsManager.storeState(tmp.toto);
+				tmp.toto.firstName = "titi";
+				tmp.personsManager.restoreState(tmp.toto, 0);
+				wru.assert(tmp.personsManager.getState(tmp.toto).fullName === "Toto Cobaye");
+			},
+		},
+		{
+			name: "saving in dataSource",
+			setup: setup,
+			test: function(tmp){
+				tmp.toto.firstName = "titi";
+				tmp.personsManager.push(tmp.toto).then(wru.async(function(){
+					wru.assert(tmp.personsDataSource.data[3].fullName === "titi Cobaye");
+				}));
+			},
+		},
+		{
+			name: "pulling from dataSource",
+			setup: setup,
+			test: function(tmp){
+				tmp.personsManager.setId(tmp.toto, "1");
+				var reqStatus;
+				tmp.personsManager.pull(tmp.toto).then(wru.async(function(){
+					wru.assert(reqStatus.stage === "success");
+					wru.assert(tmp.toto.firstName === "Sylvain");
+					wru.log(tmp.toto);
+				}));
+				reqStatus = tmp.personsManager.getRequestStatus(tmp.toto);
+				wru.assert(reqStatus.stage === "inProgress");
+			},
+		},
+		{
+			name: "unregistering",
+			setup: setup,
+			test: function(tmp){
+				var toto = tmp.toto;
+				var personsManager = tmp.personsManager;
+				personsManager.unregister(toto);
+				wru.assert(personsManager.has(toto) === false);
+				wru.assert(personsManager.getStoredState(toto) === undefined);
+				wru.assert(personsManager.getRequestStatus(toto) === undefined);
+			},
+		},
+	]);
 
 
 });
