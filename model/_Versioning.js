@@ -22,9 +22,9 @@ define([
 			this._statesHistories.set(rsc, history);
 		}
 		// store state at the begining of the array
-		var lenght = history.unshift(this.getState(rsc));
+		var length = history.unshift(this.getState(rsc));
 		// remove too old states
-		if (history.lenght > this._historyLength) {
+		if (length > this._historyLength) {
 			history.pop();
 		}
 	};

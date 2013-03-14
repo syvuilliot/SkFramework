@@ -138,7 +138,6 @@ define([
 			pushResponse2data: function(resp){
 				return null; // we do not get data in push response
 			},
-
 		});
 
 		tmp.toto = tmp.personsManager.create({
