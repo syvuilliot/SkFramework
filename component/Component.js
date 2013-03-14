@@ -1,13 +1,28 @@
 define([
-	'dojo/_base/declare',	'dojo/_base/lang',	'dojo/_base/array',
-	'dojo/Evented',	'dijit/Destroyable'
+	"compose/compose",
+	'dojo/_base/declare',
+	'dojo/_base/lang',
+	'dojo/_base/array',
+	'dojo/Evented',
+	'dijit/Destroyable',
+	"SkFramework/model/Registry",
+	"SkFramework/model/_IdMapping",
+	"collections/map",
 ], function(
-	declare,				lang,				array,
-	Evented,		Destroyable
+	compose,
+	declare,
+	lang,
+	array,
+	Evented,
+	Destroyable,
+	Registry,
+	_IdMapping,
+	Map
 ) {
 	function isComponent(component) {
 		return component instanceof Component;
 	}
+
 
 	var Component = declare([Evented, Destroyable], {
 		constructor: function(params) {
@@ -17,8 +32,11 @@ define([
 				}.bind(this));
 			}
 
-			this._registeredComponents = {};
-			this._registeredBindings = {};
+			// registry of components
+			this._componentsRegistry = compose.create(Registry, _IdMapping);
+			// registry of bindings for a component
+			this._bindingsRegistry = new Map();
+			//
 			this._hardRefs = {};
 
 		},
@@ -50,112 +68,71 @@ define([
 			return isComponent(component);
 		},
 
-		generateId: function() {
-			return "comp"+(Math.floor(Math.random() * 1000000)).toString();
-		},
-
 		/*
 		 * Get a subcomponent's id
 		 *
-		 * @param {Component|String}	component	Component or id
-		 * @return {String} Id of subcomponent
+		 * @param {String}	component	Component
+		 * @return {String} Id of component
 		 */
 		_getComponentId: function(component) {
-			var id, cmp;
-			if (lang.isString(component)) {
-				// argument is an id
-				if (this._registeredComponents.hasOwnProperty(component)) {
-					// a component is registered with this id
-					id = component;
-				} else {
-					// no component registered with this id,
-					// see if _addComponent() returns anything
-					cmp = this._addComponent(component);
-					if (cmp) {
-						id = component;
-					}
-				}
-				return id;
-			} else {
-				for (id in this._registeredComponents) {
-					if (this._registeredComponents[id] === component) {
-						return id;
-					}
-				}
-				console.warn('Unknown component', component);
-			}
+			return this._componentsRegistry.getId(component);
 		},
 
 		/*
-		 * Get a subcomponent from its id
-		 * (argument can be a component instance, in which case check if is subcomponent and return it)
+		 * Get a subcomponent by id
 		 *
-		 * @param {Component|String}	component	Component or id
+		 * @param {String|Component}	component	Component or id
 		 * @return {Component|undefined} Subcomponent
 		 */
-		_getComponent: function(component) {
-			var id = this._getComponentId(component);
-			if (id) {
-				return this._registeredComponents[id];
+		_getComponent: function(arg) {
+			if (typeof arg === "string") {
+				return this._componentsRegistry.getById(arg);
+			} else {
+				return this._hasComponent(arg) ? arg : undefined;
 			}
 		},
 
-		/*
-		 * Get a list of subcomponents
-		 *
-		 * @param {Array}	components	List of component instances or ids
-		 * @return {Array}	List of subcomponent instances
-		 */
-		_getComponents: function(components) {
-			var result = [];
-			for (var c in components) {
-				var cmp = this._getComponent(components[c]);
-				if (cmp) {
-					result.push(cmp);
-				}
-			}
-			return result;
+		_hasComponent: function(component){
+			return this._componentsRegistry.has(component);
 		},
 
+
+
 		/*
-		 * Register sub-components
+		 * Add a sub-component
 		 *
-		 * @param {Component|Function} component	Component instance to be added. Can also be a function returning a component instance.
+		 * @param {Component|Function} component	Component instance to be added. Can also be a function returning a component instance. Can also be the id of a declared (but not created) component.
 		 * @param {String}		[id]		Id of component
 		 * @param {Object}		[options]
 		 * 		Registering options:
 		 * 			- noHardRef: prevent creation of a private attribute for quick access to the subcomponent (ex: this._sub1)
 		 */
 		_addComponent: function(component, id, options) {
-			if (lang.isString(component)) {
+			// declarative mode
+			if (typeof component === "string") {
+				var name = component;
 				// argument is supposed to be an id, check if defined in _components
-				if (this._components.hasOwnProperty(component)) {
-					return this._addComponent(this._components[component], component);
+				if (this._components.hasOwnProperty(name)) {
+					return this._addComponent(this._components[name], name);
 				} else {
-					console.warn('Unknown id', component);
+					// TODO: throw an exception instead of a warning ?
+					console.warn('No declaration for this component name:', component);
 					return;
 				}
 			}
 
 			component = this._getFactoryResult(component);
 			if (!this._isComponentSupported(component)) {
-				console.warn("Unsupported component", component);
+				console.warn("The component", component, "cannot be added because it is not supported by", this);
 			}
 
-			if (id && (!options || !options.noHardRef)) {
-				var ref = '_' + id;
-				if (this[ref] === undefined) {
-					this[ref] = component;
-					this._hardRefs[id] = ref;
-				}
-			}
+			this._registerComponent(component, id, options);
 
-			id = id || this.generateId();
-			this._registeredComponents[id] = component;
 
 			// if a binding has been declared for this component, enable it
 			if (this._bindings.hasOwnProperty(id)) {
-				this._bindComponent(component, this._bindings[id]);
+				var bindings = this._getFactoryResult(this._bindings[id]);
+				this._registerBindings(component, bindings);
 			}
 
 			return component;
@@ -163,70 +140,68 @@ define([
 
 		/*
 		 * Add several components at once
-		 *
-		 *  - components: {
-		 * 		id1: configObject1,
-		 * 		id2: configObject2,
-		 * 		...
-		 * 	  }
+		 * @param {Object|Array}	components	array or map of components
 		 */
 		_addComponents: function(components, options) {
-			Object.keys(components).forEach(function(id){
-				this._addComponent(components[id], id);
-			}.bind(this));
+			var result;
+			if (Array.isArray(components)){
+				result = [];
+				components.forEach(function(comp){
+					result.push(this._addComponent(comp));
+				}.bind(this));
+			} else {
+				result = {};
+				Object.keys(components).forEach(function(key){
+					result[key] = this._addComponent(components[key], key);
+				}.bind(this));
+			}
+			return result;
 		},
 
 		/*
 		 * Register binding handlers for a subcomponent that will be canceled when deleting the subcomponent
 		 *
 		 * @param {Component|String}	component	Component or id
-		 * @param {Array}				bindings	Binding handlers
-		 * @param {String}				[name]		Name of binding, useful for future reference
+		 * @param {binding|Array}	bindings	One binding or array of bindings
+		 * @param {String} name
 		 */
-		_bindComponent: function(component, bindings, name) {
-			var id = this._getComponentId(component);
-			if (id) {
-				bindings = this._getFactoryResult(bindings);
-				if (!lang.isArray(bindings)) {
-					bindings = [bindings];
-				}
-				if (!this._registeredBindings.hasOwnProperty(id)) {
-					this._registeredBindings[id] = {};
-				}
-				this._registeredBindings[id][name] = this.own.apply(this, bindings);
+		_registerBindings: function(cmp, bindings, name) {
+			cmp = this._getComponent(cmp);
+			var cmpBindings = this._bindingsRegistry.get(cmp) || new Map();
+			var cmpNamedBindings = cmpBindings.get(name) || [];
+			if (Array.isArray(bindings)) {
+				cmpNamedBindings = cmpNamedBindings.concat(bindings);
+			} else {
+				cmpNamedBindings.push(bindings);
 			}
-		},
-		/*
-		 * Register bindings for several subcomponents
-		 *
-		 * @param {Object}	bindings	Binding handlers indexed by subcomponent's id
-		 */
-		_bindComponents: function(bindings) {
-			for (var id in bindings) {
-				this._bindComponent(id, bindings[id]);
-			}
+			cmpBindings.set(name, cmpNamedBindings);
+			this._bindingsRegistry.set(cmp, cmpBindings);
 		},
 
 		/*
-		 * Remove bindings of a subcomponent
+		 * Cancel bindings of a subcomponent
 		 *
 		 * @param {Component|String}	component	Component or id
-		 * @param {String}				[name]		Name of binding to remove
+		 * @param {String}				[name]		Name of binding set to remove. If none is provided, all bindings will be canceled
 		 */
-		_unbindComponent: function(component, name) {
-			var id = this._getComponentId(component),
-				bindings = this._registeredBindings[id] && this._registeredBindings[id][name];
-
-			array.forEach(bindings, function(handle) {
-				handle.remove();
-			});
-			if (name) {
-				if (this._registeredBindings[id]) {
-					delete this._registeredBindings[id][name];
-				}
+		_unbindComponent: function(cmp, name) {
+			cmp = this._getComponent(cmp);
+			var cmpBindings = this._bindingsRegistry.get(cmp);
+			var bindings = [];
+			if (!cmpBindings) return;
+			if (name !== undefined) {
+				bindings = bindings.concat(cmpBindings.get(name));
+				cmpBindings.delete(name);
 			} else {
-				delete this._registeredBindings[id];
+				cmpBindings.forEach(function(bindingSet, name){
+					bindings = bindings.concat(bindingSet);
+					cmpBindings.delete(name);
+				});
 			}
+
+			bindings.forEach(function(binding){
+				binding();
+			});
 		},
 
 		/*
@@ -240,10 +215,25 @@ define([
 			}
 		},
 
-		_unregisterComponent: function(id) {
-			delete this._registeredComponents[id];
+		_registerComponent: function(component, id, options){
+			if (id && (!options || !options.noHardRef)) {
+				var ref = '_' + id;
+				if (this[ref] === undefined) {
+					this[ref] = component;
+					this._hardRefs[id] = ref;
+				}
+			}
+
+			this._componentsRegistry.register(component, id);
+
+		},
+
+		_unregisterComponent: function(component) {
+			var id = this._getComponentId(component);
+			this._componentsRegistry.unregister(component);
 			if (id in this._hardRefs) {
 				delete this[this._hardRefs[id]];
+				delete this._hardRefs[id];
 			}
 		},
 
