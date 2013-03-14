@@ -1,6 +1,6 @@
 define([
 	'SkFramework/utils/wru-amd',
-	'../ResourcesManager',
+	'../Registry',
 	'../_Factory',
 	'../_IdMapping',
 	'../_Versioning',
@@ -13,7 +13,7 @@ define([
 	"dojo/promise/all",
 ], function(
 	wru,
-	ResourcesManager,
+	Registry,
 	_Factory,
 	_IdMapping,
 	_Versioning,
@@ -77,7 +77,7 @@ define([
 	});
 
 	var Manager = compose(
-		ResourcesManager,
+		Registry,
 		_Factory,
 		_IdMapping,
 		_Versioning,
