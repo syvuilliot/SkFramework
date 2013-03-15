@@ -4,8 +4,11 @@
   "dependencies": {
     "dojo": "1.8.3",
     "dijit": "1.8.3",
-    "lodash": "#1.0.0-rc.3",
+    "lodash": "#1.0.1",
     "put-selector": "kriszyp/put-selector#0.3.2",
-    "compose": "kriszyp/compose#0.2.2"
+    "compose": "kriszyp/compose#0.2.2",
+    "frb": "montagejs/frb#0.1.25",
+    "collections": "montagejs/collections#0.1.16",
+    "dojo2-teststack": "csnover/dojo2-teststack"
   }
 }
