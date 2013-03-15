@@ -36,7 +36,6 @@ define([
 			this._componentsRegistry = compose.create(Registry, _IdMapping);
 			// registry of bindings for a component
 			this._bindingsRegistry = new Map();
-			//
 			this._hardRefs = {};
 
 		},
@@ -80,6 +79,8 @@ define([
 
 		/*
 		 * Get a subcomponent by id
+		 * Can be used by other methods to "normalize" the component argument :
+		 * if the argument is a registered component it is returned
 		 *
 		 * @param {String|Component}	component	Component or id
 		 * @return {Component|undefined} Subcomponent
@@ -91,9 +92,18 @@ define([
 				return this._hasComponent(arg) ? arg : undefined;
 			}
 		},
-
-		_hasComponent: function(component){
-			return this._componentsRegistry.has(component);
+		/*
+		 * Check that a component is registered
+		 *
+		 * @param {Component}	component	Component
+		 * @return {Boolean} Has
+		 */
+		_hasComponent: function(cmp){
+			if (typeof cmp === "string") {
+				return this._hasComponent(this._getComponent(cmp));
+			} else {
+				return this._componentsRegistry.has(cmp);
+			}
 		},
 
 
@@ -166,6 +176,7 @@ define([
 		 * @param {String} name
 		 */
 		_registerBindings: function(cmp, bindings, name) {
+			name = (name === undefined ? "default" : name); // prevent unpredictable behavior
 			cmp = this._getComponent(cmp);
 			var cmpBindings = this._bindingsRegistry.get(cmp) || new Map();
 			var cmpNamedBindings = cmpBindings.get(name) || [];
@@ -189,18 +200,27 @@ define([
 			var cmpBindings = this._bindingsRegistry.get(cmp);
 			var bindings = [];
 			if (!cmpBindings) return;
-			if (name !== undefined) {
-				bindings = bindings.concat(cmpBindings.get(name));
-				cmpBindings.delete(name);
-			} else {
+			if (name === undefined) { // cancel and remove all bindings for the component
 				cmpBindings.forEach(function(bindingSet, name){
 					bindings = bindings.concat(bindingSet);
 					cmpBindings.delete(name);
 				});
+			} else { // cancel and remove only the bindings registered with this name
+				bindings = bindings.concat(cmpBindings.get(name));
+				cmpBindings.delete(name);
+			}
+			// if there is no more binding for this component remove its entry in the registry
+			if (cmpBindings.length === 0) {
+				this._bindingsRegistry.delete(cmp);
 			}
 
 			bindings.forEach(function(binding){
-				binding();
+				if (typeof binding === "function"){
+					binding();
+				} else {
+					binding.remove && binding.remove();
+					binding.cancel && binding.cancel();
+				}
 			});
 		},
 
@@ -242,12 +262,11 @@ define([
 		 *
 		 * @param {Component|String}	component	Component or id
 		 */
-		_deleteComponent: function (component) {
-			var id = this._getComponentId(component);
-			this._unbindComponent(id);
-			var comp = this._getComponent(id);
-			this._destroyComponent(comp);
-			this._unregisterComponent(id);
+		_deleteComponent: function (cmp) {
+			cmp = this._getComponent(cmp);
+			this._unbindComponent(cmp);
+			this._destroyComponent(cmp);
+			this._unregisterComponent(cmp);
 		},
 
 		/*
@@ -266,8 +285,8 @@ define([
 		 */
 		destroy: function () {
 			//unregister every component and call destroy on them if available
-			Object.keys(this._registeredComponents).forEach(function(id){
-				this._deleteComponent(id);
+			this._componentsRegistry.forEach(function(cmp){
+				this._deleteComponent(cmp);
 			}.bind(this));
 			this.inherited(arguments);
 		}
