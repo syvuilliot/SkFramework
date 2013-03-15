@@ -5,8 +5,8 @@ define([
 	'dojo/_base/array',
 	'dojo/Evented',
 	'dijit/Destroyable',
-	"SkFramework/model/Registry",
-	"SkFramework/model/_IdMapping",
+	"SkFramework/utils/Registry",
+	"SkFramework/utils/_IdMapping",
 	"collections/map",
 ], function(
 	compose,

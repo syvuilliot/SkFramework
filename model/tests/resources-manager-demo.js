@@ -1,8 +1,8 @@
 define([
-	'SkFramework/utils/wru-amd',
-	'../Registry',
+	'../../utils/wru-amd',
+	'../../utils/Registry',
+	'../../utils/_IdMapping',
 	'../_Factory',
-	'../_IdMapping',
 	'../_Versioning',
 	'../_Connected',
 	'../_Syncable',
@@ -14,8 +14,8 @@ define([
 ], function(
 	wru,
 	Registry,
-	_Factory,
 	_IdMapping,
+	_Factory,
 	_Versioning,
 	_Connected,
 	_Syncable,
