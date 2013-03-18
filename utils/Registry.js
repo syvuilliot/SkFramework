@@ -1,7 +1,9 @@
 define([
 	"collections/set",
+	"SkFramework/utils/proxyFunctions",
 ], function(
-	Set
+	Set,
+	proxy
 ) {
 	/*
 	* base class for ResourcesManager
@@ -30,6 +32,9 @@ define([
 	proto.has = function(rsc) {
 		return this._registry.has(rsc);
 	};
+
+	proxy.prop(proto, "_registry", "length");
+	proxy.method(proto, "_registry", "forEach");
 
 	return ResourcesManager;
 

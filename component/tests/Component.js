@@ -2,7 +2,7 @@ define([
 	'teststack!object',
 	'teststack/chai!assert',
 	'dojo/_base/declare',
-	'../Component'
+	'../Component',
 ], function(
 	registerSuite,
 	assert,
@@ -22,18 +22,21 @@ define([
 		"add one component without name": function(){
 			main._addComponent(sub1);
 			assert(main._componentsRegistry.has(sub1));
+			assert(main._componentsRegistry.length === 1);
 		},
 		"add one component with a name and get it": function(){
 			main._addComponent(sub1, "sub1");
 			assert.equal(main._getComponent('sub1'), sub1);
 			assert(main._componentsRegistry.has(sub1));
 			assert.equal(main._sub1, sub1);
+			assert(main._componentsRegistry.length === 1);
 		},
 		"add many components without name": function(){
 			var comps = main._addComponents([sub1, sub2, sub3]);
 			assert(main._componentsRegistry.has(sub1));
 			assert(main._componentsRegistry.has(sub2));
 			assert(main._componentsRegistry.has(comps[2]));
+			assert(main._componentsRegistry.length === 3);
 		},
 		"add many components with names": function(){
 			var comps = main._addComponents({
@@ -44,9 +47,12 @@ define([
 			assert.equal(main._getComponent('sub1'), sub1);
 			assert.equal(main._getComponent('sub2'), sub2);
 			assert.equal(main._getComponent('sub3'), comps.sub3);
+			assert(main._componentsRegistry.length === 3);
 		},
-		"unknown component don't get returned": function(){
-			assert(!main._getComponent('unknown'));
+		"unknown components don't get returned": function(){
+			main._addComponent(sub1);
+			assert(!main._getComponent('sub1'));
+			assert(!main._getComponent(sub2));
 		},
 		"get component id": function(){
 			main._addComponent(sub1, "sub1");
@@ -61,8 +67,11 @@ define([
 			main._registerBindings(sub1, function(){
 				binding1Canceled = true;
 			});
+			assert(main._bindingsRegistry.length === 1);
+			assert(main._bindingsRegistry.get(sub1).length === 1);
 			main._unbindComponent(sub1);
 			assert(binding1Canceled);
+			assert(main._bindingsRegistry.length === 0);
 		},
 		"register and cancel an array of bindings without name": function(){
 			main._addComponent(sub1);
@@ -72,9 +81,12 @@ define([
 				function(){ binding2Canceled = true;},
 				function(){ binding3Canceled = true;},
 			]);
+			assert(main._bindingsRegistry.length === 1);
+			assert(main._bindingsRegistry.get(sub1).length === 1);
 			main._unbindComponent(sub1);
 			assert(binding2Canceled);
 			assert(binding3Canceled);
+			assert(main._bindingsRegistry.length === 0);
 		},
 		"register and cancel many bindings without name": function(){
 			main._addComponent(sub1);
@@ -86,15 +98,16 @@ define([
 			var binding2Canceled = false;
 			var binding3Canceled = false;
 			main._registerBindings(sub1, [
-				function(){ binding2Canceled = true;},
-				function(){ binding3Canceled = true;},
+				{remove: function(){ binding2Canceled = true;}},
+				{cancel: function(){ binding3Canceled = true;}},
 			]);
+			assert(main._bindingsRegistry.length === 1);
 			assert(main._bindingsRegistry.get(sub1).length === 1);
 			main._unbindComponent(sub1);
 			assert(binding1Canceled);
 			assert(binding2Canceled);
 			assert(binding3Canceled);
-			assert(main._bindingsRegistry.get(sub1).length === 0);
+			assert(main._bindingsRegistry.length === 0);
 		},
 		"register and cancel bindings with names": function(){
 			main._addComponent(sub1);
@@ -117,7 +130,7 @@ define([
 			main._unbindComponent(sub1, "binding2and3");
 			assert(binding2Canceled);
 			assert(binding3Canceled);
-			assert(main._bindingsRegistry.get(sub1).length === 0);
+			assert(main._bindingsRegistry.length === 0);
 		},
 		"register and cancel all bindings with names": function(){
 			main._addComponent(sub1);
@@ -131,38 +144,147 @@ define([
 				function(){ binding2Canceled = true;},
 				function(){ binding3Canceled = true;},
 			], "binding2and3");
-			assert(main._bindingsRegistry.get(sub1).length === 2);
+			assert(main._bindingsRegistry.get(sub1).length === 2); // "binding1" and "binding2&3"
 			main._unbindComponent(sub1);
 			assert(binding1Canceled);
 			assert(binding2Canceled);
 			assert(binding3Canceled);
-			assert(main._bindingsRegistry.get(sub1).length === 0);
+			assert(main._bindingsRegistry.length === 0);
+		},
+		"remove one component without name": function(){
+			main._addComponent(sub1);
+			main._addComponents([sub2, sub3]);
+			main._registerBindings(sub1, function(){});
+			main._registerBindings(sub2, function(){});
+			assert(main._componentsRegistry.length === 3);
+			assert(main._bindingsRegistry.length === 2);
+			main._deleteComponent(sub1);
+			assert(!main._componentsRegistry.has(sub1));
+			assert(main._componentsRegistry.length === 2);
+			assert(main._bindingsRegistry.length === 1);
+		},
+		"remove one component by name": function(){
+			main._addComponent(sub1, "sub1");
+			main._addComponents([sub2, sub3]);
+			main._registerBindings("sub1", function(){});
+			main._registerBindings(sub2, function(){});
+			assert(main._componentsRegistry.length === 3);
+			assert(main._bindingsRegistry.length === 2);
+			assert.equal(main._sub1, sub1);
+			main._deleteComponent("sub1");
+			assert(!main._componentsRegistry.has("sub1"));
+			assert(main._componentsRegistry.length === 2);
+			assert(main._bindingsRegistry.length === 1);
+			assert.equal(main._sub1, undefined);
+		},
+		"remove many components without name": function(){
+			main._addComponent(sub1);
+			main._addComponents([sub2, sub3]);
+			main._registerBindings(sub1, function(){});
+			main._registerBindings(sub2, function(){});
+			assert(main._componentsRegistry.length === 3);
+			assert(main._bindingsRegistry.length === 2);
+			main._deleteComponents([sub1, sub2]);
+			assert(!main._componentsRegistry.has(sub1));
+			assert(!main._componentsRegistry.has(sub2));
+			assert(main._componentsRegistry.length === 1);
+			assert(main._bindingsRegistry.length === 0);
+		},
+		"remove many components by name": function(){
+			main._addComponent(sub1, "sub1");
+			main._addComponents({
+				"sub2" : sub2,
+				"sub3" : sub3
+			});
+			main._registerBindings("sub1", function(){});
+			main._registerBindings(sub2, function(){});
+			assert(main._componentsRegistry.length === 3);
+			assert(main._bindingsRegistry.length === 2);
+			main._deleteComponents(["sub1", "sub2"]);
+			assert(!main._componentsRegistry.has("sub1"));
+			assert(!main._componentsRegistry.has("sub2"));
+			assert(main._componentsRegistry.length === 1);
+			assert(main._bindingsRegistry.length === 0);
+		},
+		"destroy main component": function(){
+			main._addComponent(sub1);
+			main._addComponents([sub2, sub3]);
+			main._registerBindings(sub1, function(){});
+			main._registerBindings(sub2, function(){});
+			assert(main._componentsRegistry.length === 3);
+			assert(main._bindingsRegistry.length === 2);
+			main.destroy();
+			assert(main._componentsRegistry.length === 0);
+			assert(main._bindingsRegistry.length === 0);
+		},
+		"don't add an anonymous component twice": function(){
+			main._addComponent(sub1);
+			assert.throw(function(){main._addComponent(sub1);}, "This component is already registered");
+			assert(main._componentsRegistry.length === 1);
+		},
+		"don't add a named component twice": function(){
+			main._addComponent(sub1, "sub1");
+			assert.throw(function(){main._addComponent(sub1, "sub2");}, "This component is already registered");
+			assert(main._componentsRegistry.length === 1);
+		},
+
+
+	});
+
+	var sub2BindingCanceled = false;
+	var MyComponent = declare(Component, {
+		_components: {
+			sub1: function(){
+				return new Component();
+			},
+			sub2: function(){
+				return new Component();
+			}
+		},
+		_bindings: {
+			sub2: function(){
+				return function(){
+					sub2BindingCanceled = true;
+				};
+			},
+
+		}
+	});
+
+	registerSuite({
+		name : "Declarative components creation with bindings",
+		beforeEach : function() {
+			main = new MyComponent();
+			sub2BindingCanceled = false;
+		},
+		"add one component without binding": function(){
+			main._addComponent("sub1");
+			assert(main._componentsRegistry.length === 1);
+			assert(main._bindingsRegistry.length === 0);
+			assert(main._hasComponent("sub1"));
+		},
+		"remove one component without binding": function(){
+			main._addComponent("sub1");
+			main._deleteComponent("sub1");
+			assert(main._componentsRegistry.length === 0);
+			assert(main._bindingsRegistry.length === 0);
+			assert(!main._hasComponent("sub1"));
+		},
+		"add one component with binding": function(){
+			main._addComponent("sub2");
+			assert(main._componentsRegistry.length === 1);
+			assert(main._bindingsRegistry.length === 1);
+			assert(main._hasComponent("sub2"));
+			assert(!sub2BindingCanceled);
+		},
+		"remove one component with binding": function(){
+			main._addComponent("sub2");
+			main._deleteComponent("sub2");
+			assert(main._componentsRegistry.length === 0);
+			assert(main._bindingsRegistry.length === 0);
+			assert(!main._hasComponent("sub2"));
+			assert(sub2BindingCanceled);
 		},
 	});
 
-/*
-			// Remove sub1
-			this.main._deleteComponent(this.sub1);
-
-			doh.f(this.main._getComponent('sub1'), "sub1 has correctly been removed");
-			doh.is(this.main._sub1, undefined, "sub1's private attribute has been removed");
-			doh.f(this.main._bindings.sub1, "sub1's binding has correctly been removed");
-			doh.t(this.sub1BindingRemoved, "sub1's binding has correctly been deactivated");
-			// Remove sub2
-			this.main._deleteComponent('sub2');
-
-			doh.f(this.main._registeredComponents.sub2, "sub2 has correctly been removed");
-			doh.is(this.main._sub2, 'occupied', "'_sub2' private attribute still there");
-			doh.f(this.main._bindings.sub2, "sub2's binding has correctly been removed");
-			doh.t(this.sub2BindingRemoved, "sub2's binding has correctly been deactivated");
-
-			// Destroy main component
-			this.main.destroy();
-
-			doh.f(this.main._getComponent('sub3'), "sub3 has been removed");
-			doh.f(this.main._bindings.sub3, "sub3's binding has been removed");
-			doh.t(this.sub3BindingRemoved, "sub3's binding has correctly been deactivated");
-		}
-	}]);
-*/
 });
