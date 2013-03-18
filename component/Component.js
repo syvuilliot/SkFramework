@@ -118,6 +118,10 @@ define([
 		 * 			- noHardRef: prevent creation of a private attribute for quick access to the subcomponent (ex: this._sub1)
 		 */
 		_addComponent: function(component, id, options) {
+			// don't add a component twice
+			if (this._hasComponent(component)) {
+				throw("This component is already registered");
+			}
 			// declarative mode
 			if (typeof component === "string") {
 				var name = component;
@@ -138,7 +142,7 @@ define([
 
 			this._registerComponent(component, id, options);
 
-
+			// declarative mode
 			// if a binding has been declared for this component, enable it
 			if (this._bindings.hasOwnProperty(id)) {
 				var bindings = this._getFactoryResult(this._bindings[id]);
