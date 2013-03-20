@@ -5,8 +5,8 @@ define([
 	'dojo/_base/array',
 	'dojo/Evented',
 	'dijit/Destroyable',
-	"SkFramework/utils/Registry",
-	"SkFramework/utils/_IdMapping",
+	"../utils/Registry",
+	"../utils/_IdMapping",
 	"collections/map",
 ], function(
 	compose,
@@ -122,7 +122,7 @@ define([
 
 			component = this._getFactoryResult(component);
 			if (!this._isComponentSupported(component)) {
-				console.warn("The component", component, "cannot be added because it is not supported by", this);
+				console.warn("The component", component, "is not supported by", this);
 			}
 
 			this._registerComponent(component, id, options);
