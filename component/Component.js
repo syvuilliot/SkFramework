@@ -25,18 +25,16 @@ define([
 
 
 	var Component = declare([Evented, Destroyable], {
-		_bindings: {},
 
 		constructor: function(params) {
 			// registry of components
 			this._componentFactories = {};
 			this._componentsRegistry = compose.create(Registry, _IdMapping);
 			// registry of bindings for a component
-			this._bindingsFactories = {};
-			this._bindingsRegistry = new Map();
+			this._bindingFactories = [];
+			this._bindingsRegistry = [];
 
 			this._hardRefs = {};
-
 		},
 
 		_getFactoryResult: function(factory) {
@@ -61,6 +59,14 @@ define([
 			return this._componentFactories[name];
 		},
 
+		_addBindingFactory: function(factory){
+			this._bindingFactories.push(factory);
+		},
+		_addBindingFactories: function(factories){
+			factories.forEach(function(f){
+				this._addBindingFactory(f);
+			}.bind(this));
+		},
 
 		/*
 		 * Check whether a component is supported as a sub-component
@@ -128,10 +134,27 @@ define([
 			this._registerComponent(component, id, options);
 
 			// declarative mode
-			// if a binding has been declared for this component, enable it
-			if (this._bindings.hasOwnProperty(id)) {
-				var bindings = this._getFactoryResult(this._bindings[id]);
-				this._registerBindings(component, bindings);
+			// if a binding has been declared for this component, and all others components are active, enable it
+			// we need to parse the whole _bindingFactories array each time
+			if (id){
+				var factories = this._bindingFactories;
+				// if one of cmps is the component we are concerned about return true
+				var someCb = function(cmpId){
+					return cmpId === id;
+				}.bind(this);
+				// if one of cmps is not registered return false
+				var everyCb = function(cmpId){
+					return this._getComponent(cmpId) ? true : false;
+				}.bind(this);
+
+				for (var i=0; i<factories.length; i++){
+					var cmps = factories[i][0];
+					if (!Array.isArray(cmps)){ cmps = [cmps];}
+					if (cmps.some(someCb) && cmps.every(everyCb)) {
+						var bindings = this._getFactoryResult(factories[i][1]);
+						this._registerBindings(cmps, bindings);
+					}
+				}
 			}
 
 			return component;
@@ -158,49 +181,46 @@ define([
 		},
 
 		/*
-		 * Register binding handlers for a subcomponent that will be canceled when deleting the subcomponent
+		 * Register binding cancelers for many components that will be canceled when deleting one of these component
 		 *
-		 * @param {Component|String}	component	Component or id
-		 * @param {binding|Array}	bindings	One binding or array of bindings
-		 * @param {String} name
+		 * @param {Array|Object|Function}	components	list of components concerned by the bindings
+		 * @param {binding|Array}	cancelers	List of binding cancelers
+		 * @param {Object} Name Name used to retrive bindings by name
 		 */
-		_registerBindings: function(cmp, bindings, name) {
+		_registerBindings: function(components, cancelers, name) {
 			name = (name === undefined ? "default" : name); // prevent unpredictable behavior
-			cmp = this._getComponent(cmp);
-			var cmpBindings = this._bindingsRegistry.get(cmp) || new Map();
-			var cmpNamedBindings = cmpBindings.get(name) || [];
-			if (Array.isArray(bindings)) {
-				cmpNamedBindings = cmpNamedBindings.concat(bindings);
+			if (Array.isArray(components)){
+				components.forEach(function(cmp, key){
+					components[key] = this._getComponent(cmp);
+				}.bind(this));
 			} else {
-				cmpNamedBindings.push(bindings);
+				components = [this._getComponent(components)];
 			}
-			cmpBindings.set(name, cmpNamedBindings);
-			this._bindingsRegistry.set(cmp, cmpBindings);
+			this._bindingsRegistry.push([components, cancelers, name]);
 		},
 
 		/*
-		 * Cancel bindings of a subcomponent
+		 * Cancel bindings registered for a component
 		 *
 		 * @param {Component|String}	component	Component or id
-		 * @param {String}				[name]		Name of binding set to remove. If none is provided, all bindings will be canceled
+		 * @param {String}				[name]		Name of binding sets to remove. If none is provided, all bindings will be canceled
 		 */
-		_unbindComponent: function(cmp, name) {
-			cmp = this._getComponent(cmp);
-			var cmpBindings = this._bindingsRegistry.get(cmp);
+		_unbindComponent: function(component, name) {
+			var reg = this._bindingsRegistry;
 			var bindings = [];
-			if (!cmpBindings) return;
-			if (name === undefined) { // cancel and remove all bindings for the component
-				cmpBindings.forEach(function(bindingSet, name){
-					bindings = bindings.concat(bindingSet);
-					cmpBindings.delete(name);
-				});
-			} else { // cancel and remove only the bindings registered with this name
-				bindings = bindings.concat(cmpBindings.get(name));
-				cmpBindings.delete(name);
-			}
-			// if there is no more binding for this component remove its entry in the registry
-			if (cmpBindings.length === 0) {
-				this._bindingsRegistry.delete(cmp);
+			var i;
+			var someCb = function(cmp){
+				if (cmp === component){
+					bindings = bindings.concat(reg[i][1]);
+					reg.splice(i, 1);
+					i--;
+					return true; // exit early the "some" loop
+				}
+			};
+			for (i = 0; i<reg.length; i++){
+				if (name === undefined || name === reg[i][2]){
+					reg[i][0].some(someCb);
+				}
 			}
 
 			bindings.forEach(function(binding){
