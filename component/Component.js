@@ -25,35 +25,40 @@ define([
 
 
 	var Component = declare([Evented, Destroyable], {
-		constructor: function(params) {
-			if (params) {
-				Object.keys(params).forEach(function(key){
-					this[key] = params[key];
-				}.bind(this));
-			}
+		_bindings: {},
 
+		constructor: function(params) {
 			// registry of components
+			this._componentFactories = {};
 			this._componentsRegistry = compose.create(Registry, _IdMapping);
 			// registry of bindings for a component
+			this._bindingsFactories = {};
 			this._bindingsRegistry = new Map();
+
 			this._hardRefs = {};
 
 		},
 
-		/*
-		 * Components definitions
-		 */
-		_components: {},
-		_bindings: {},
-
-		/*
-		 *
-		 */
 		_getFactoryResult: function(factory) {
 			if (factory instanceof Function) {
 				return factory.bind(this)();
 			}
 			return factory;
+		},
+
+		_addComponentFactory: function(name, factory){
+			this._componentFactories[name] = factory;
+		},
+		_addComponentFactories: function(factories){
+			Object.keys(factories).forEach(function(name){
+				this._addComponentFactory(name, factories[name]);
+			}.bind(this));
+		},
+		_removeComponentFactory: function(name){
+			delete this._componentFactories[name];
+		},
+		_getComponentFactory: function(name){
+			return this._componentFactories[name];
 		},
 
 
@@ -78,7 +83,7 @@ define([
 		},
 
 		/*
-		 * Get a subcomponent by id
+		 * Get a subcomponent by id or return the provided component if it is registered (undefined otherwise)
 		 * Can be used by other methods to "normalize" the component argument :
 		 * if the argument is a registered component it is returned
 		 *
@@ -89,23 +94,9 @@ define([
 			if (typeof arg === "string") {
 				return this._componentsRegistry.getById(arg);
 			} else {
-				return this._hasComponent(arg) ? arg : undefined;
+				return this._componentsRegistry.has(arg) ? arg : undefined;
 			}
 		},
-		/*
-		 * Check that a component is registered
-		 *
-		 * @param {Component}	component	Component
-		 * @return {Boolean} Has
-		 */
-		_hasComponent: function(cmp){
-			if (typeof cmp === "string") {
-				return this._hasComponent(this._getComponent(cmp));
-			} else {
-				return this._componentsRegistry.has(cmp);
-			}
-		},
-
 
 
 		/*
@@ -119,20 +110,14 @@ define([
 		 */
 		_addComponent: function(component, id, options) {
 			// don't add a component twice
-			if (this._hasComponent(component)) {
+			if (this._getComponent(component)) {
 				throw("This component is already registered");
 			}
 			// declarative mode
 			if (typeof component === "string") {
 				var name = component;
-				// argument is supposed to be an id, check if defined in _components
-				if (this._components.hasOwnProperty(name)) {
-					return this._addComponent(this._components[name], name);
-				} else {
-					// TODO: throw an exception instead of a warning ?
-					console.warn('No declaration for this component name:', component);
-					return;
-				}
+				var factory = this._getComponentFactory(name);
+				return this._addComponent(factory, name);
 			}
 
 			component = this._getFactoryResult(component);

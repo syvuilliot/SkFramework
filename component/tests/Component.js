@@ -233,13 +233,15 @@ define([
 
 	var sub2BindingCanceled = false;
 	var MyComponent = declare(Component, {
-		_components: {
-			sub1: function(){
-				return new Component();
-			},
-			sub2: function(){
-				return new Component();
-			}
+		constructor: function(){
+			this._addComponentFactories({
+				sub1: function(){
+					return new Component();
+				},
+				sub2: function(){
+					return new Component();
+				}
+			});
 		},
 		_bindings: {
 			sub2: function(){
@@ -261,20 +263,20 @@ define([
 			main._addComponent("sub1");
 			assert(main._componentsRegistry.length === 1);
 			assert(main._bindingsRegistry.length === 0);
-			assert(main._hasComponent("sub1"));
+			assert(main._getComponent("sub1"));
 		},
 		"remove one component without binding": function(){
 			main._addComponent("sub1");
 			main._deleteComponent("sub1");
 			assert(main._componentsRegistry.length === 0);
 			assert(main._bindingsRegistry.length === 0);
-			assert(!main._hasComponent("sub1"));
+			assert(!main._getComponent("sub1"));
 		},
 		"add one component with binding": function(){
 			main._addComponent("sub2");
 			assert(main._componentsRegistry.length === 1);
 			assert(main._bindingsRegistry.length === 1);
-			assert(main._hasComponent("sub2"));
+			assert(main._getComponent("sub2"));
 			assert(!sub2BindingCanceled);
 		},
 		"remove one component with binding": function(){
@@ -282,7 +284,7 @@ define([
 			main._deleteComponent("sub2");
 			assert(main._componentsRegistry.length === 0);
 			assert(main._bindingsRegistry.length === 0);
-			assert(!main._hasComponent("sub2"));
+			assert(!main._getComponent("sub2"));
 			assert(sub2BindingCanceled);
 		},
 	});
