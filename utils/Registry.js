@@ -1,6 +1,6 @@
 define([
 	"collections/set",
-	"SkFramework/utils/proxyFunctions",
+	"./proxyFunctions",
 ], function(
 	Set,
 	proxy

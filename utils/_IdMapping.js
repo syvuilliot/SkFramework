@@ -1,7 +1,9 @@
 define([
 	"compose/compose",
+	'collections/map'
 ], function(
-	compose
+	compose,
+	Map
 ) {
 	/*
 	* Mixin that primarily index resources by Id
