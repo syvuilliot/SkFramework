@@ -1,12 +1,10 @@
 define([
 	'dojo/_base/declare',
 	'dojo/dom-construct',
-	'put-selector/put',
     '../utils/string'
 ], function(
 	declare,
 	domConstruct,
-	put,
 	str
 ) {
 	/*
@@ -17,40 +15,26 @@ define([
 	};
 	
 	return declare([], {
-		_isComponentSupported: function(component) {
-			if (isDomNode(component)) {
+		_doPlaceComponent: function(node, containerNode, options) {
+			if (isDomNode(node) && isDomNode(containerNode)) {
+				domConstruct.place(node, containerNode, options);
 				return true;
-			}
-			return this.inherited(arguments);
-		},
-		
-	    _addComponent: function(cmp, id) {
-            var cmp = this.inherited(arguments);
-            if (isDomNode(cmp)) {
-                // add CSS class matching the component id, hyphenated
-                id && put(cmp, '.' + str.hyphenate(id));
-            }
-            return cmp;
-        },
-        
-		_insertComponentIntoDom: function(component, option) {
-			if (isDomNode(component)) {
-				domConstruct.place(component, this.domNode, option);
 			} else {
-				this.inherited(arguments);
+				return this.inherited(arguments);
 			}
 		},
 		
-		_detachComponentFromDom: function (component) {
-			if (isDomNode(component)) {
+		_doUnplaceComponent: function (node, containerNode) {
+			if (isDomNode(node) && isDomNode(containerNode)) {
 				try {
-					this.domNode.removeChild(component);
+					containerNode.removeChild(node);
 				}
 				catch(NotFoundError) {
 					console.warn('Tried to remove a node not present in parent');
 				}
+				return true;
 			} else {
-				this.inherited(arguments);
+				return this.inherited(arguments);
 			}
 		}
 	});

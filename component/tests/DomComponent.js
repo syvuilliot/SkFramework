@@ -1,47 +1,65 @@
-define(['doh/runner', '../DomComponent'], function(doh, DomComponent) {
-	doh.register("Testing Dom-components", [{
-		name : "DOM-component",
-		setUp : function() {
-			this.main = new DomComponent();
-			this.sub1 = new DomComponent({
-				domTag : 'h1',
-				domAttrs : {
-					innerHTML : "Sub1"
-				}
+define([
+	'teststack!object',	'teststack/chai!assert',
+	'../DomComponent'
+], function(
+	registerSuite,		assert,
+	Dom
+) {
+	"strict mode";
+	
+	var owner, domNode, sub1, sub2, subSub1, subSub2;
+	registerSuite({
+		name: "DOM components",
+		beforeEach: function() {
+			owner = new Dom();
+			sub1 = new Dom();
+			sub2 = new Dom();
+			subSub1 = new Dom('span');
+			subSub2 = new Dom({tag: 'span'});
+			owner._addComponents({
+				sub1: sub1,
+				sub2: sub2,
+				subSub1: subSub1,
+				subSub2: subSub2
 			});
-			this.sub2 = new DomComponent({
-				domTag : 'h2',
-				domAttrs : {
-					innerHTML : "Sub2"
-				}
-			});
-			this.main._addComponents({
-				sub1 : this.sub1,
-				sub2 : this.sub2
-			});
-			this.main._placeComponents(['sub1', this.sub2]);
 		},
-		runTest : function() {
-			doh.is(this.main.inDom, false);
-			doh.t(this.main.domNode, "main domNode");
-			// Insert into the DOM
-			this.main.inDom = true;
-			doh.t(this.main.inDom, "1. main in DOM");
-			doh.t(this.sub1.inDom, "1. sub1 in DOM");
-			doh.t(this.sub1.domNode, "sub1 rendered");
-			doh.t(this.sub2.domNode, "sub2 rendered");
-			doh.is(this.sub1.domNode.tagName, 'H1', "correct tag for sub1");
-			doh.is(this.sub1.domNode.innerHTML, "Sub1", "correct attributes for sub1");
-			// Remove from the DOM
-			this.main.inDom = false;
-			doh.f(this.main.inDom, "2. main out of DOM");
-			doh.f(this.sub1.inDom, "2. sub1 out of DOM");
-			doh.f(this.sub2.inDom, "2. sub2 out of DOM");
-			// Insert into the DOM again
-			this.main.inDom = true;
-			doh.t(this.main.inDom, "3. main in DOM again");
-			doh.t(this.sub1.inDom, "3. sub1 in DOM again");
-			doh.t(this.sub2.inDom, "3. sub2 in DOM again");
+		
+		"DOM node creation": function() {
+			assert.equal(owner.domNode.tagName, 'DIV', "Default tag name is 'div'");
+			assert.equal(subSub1.domNode.tagName, 'SPAN', "Tag name passed as single constructor arg");
+			assert.equal(subSub2.domNode.tagName, 'SPAN', "Tag name passed in constructor params");
+		},
+
+		"place single component": function() {
+			owner._place(sub1, owner.domNode);
+			assert(owner.domNode.contains(sub1.domNode), "sub1 in domNode");
+			owner._unplace(sub1);
+			assert.isFalse(owner.domNode.contains(sub1.domNode), "sub1 no more in domNode");
+		},
+		
+		"place single component by id": function() {
+			owner._place('sub1', 'domNode');
+			assert(owner.domNode.contains(sub1.domNode), "sub1 in domNode");
+			owner._unplace('sub1');
+			assert.isFalse(owner.domNode.contains(sub1.domNode), "sub1 no more in domNode");
+		},
+
+		"place multiple components": function() {
+			owner._place([sub1, 'sub2'], 'domNode');
+			assert.equal(owner.domNode.children[0], sub1.domNode, "sub1 in domNode in 1st place");
+			assert.equal(owner.domNode.children[1], sub2.domNode, "sub2 in domNode in 2nd place");
+			owner._unplace(sub1);
+			assert.isFalse(owner.domNode.contains(sub1.domNode), "sub1 no more in domNode");
+			assert(owner.domNode.contains(sub2.domNode), "sub2 still in domNode");
+			owner._unplace(sub2);
+			assert.isFalse(owner.domNode.contains(sub2.domNode), "sub2 no more in domNode");
+		},
+		
+		"place component tree": function() {
+			owner._place([sub1, [subSub1, subSub2]], 'domNode');
+			assert(owner.domNode.contains(sub1.domNode), "place component tree");
+			assert(sub1.domNode.contains(subSub1.domNode), "place component tree");
+			assert(sub1.domNode.contains(subSub2.domNode), "place component tree");
 		}
-	}]);
+	});
 });

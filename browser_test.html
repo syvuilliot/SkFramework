@@ -13,8 +13,14 @@
 			{ name: 'dojo-ts', location: 'dojo2-teststack/dojo' },
 			{ name: 'teststack', location: 'dojo2-teststack' },
 			{ name: 'chai', location: 'dojo2-teststack/chai', main: 'chai' },
-			{ name: 'SkFramework', location: basePath }
-		]
+			{ name: 'SkFramework', location: basePath },
+			'dojo2-teststack'
+		],
+		map: { 'dojo2-teststack': { 'dojo-ts': 'dojo2-teststack/dojo' } },
+		paths: {
+			"collections": "collections-amd",
+			"frb": "frb-amd",
+		}
 	}, [ 'teststack/client' ]);
 })();
 		</script>
