@@ -1,158 +1,153 @@
 define([
-	'lodash/lodash',
-	'dojo/_base/declare'
+	'dojo/_base/declare',	'dojo/_base/lang',
+	'collections/map'
 ], function(
-	_,
-	declare
+	declare,				lang,
+	Map
 ) {
+	function isTree(item) {
+		return lang.isArray(item) && item.length == 2 && lang.isArray(item[1]) && !isTree(item[1]);
+	}
+	
 	/*
 	 * Mixin adding placement API for Component
 	 */
 	return declare([], {
 		constructor: function() {
-			this._placedComponents = [];
+			// map children to containers
+			this._placedComponents = new Map();
+		},
+		/*
+		 * Place own children in own container
+		 * 
+		 * @param {Component|String|Array}	arg			Component/id/tree, or array of component/id/tree
+		 * @param {Component|String}		container	Component or id
+		 * @param {String|Object}			[options]	Placement options
+		 */
+		_place: function(arg, container, options) {
+			container = this._getComponent(container);
+			if (!container) {
+				throw "Unknown component";
+			}
+			if (!lang.isArray(arg) || isTree(arg)) {
+				arg = [arg];
+			}
+			
+			arg.forEach(function(item) {
+				if (isTree(item)) {
+					// tree
+					this._placeTree(item, container, options);
+				} else {
+					// leaf
+					this._placeLeaf(item, container, options);
+				}
+			}.bind(this));
 		},
 		
 		/*
-		 * Get index of placement
+		 * Place a subtree in a container
 		 * 
-		 * @param {Component}	component	Component
+		 * @param {Object}			tree		Tree
+		 * @param {Component}		container	Component
+		 * @param {String|Object}	[options]	Placement options
 		 */
-		_placeIndex: function(component) {
-			return this._placedComponents.indexOf(component);
+		_placeTree: function(tree, container, options) {
+			var leaf, root;
+			root = this._placeLeaf(tree[0], container);
+			this._place(tree[1], root);
+		},
+		
+		/*
+		 * Place a flat, single item
+		 * 
+		 * @param {Component|String}	leaf		Component or id
+		 * @param {Component}			container	Component
+		 * @param {String|Object}		[options]	Placement options
+		 */
+		_placeLeaf: function(leaf, container, options) {
+			leaf = this._getComponent(leaf);
+			if (leaf) {
+				if (this._doPlaceComponent(leaf, container, options)) {
+					this._placedComponents.set(leaf, container);
+				}
+			}
+			return leaf;
 		},
 		
 		/*
 		 * Placing implementation
 		 * 
-		 * @param {Component|String}	component	Component or id
-		 * @param {String|Object}		options		Placement options
+		 * @param {Component}	component	Component
+		 * @param {Component}	container	Component
+		 * @param {Object}		options		Placement options
 		 */
-		_doPlaceComponent: function(component, options) {
-			// To be implemented in subclasses
-		},
-		
-		
-		_getAssembledComponent: function(config) {
-			var comp, index, ctnrId, container;
-			if (_(config).isPlainObject()) {
-				for (ctnrId in config) {
-					container = this._getComponent(ctnrId);
-					if (container) {
-						comp = container.addChildren(this._getAssembledComponents(config[ctnrId]));
-					}
-					// only one key is consumed, since object configuration is supposed to represent only one container
-					break;
-				}
-			} else {
-				comp = this._getComponent(config);
-			}
-			return comp;
+		_doPlaceComponent: function(component, container, options) {
+			// To be overridden
+			console.warn("Component could not be placed:", component, "in", container);
+			return false;
 		},
 		
 		/*
-		 * Get a component or list of components with potential children already placed
+		 * Unplace own component from own container
 		 * 
-		 * @param {String|Object|Array}	config	Placement configuration
+		 * @param {Component|String|Object|Array}	children	Component/id/tree, or array of component/id/tree
 		 */
-		_getAssembledComponents: function(config) {
-			if (!(config instanceof Array)) {
-				return this._getAssembledComponent(config);
+		_unplace: function(children) {
+			if (!lang.isArray(children)) {
+				children = [children];
 			}
 			
-			var result = [],
-				item, i;
-			for (i = 0; i < config.length; i++) {
-				item = this._getAssembledComponent(config[i]);
-				if (item !== undefined) {
-					result.push(item);
-				}
-			}
-			return result;
-		},
-		
-		/*
-		 * Place a subcomponent
-		 * 
-		 * @param {Component|String}	component			Component or id
-		 * @param {String|Object}		[options="last"]	Placement options
-		 */
-		_placeComponent: function(component, options) {
-			options = (options === undefined) ? 'last' : options;
-			var comp = this._getAssembledComponents(component),
-				index;
-			
-			if (comp) {
-				index = this._placeIndex(comp);
-				if (index > -1) {
-					// Component already placed, remove it from array
-					this._placedComponents.splice(index, 1);
-				}
-				if (options === 'last') {
-					this._placedComponents.push(comp);
+			children.forEach(function(item) {
+				if (isTree(item)) {
+					// tree
+					this._unplaceTree(item);
 				} else {
-					// options should be an index
-					this._placedComponents.splice(options, 0, comp);
+					// leaf
+					this._unplaceLeaf(item);
 				}
-				this._doPlaceComponent(comp, options);
-			}
-		},
-
-		/*
-		 * Place several subcomponents
-		 * 
-		 * @param {Array}			config				Placement configuration
-		 * @param {String|Object}	[options="last"]	Placement options
-		 */
-		_placeComponents: function(config, options) {
-			var c, item;
-			for (c = 0; c < config.length; c++) {
-				item = config[c]; 
-				this._placeComponent(item, options);
-			}
-		},
-		
-		/*
-		 * Unplacing implementation
-		 * 
-		 * @param {Component|String}	component			Component or id
-		 */
-		_doUnplaceComponent: function(component) {
-			// To be implemented in subclasses
-		},
-		
-		/*
-		 * Unplace a subcomponent
-		 * 
-		 * @param {Component|String}	component	Component or id
-		 */
-		_unplaceComponent: function(component) {
-			var comp = this._getComponent(component),
-				index;
-			if (comp) {
-				index = this._placeIndex(comp);
-				if (index > -1) {
-					this._doUnplaceComponent(comp);
-					// remove from _placedComponents
-					this._placedComponents.splice(index, 1);
-				}
-			}
+			}.bind(this));
 		},
 		
 		/*
 		 * Unplace several subcomponents
 		 * 
-		 * @param {Array}			components			List of Component objects and/or ids
+		 * @param {Array}	components	List of Component objects and/or ids
 		 */
-		_unplaceComponents: function(components) {
-			var c;
-			for (c = 0; c < components.length; c++) {
-				this._unplaceComponent(components[c]);
+		_unplaceTree: function(tree) {
+			// unplace children of root first
+			this._unplace(tree[1]);
+			// then unplace root
+			this._unplaceLeaf(tree[0]);
+		},
+		
+		_unplaceLeaf: function(leaf) {
+			var container;
+			leaf = this._getComponent(leaf);
+			
+			if (leaf && this._placedComponents.has(leaf)) {
+				// remove leaf from the container where it had been placed
+				if (this._doUnplaceComponent(leaf, this._placedComponents.get(leaf))) {
+					// remove from _placedComponents
+					this._placedComponents.delete(leaf);
+				}
 			}
+			return leaf;
+		},
+
+		/*
+		 * Unplacing implementation
+		 * 
+		 * @param {Component}	container	Component
+		 * @param {Component}	component	Component
+		 */
+		_doUnplaceComponent: function(component, container) {
+			// To be overridden
+			console.warn("Component could not be unplaced:", component, "from", container);
+			return false;
 		},
 		
 		_deleteComponent: function(component) {
-			this._unplaceComponent(component);
+			this._unplace(component);
 			this.inherited(arguments);
 		}
 	});
