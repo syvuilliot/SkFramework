@@ -33,7 +33,7 @@ define([
 	function proxyProperties (proxy, target, props){
 		if (Array.isArray(props)){
 			props.forEach(function(prop){
-				proxyProperty(proxy, target, prop, props[prop]);
+				proxyProperty(proxy, target, prop);
 			});
 		} else {
 			Object.keys(props).forEach(function(prop){

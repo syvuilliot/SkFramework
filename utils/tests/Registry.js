@@ -11,7 +11,7 @@ define([
 	var values;
 
 	registerSuite({
-		name : "Registry without id property",
+		name : "Registering without key",
 		beforeEach : function() {
 			reg = new Registry();
 			values = [
@@ -28,16 +28,33 @@ define([
 				assert(reg.has(v));
 			});
 		},
-		"hasId": function(){
-			assert(reg.hasId(undefined));
-			assert(!reg.hasId(null));
+		"hasKey": function(){
+			assert(reg.hasKey(undefined));
+			assert(!reg.hasKey(null));
 		},
 		"getValues": function(){
 			assert.deepEqual(reg.getValues(undefined), values);
 		},
+		"length": function(){
+			assert(reg.length === 3);
+		},
+		"remove": function(){
+			values.forEach(function(v){
+				reg.remove(v);
+				assert(!reg.has(v));
+			});
+			assert(reg.length === 0);
+		},
+		"add twice": function(){
+			values.forEach(function(v){
+				assert.throw(function(){
+					reg.add(v);
+				}, "A value can not be added twice");
+			});
+		},
 	});
 	registerSuite({
-		name : "Registry with unique id property",
+		name : "Registering with unique keys",
 		beforeEach : function() {
 			reg = new Registry();
 			values = {
@@ -54,14 +71,14 @@ define([
 				assert(reg.has(values[k]));
 			});
 		},
-		"getId": function(){
+		"getKey": function(){
 			Object.keys(values).forEach(function(k){
-				assert(reg.getId(values[k]) === k);
+				assert(reg.getKey(values[k]) === k);
 			});
 		},
-		"hasId": function(){
+		"hasKey": function(){
 			Object.keys(values).forEach(function(k){
-				assert(reg.hasId(k));
+				assert(reg.hasKey(k));
 			});
 		},
 		"getValues": function(){
@@ -69,12 +86,23 @@ define([
 				assert.deepEqual(reg.getValues(k), [values[k]]);
 			});
 		},
+		"length": function(){
+			assert(reg.length === 3);
+		},
+		"remove": function(){
+			Object.keys(values).forEach(function(k){
+				reg.remove(values[k]);
+				assert(!reg.has(values[k]));
+				assert(!reg.hasKey(k));
+			});
+			assert(reg.length === 0);
+		},
 	});
 
 	var childParentPairs;
 
 	registerSuite({
-		name : "Registry with non unique id property",
+		name : "Registering with non unique keys",
 		beforeEach : function() {
 			reg = new Registry();
 			childParentPairs = [
@@ -97,21 +125,20 @@ define([
 				assert(reg.has(pair[0]));
 			});
 		},
-		"get parent": function(){
+		"getKey": function(){
 			childParentPairs.forEach(function(pair){
-				assert(reg.getId(pair[0]) === pair[1]);
+				assert(reg.getKey(pair[0]) === pair[1]);
 			});
 		},
-		"get children": function(){
-			// childParentPairs.forEach(function(pair){
-			// 	console.log("children of", pair[1], reg.getValues(pair[1]).toArray());
-			// });
+		"getValues": function(){
 			assert.deepEqual(reg.getValues(), ["1"]);
 			assert.deepEqual(reg.getValues("1"), ["11", "12", "13"]);
 			assert.deepEqual(reg.getValues("11"), []);
 			assert.deepEqual(reg.getValues("12"), ["121", "122"]);
 		},
-
+		"length": function(){
+			assert(reg.length === 9);
+		},
 	});
 
 });

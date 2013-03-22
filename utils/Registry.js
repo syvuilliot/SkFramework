@@ -8,12 +8,12 @@ define([
 	proxy
 ) {
 	/*
-	* Registry is designed to store unique values (like a Set) but to allow an access by id if it is provided
-	* Id can be a property of stored values or an independant value
+	* Registry is designed to store unique values (like a Set) but to allow an access by key if it is provided
+	* The key can be a property of stored values or an independant value
 	*/
 
 	function Registry(args){
-		this._idProperty = args && args.idProperty || undefined;
+		this._keyProperty = args && args.keyProperty || undefined;
 		this._values = new Map();
 		this._index = new Map();
 	}
@@ -21,44 +21,53 @@ define([
 	var proto = Registry.prototype;
 
 
-	proto.add = function(value, id){
-		// if no id is provided and that id should be available on the value, get it
-		if (!id && this._idProperty) {id = value[this._idProperty];}
+	proto.add = function(value, key){
+		// prevent adding a value twice
+		// its up to the user to remove it before adding it again if it need to change its key for example
+		if (this.has(value)) {
+			throw "A value can not be added twice";
+		}
+		// if no key is provided and that key should be available on the value, get it
+		if (key === undefined && this._keyProperty) {
+			key = value[this._keyProperty];
+		}
 		// store value
-		this._values.set(value, id);
-		// index value by id
-		var values = this._index.get(id);
+		this._values.set(value, key);
+		// index value by key
+		var values = this._index.get(key);
 		if(!values){
 			values = new Set();
-			this._index.set(id, values);
+			this._index.set(key, values);
 		}
 		values.add(value);
 	};
 
 	proto.remove = function(value){
-		var id = this.getId(value);
+		var key = this.getKey(value);
 		// remove value
 		this._values.delete(value);
 		// remove index
-		var values = this._index.get(id);
-		values.splice(values.indexOf(value), 1);
+		var values = this._index.get(key);
+		values.delete(value);
 		if (values.length === 0){
-			this._index.delete(id);
+			this._index.delete(key);
 		}
 	};
 
-	proto.getValues = function(id){
-		var valuesSet = this._index.get(id);
+	proto.getValues = function(key){
+		var valuesSet = this._index.get(key);
 		return valuesSet ? valuesSet.toArray() : [];
 	};
 
+	proxy.props(proto, "_values", ["length"]);
+
 	proxy.methods(proto, "_values", {
 		"has": "has",
-		"getId": "get",
+		"getKey": "get",
 	});
 
 	proxy.methods(proto, "_index", {
-		"hasId": "has",
+		"hasKey": "has",
 	});
 
 	return Registry;
