@@ -44,7 +44,7 @@ define([
 	function proxyMethods (proxy, target, props){
 		if (Array.isArray(props)){
 			props.forEach(function(prop){
-				proxyMethod(proxy, target, prop, props[prop]);
+				proxyMethod(proxy, target, prop);
 			});
 		} else {
 			Object.keys(props).forEach(function(prop){
