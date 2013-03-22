@@ -72,7 +72,7 @@ define([
 	};
 
 	proxy.methods(proto, "_componentsRegistry", [
-		"addComponent",
+		"add",
 		"removeComponent",
 		"addBindings",
 		"unbindComponent", // for those that would like to unbind a component without removing it (especially when there are named bindings)

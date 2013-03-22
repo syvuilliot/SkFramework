@@ -16,12 +16,21 @@ define([
 	var proto = ComponentsRegistry.prototype;
 
 	/*
-	 * Add a sub-component
+	 * Add sub-components
 	 *
 	 * @param {Component} component	Component instance to be added.
 	 * @param {String}		[id]		Id of component
 	 */
-	proxy.method(proto, "_components", "addComponent", "add");
+	proto.add = function (components) {
+		for (var id in components) {
+			var cmp = components[id];
+			if (components instanceof Array) {
+				this._components.add(cmp);
+			} else {
+				this._components.add(cmp, id);
+			}
+		}
+	}
 
 	/*
 	 * Delete a subcomponent
