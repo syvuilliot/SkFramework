@@ -15,22 +15,20 @@ define([
 	};
 	
 	return declare([], {
-		_doPlaceComponent: function(component, container, options) {
+		place: function(component, container, options) {
 			if (isSupportedChild(component) && isSupportedContainer(container)) {
 				// do the actual work here
 				return true;
-			} else {
-				return this.inherited(arguments);
 			}
+			return false;
 		},
 		
-		_doUnplaceComponent: function (component, container) {
+		unplace: function (component, container) {
 			if (isSupportedChild(component) && isSupportedContainer(container)) {
 				// do the actual work here
 				return true;
-			} else {
-				return this.inherited(arguments);
 			}
+			return false;
 		}
 	});
 });
