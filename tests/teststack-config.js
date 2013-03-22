@@ -13,8 +13,8 @@ define({
 
 	// Non-functional test suite(s) to run in each browser
 	suites: [
-		'ksf/component/tests/Component',
-		'ksf/component/tests/DomComponent'
+		'ksf/component/tests/all',
+		'ksf/utils/tests/all'
 	],
 
 });
