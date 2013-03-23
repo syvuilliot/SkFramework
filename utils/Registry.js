@@ -42,6 +42,27 @@ define([
 		values.add(value);
 	};
 
+	proto.addEach = function(values){
+		if (typeof values.forEach === "function") {
+			// copy map-alikes
+			if (typeof values.keys === "function") {
+				values.forEach(function (value, key) {
+					this.add(value, key);
+				}, this);
+			// iterate key value pairs of other iterables
+			} else {
+				values.forEach(function (value) {
+					this.add(value);
+				}, this);
+			}
+		} else {
+			// copy other objects as map-alikes
+			Object.keys(values).forEach(function (key) {
+				this.add(values[key], key);
+			}, this);
+		}
+	};
+
 	proto.remove = function(value){
 		var key = this.getKey(value);
 		// remove value

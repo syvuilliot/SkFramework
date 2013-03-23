@@ -21,27 +21,30 @@ define([
 	 * @param {Component} component	Component instance to be added.
 	 * @param {String}		[id]		Id of component
 	 */
-	proto.add = function (components) {
-		for (var id in components) {
-			var cmp = components[id];
-			if (components instanceof Array) {
-				this._components.add(cmp);
-			} else {
-				this._components.add(cmp, id);
-			}
-		}
-	}
+	proxy.methods(proto, "_components", ["add", "addEach"]);
 
 	/*
 	 * Delete a subcomponent
 	 *
 	 * @param {Component|String}	component	Component or id
 	 */
-	proto.removeComponent = function (cmp) {
-		cmp = this.getComponent(cmp);
+	proto.remove = function (cmp) {
+		cmp = this.get(cmp);
 		if (!cmp) {return;}
-		this.unbindComponent(cmp);
+		this.unbind(cmp);
 		this._components.remove(cmp);
+	};
+
+	proto.removeEach = function(cmps){
+		if (typeof cmps.forEach === "function") {
+			cmps.forEach(function (cmp) {
+				this.remove(cmp);
+			}, this);
+		} else {
+			Object.keys(cmps).forEach(function (key) {
+				this.remove(cmps[key]);
+			}, this);
+		}
 	};
 
 	/*
@@ -52,7 +55,7 @@ define([
 	 * @param {String|Component}	component	Component or id
 	 * @return {Component|undefined} Subcomponent
 	 */
-	proto.getComponent = function(arg) {
+	proto.get = function(arg) {
 		if (typeof arg === "string") {
 			return this._components.getValues(arg)[0];
 		} else {
@@ -60,7 +63,7 @@ define([
 		}
 	};
 
-	proto.hasComponent = function(arg){
+	proto.has = function(arg){
 		if (typeof arg === "string") {
 			return this._components.hasKey(arg);
 		} else {
@@ -79,10 +82,10 @@ define([
 		name = (name === undefined ? "default" : name); // prevent unpredictable behavior
 		if (Array.isArray(components)){
 			components.forEach(function(cmp, key){
-				components[key] = this.getComponent(cmp);
+				components[key] = this.get(cmp);
 			}.bind(this));
 		} else {
-			components = [this.getComponent(components)];
+			components = [this.get(components)];
 		}
 		this._bindings.push([components, cancelers, name]);
 	};
@@ -93,7 +96,7 @@ define([
 	 * @param {Component|String}	component	Component or id
 	 * @param {String}				[name]		Name of binding sets to remove. If none is provided, all bindings will be canceled
 	 */
-	proto.unbindComponent = function(component, name) {
+	proto.unbind = function(component, name) {
 		var reg = this._bindings;
 		var bindings = [];
 		var i;
