@@ -40,10 +40,6 @@ define([
 			cmps.forEach(function (cmp) {
 				this.remove(cmp);
 			}, this);
-		} else {
-			Object.keys(cmps).forEach(function (key) {
-				this.remove(cmps[key]);
-			}, this);
 		}
 	};
 
