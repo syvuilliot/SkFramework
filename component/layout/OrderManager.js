@@ -30,7 +30,7 @@ define([
 		 * @param {Component}			parent		Component
 		 * @param {Integer}				[options]	Position of node, default to last position
 		 */
-		place: function(config, parent, options) {
+		set: function(config, parent, options) {
 			if (!lang.isArray(config) || isTree(config)) {
 				config = [config];
 			}
@@ -51,7 +51,7 @@ define([
 		 * 
 		 * @param {Component|Array}		config		Component/Tree, or Array of Component/Tree
 		 */
-		unplace: function(config) {
+		remove: function(config) {
 			if (!lang.isArray(config)) {
 				config = [config];
 			}
@@ -76,7 +76,7 @@ define([
 		 */
 		_placeTree: function(tree, parent, options) {
 			this._placeNode(tree[0], parent);
-			this.place(tree[1], tree[0], options);
+			this.set(tree[1], tree[0], options);
 		},
 		
 		/*
@@ -87,7 +87,7 @@ define([
 		 * @param {Object}		[options]	Placement options
 		 */
 		_placeNode: function(node, parent, options) {
-			this._placementMngr.place(node, parent, options);
+			this._placementMngr.set(node, parent, options);
 		},
 		
 		/*
@@ -97,7 +97,7 @@ define([
 		 */
 		_unplaceTree: function(tree) {
 			// unplace children of root first
-			this.unplace(tree[1]);
+			this.remove(tree[1]);
 			// then unplace root
 			this._unplaceNode(tree[0]);
 		},
@@ -108,7 +108,7 @@ define([
 		 * @param {Component}	node		Component
 		 */
 		_unplaceNode: function(node) {
-			this._placementMngr.unplace(node);
+			this._placementMngr.remove(node);
 		}
 	});
 

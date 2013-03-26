@@ -15,7 +15,7 @@ define([
 	};
 	
 	return declare([], {
-		place: function(component, container, options) {
+		put: function(component, container, options) {
 			if (isSupportedChild(component) && isSupportedContainer(container)) {
 				// do the actual work here
 				return true;
@@ -23,7 +23,7 @@ define([
 			return false;
 		},
 		
-		unplace: function (component, container) {
+		remove: function (component, container) {
 			if (isSupportedChild(component) && isSupportedContainer(container)) {
 				// do the actual work here
 				return true;
