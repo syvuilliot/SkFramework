@@ -1,14 +1,14 @@
 define([
-	'dojo/_base/lang'
+	'./mixinProperties'
 ], function(
-	lang
+	mixin
 ) {
 	return function(ctor, proto) {
-		if (!lang.isFunction(ctor)) {
+		if (typeof ctro !== "function") {
 			proto = ctor;
-			ctor = function() {}
+			ctor = function() {};
 		}
-		lang.mixin(ctor.prototype, proto);
+		mixin(ctor.prototype, proto);
 		return ctor;
 	};
 });
