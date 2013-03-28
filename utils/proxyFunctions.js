@@ -22,13 +22,9 @@ define([
 		});
 	}
 	function proxyMethod (proxy, target, prop, targetProp){
-		Object.defineProperty(proxy, prop, {
-			value: function(){
-				return this[target][targetProp || prop].apply(this[target], arguments);
-			},
-			enumerable: true,
-			configurable: true,
-		});
+		proxy[prop] = function() {
+			return this[target][targetProp || prop].apply(this[target], arguments);
+		};
 	}
 	function proxyProperties (proxy, target, props){
 		if (Array.isArray(props)){

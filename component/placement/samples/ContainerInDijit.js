@@ -32,6 +32,11 @@ define([
 				child._dijitWrap.set(options);
 				parent.layout();
 			}
+		},
+		remove: function(child, parent, options) {
+			if (isContainer(child) && isDijitLayout(parent)) {
+				parent.removeChild(child._dijitWrap);
+			}
 		}
 	});
 });

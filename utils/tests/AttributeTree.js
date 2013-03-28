@@ -27,13 +27,13 @@ define([
 		},
 
 		"main tests": function() {
-			tree.add(sub1, root, sub1Attr);
+			tree.set(sub1, root, sub1Attr);
 			assert.equal(tree.getParent(sub1), root, "sub1 under root");
 			assert.equal(tree.getAttribute(sub1), sub1Attr, "sub1 attributes retrievable");
-			tree.add(sub2, root);
+			tree.set(sub2, root);
 			assert.equal(tree.getParent(sub2), root, "sub2 under root");
 			assert(tree.getChildren(root).length === 2, "can get children of root");
-			tree.add(subSub1, sub1, subSub1Attr);
+			tree.set(subSub1, sub1, subSub1Attr);
 			assert.equal(tree.getParent(subSub1), sub1, "subSub1 under sub1");
 			assert.equal(tree.getAttribute(subSub1), subSub1Attr, "subSub1 attributes retrievable");
 			tree.remove(sub1);

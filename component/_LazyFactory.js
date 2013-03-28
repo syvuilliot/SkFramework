@@ -1,20 +1,15 @@
 define([
-	'dojo/_base/declare',	'dojo/_base/lang',
-	'collections/map'
+	'./Manager'
 ], function(
-	declare,				lang,
-	Map
+	Manager
 ) {
-	/*
-	 * Mixin adding placement API for Component
-	 */
-	return declare([], {
-		_getComponent: function(arg) {
-			var cmp = this.inherited(arguments);
+	return {
+		get: function(arg) {
+			var cmp = Manager.prototype.get.apply(this, arguments);
 			if (!cmp && typeof arg === "string") {
-				cmp = this._addComponent(arg);
+				cmp = this.create(arg);
 			}
 			return cmp;
 		}
-	});
+	};
 });

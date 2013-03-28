@@ -5,7 +5,6 @@ define([
 ], function(
 	registerSuite,		assert,
 	declare,				style,
-	Map,
 	FlexContainer
 ) {
 	"strict mode";

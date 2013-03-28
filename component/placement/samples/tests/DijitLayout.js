@@ -3,21 +3,22 @@ define([
 	'../../../../utils/AttributeTree',
 	'dijit/layout/BorderContainer',	'dijit/layout/ContentPane',
 	'../FlexContainer',
-	'../../MultiPlacer',	'../DijitInDijit',	'../DijitInDom',	'../DomInDijit',	'../ContainerInDijit',	'../InContainer'
+	'../../ManyPlacer',	'../../MultiPlacers',	'../DijitInDijit',	'../DijitInDom',	'../ContainerInDijit',	'../InContainer'
 ], function(
 	declare,				style,				lang,
 	AttributeTree,
 	BorderContainer,				ContentPane,
 	FlexContainer,
-	MultiPlacer,			DijitInDijit,		DijitInDom,			DomInDijit,			ContainerInDijit,		InContainer
+	ManyPlacer,			MultiPlacers,			DijitInDijit,		DijitInDom,			ContainerInDijit,		InContainer
 ) {
 	"strict mode";
 	
 	var App = declare([], {
 		constructor: function() {
-			this._placement = new AttributeTree();
-			this._placer = new MultiPlacer([new DijitInDijit(), new DijitInDom(), new DomInDijit(),
-				new ContainerInDijit(), new InContainer()]);
+			this._placer = new ManyPlacer(new MultiPlacers([
+				new DijitInDijit(),
+				new ContainerInDijit(), new InContainer()
+			]));
 
 			this.root = new BorderContainer({style: "height: 100%; width: 100%;"});
 			this.leftPanel = new ContentPane({
@@ -33,28 +34,16 @@ define([
 			this.fixedContent.innerHTML = "FlexContainer.fixed";
 		},
 
-		layout: function() {
-			this.root.startup();
-			this._placer.put(this.leftPanel, this.root, {
-				region: 'left'
-			});
-			this._placer.put(this.rightPanel, this.root, {
-				region: 'center'
-			});
-
-			this._placer.put(this.fixedContent, this.rightPanel, 100);
-			this._placer.put(this.flexContent, this.rightPanel, 'flex');
+		init: function() {
+			this._placer.putEach([
+				[this.leftPanel, { region: 'left', splitter: 'true' }], [
+				[this.rightPanel, { region: 'center' }], [
+					[this.fixedContent, 100],
+					[this.flexContent, 'flex']
+				]]
+			], this.root);
 		}
 	});
-
-	Object.defineProperty(App.prototype, 'domNode', {
-		get: function() {
-			return this.root.domNode;
-		}
-	});
-	
-	window.app = new App();
-	document.body.appendChild(app.domNode);
 
 	// Set styles for html & body: fullscreen
 	style.set(document.getElementsByTagName('html')[0], {
@@ -69,6 +58,9 @@ define([
 		margin: 0,
 		padding: 0
 	});
+	
+	window.app = new App();
+	app.init();
 
-	app.layout();
+	new DijitInDom().put(app.root, document.body);
 });

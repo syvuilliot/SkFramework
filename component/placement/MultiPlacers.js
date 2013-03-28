@@ -1,19 +1,23 @@
 define([
-	'dojo/_base/declare',	'dojo/_base/array'
+	'ksf/utils/createConstructor',
+	'dojo/_base/array'
 ], function(
-	declare,				array
+	ctr,
+	array
 ) {
 	/*
 	 * Placer delegating placement to multiple placers
 	 */
-	return declare([], {
+	 return ctr(
 		/*
+		 * Constructor
+		 * 
 		 * @param {Array}	placers		List of placers = placement implementation
 		 */
-		constructor: function(placers) {
+		function MultiPlacers(placers) {
 			this._placers = placers;
 		},
-
+		{
 		/*
 		 * Place a single node in a parent
 		 * 

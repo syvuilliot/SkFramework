@@ -1,7 +1,7 @@
 define([
 	'dojo/_base/declare',
 	'collections/map',
-	'./DomPlacer'
+	'./DomInDom'
 ], function(
 	declare,
 	Map,
@@ -18,11 +18,13 @@ define([
 		put: function(child, options) {
 			this._children.add(options, child);
 			this.layout();
+			return true;
 		},
 		
 		set: function(child, options) {
 			this._children.set(child, options);
 			this.layout();
+			return true;
 		},
 
 		remove: function(child) {
@@ -43,14 +45,18 @@ define([
 				} else {
 					flexHeight -= attr;
 					this._placer.put(child, this.root, {
-						background: '#CCC',
-						height: attr + 'px'
+						style: {
+							background: '#CCC',
+							height: attr + 'px'
+						}
 					});
 				}
 			}.bind(this));
 			this._placer.put(flexChild, this.root, {
-				height: flexHeight + 'px',
-				background: '#AFA'
+				style: {
+					height: flexHeight + 'px',
+					background: '#AFA'
+				}
 			});
 		}
 	});

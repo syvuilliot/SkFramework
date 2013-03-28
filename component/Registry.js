@@ -6,7 +6,7 @@ define([
 	proxy
 ) {
 
-	function ComponentsRegistry(params){
+	function ComponentsRegistry(params) {
 		// registry of components
 		this._components = new Registry();
 		// registry of bindings linked to many components
@@ -122,6 +122,9 @@ define([
 
 	proxy.props(proto, "_components", ["length"]);
 
+	proxy.methods(proto, "_components", {
+		"getId": "getKey"
+	});
 
 	return ComponentsRegistry;
 });

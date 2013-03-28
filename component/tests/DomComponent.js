@@ -1,9 +1,9 @@
 define([
 	'teststack!object',	'teststack/chai!assert',
-	'../DomComponent'
+	'../DivComponent'
 ], function(
 	registerSuite,		assert,
-	Dom
+	Div
 ) {
 	"strict mode";
 	
@@ -11,41 +11,41 @@ define([
 	registerSuite({
 		name: "DOM components",
 		beforeEach: function() {
-			owner = new Dom();
-			sub1 = new Dom();
-			sub2 = new Dom();
-			subSub1 = new Dom('span');
-			subSub2 = new Dom({tag: 'span'});
-			owner._addComponents({
-				sub1: sub1,
-				sub2: sub2,
-				subSub1: subSub1,
-				subSub2: subSub2
+			owner = new Div();
+
+			owner._components.addEachComponentFactory({
+				sub1: function() { return new Div(); },
+				sub2: function() { return new Div(); },
+				subSub1: function() { return document.createElement('div'); },
+				subSub2: function() { return document.createElement('div'); }
 			});
+
+			sub1 = owner._components.create('sub1');
+			sub2 = owner._components.create('sub2');
+			subSub1 = owner._components.create('subSub1');
+			subSub2 = owner._components.create('subSub2');
 		},
 		
 		"DOM node creation": function() {
-			assert.equal(owner.domNode.tagName, 'DIV', "Default tag name is 'div'");
-			assert.equal(subSub1.domNode.tagName, 'SPAN', "Tag name passed as single constructor arg");
-			assert.equal(subSub2.domNode.tagName, 'SPAN', "Tag name passed in constructor params");
+			assert.equal(owner.domNode.tagName, 'DIV', "Tag name is 'div'");
 		},
 
 		"place single component": function() {
-			owner._place(sub1, owner.domNode);
+			owner._place(sub1);
 			assert(owner.domNode.contains(sub1.domNode), "sub1 in domNode");
 			owner._unplace(sub1);
 			assert.isFalse(owner.domNode.contains(sub1.domNode), "sub1 no more in domNode");
 		},
 		
 		"place single component by id": function() {
-			owner._place('sub1', 'domNode');
+			owner._place('sub1');
 			assert(owner.domNode.contains(sub1.domNode), "sub1 in domNode");
 			owner._unplace('sub1');
 			assert.isFalse(owner.domNode.contains(sub1.domNode), "sub1 no more in domNode");
 		},
 
 		"place multiple components": function() {
-			owner._place([sub1, 'sub2'], 'domNode');
+			owner._placeEach([sub1, 'sub2']);
 			assert.equal(owner.domNode.children[0], sub1.domNode, "sub1 in domNode in 1st place");
 			assert.equal(owner.domNode.children[1], sub2.domNode, "sub2 in domNode in 2nd place");
 			owner._unplace(sub1);
@@ -56,10 +56,18 @@ define([
 		},
 		
 		"place component tree": function() {
-			owner._place([sub1, [subSub1, subSub2]], 'domNode');
+			owner._placeEach([
+				'sub1',
+				['sub2', [
+					'subSub1',
+					'subSub2'
+				]]
+			]);
 			assert(owner.domNode.contains(sub1.domNode), "place component tree");
-			assert(sub1.domNode.contains(subSub1.domNode), "place component tree");
-			assert(sub1.domNode.contains(subSub2.domNode), "place component tree");
+			assert(sub2.domNode.contains(subSub1), "place component tree");
+			assert(sub2.domNode.contains(subSub2), "place component tree");
+
+
 		}
 	});
 });

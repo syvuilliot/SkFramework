@@ -3,6 +3,7 @@ define({
 	// used here
 	loader: {
 		packages: [
+			{ name: 'compose', location: 'compose', main: 'compose' },
 			{ name: 'chai', location: 'dojo2-teststack/chai', main: 'chai' }
 		],
 		paths: {

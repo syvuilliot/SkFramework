@@ -1,15 +1,13 @@
 define([
-	"./ComponentsRegistry",
+	"./Registry",
 	"../utils/proxyFunctions",
 ], function(
-	ComponentsRegistry,
+	Registry,
 	proxy
 ) {
-
-
 	// a component manager is designed to register component factories and bindings factories, in order to be abale to create and delete components many times
 	function ComponentsManager(params) {
-		this._componentsRegistry = new ComponentsRegistry();
+		this._componentsRegistry = new Registry();
 		this._componentFactories = {};
 		this._bindingsFactories = [];
 	}
@@ -18,6 +16,11 @@ define([
 
 	proto.addComponentFactory = function(id, factory){
 		this._componentFactories[id] = factory;
+	};
+	proto.addEachComponentFactory = function(factoriesMap){
+		for (var id in factoriesMap) {
+			this.addComponentFactory(id, factoriesMap[id]);
+		}
 	};
 	proto.removeComponentFactory = function(id){
 		delete this._componentFactories[id];
@@ -92,7 +95,6 @@ define([
 	proxy.methods(proto, "_componentsRegistry", [
 		"get",
 	]);
-
 
 
 	return ComponentsManager;
