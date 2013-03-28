@@ -8,8 +8,15 @@ define([
 	mixin
 ) {
 
-	var target, simpleliteralObject, literalObjectWithAccessors, valueDescriptors, accessorDescriptors;
+	var target, simpleliteralObject, literalObjectWithAccessors, valueDescriptors, accessorDescriptors, personInstance;
 	var propDesc = Object.getOwnPropertyDescriptor;
+
+	var Person = function(name){
+		this.name = name;
+	};
+	Person.prototype.describe = function(){
+		return "I'm "+this.name;
+	};
 
 	registerSuite({
 		name : "mixinProperties",
@@ -17,7 +24,9 @@ define([
 			target = {name: "toto"};
 			simpleliteralObject = {age: 3, friend: "titi", cool: true, address: {city: "Choisy"}};
 			literalObjectWithAccessors = {
-				get job(){return "student";},
+				_job: "student",
+				get job(){return this._job;},
+				set job(job){this._job = job;}
 			};
 			valueDescriptors = {
 				dog: {
@@ -30,6 +39,7 @@ define([
 					get: function(){return "red";}
 				}
 			};
+			personInstance = new Person("tata");
 
 		},
 		"simpleliteralObject": function(){
@@ -41,6 +51,8 @@ define([
 			mixin(target, literalObjectWithAccessors);
 			assert.deepEqual(propDesc(target, "job"), propDesc(literalObjectWithAccessors, "job"));
 			assert.equal(target.job, "student");
+			target.job = "cowboy";
+			assert.equal(target.job, "cowboy");
 		},
 		"valueDescriptors": function(){
 			mixin(target, valueDescriptors);
@@ -65,7 +77,26 @@ define([
 			assert.equal(target.dog, "medor");
 			assert.equal(target.color, "red");
 		},
-
+		"property override": function(){
+			var otherAgeProperty = {age: 5};
+			mixin(target, simpleliteralObject, otherAgeProperty);
+			assert.deepEqual(propDesc(target, "age"), propDesc(otherAgeProperty, "age"));
+			assert.equal(target.age, 5);
+		},
+		"copy only own properties": function(){
+			mixin(target, personInstance);
+			assert(target.describe === undefined);
+		},
+		"copy non enumerable properties": function(){
+			var objectWithNonEnumerableProperties = Object.create(null, {
+				nonEnumProp: {
+					value: "test"
+				}
+			});
+			assert.deepEqual(Object.keys(objectWithNonEnumerableProperties), []);
+			mixin(target, objectWithNonEnumerableProperties);
+			assert.equal(target.nonEnumProp, "test");
+		}
 	});
 
 });

@@ -1,8 +1,9 @@
 define([], function(){
 
 	/**
-	Utility function that does not only mixin values from sources to target but copy the whole property descriptor
-	As a refinement, it is also possible to declare a property descriptor on a source object and it will be used instead
+	Utility function that define properties on "target", by copying all (enumerable or not) own properties from "sources" from left to right.
+	If the value of a "source" property, looks like a property descriptor, the property itself is not copied but the property descriptor it defines is used to configure a property on target.
+
 	*/
 
 	// define properties on target based on sources objects by copying eitheir the properties directly or by using their value as a property descriptor if it is considered as one
