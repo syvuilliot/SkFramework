@@ -30,12 +30,17 @@ define([
 		return this._componentFactories[id];
 	},
 
-	// a bindingsFactory is [[cmp1, ...], function(cmp1, ...){doBinding(); return [canceler1, ...];}]
+	// a bindingsFactory is: function(cmp1, ...){doBinding(); return canceler;}
 	proto.addBindingsFactory = function(cmps, factory){
 		if (!Array.isArray(cmps)){
 			cmps = [cmps];
 		}
 		this._bindingsFactories.push([cmps, factory]);
+	};
+	proto.addEachBindingsFactory = function(factoriesList){
+		factoriesList.forEach(function (cmpsAndFactory) {
+			this.addBindingsFactory(cmpsAndFactory[0], cmpsAndFactory[1]);
+		}, this);
 	};
 	// TODO ?
 /*	proto.removeBindingsFactory = function(cmp){
@@ -57,13 +62,18 @@ define([
 				this.create(cmp);
 			}, this);
 		}
-
 	};
 
 	proto.delete = function(id){
 		this._componentsRegistry.remove(id);
 	};
-
+	proto.deleteEach = function(ids){
+		if (typeof ids.forEach === "function") {
+			ids.forEach(function (cmp) {
+				this.delete(cmp);
+			}, this);
+		}
+	};
 	// execute all bindings factories that reference this component and for which each dependant component is alive (registered in _componentsRegistry)
 	// it is a private method since the user should not execute bindings factories out of the component creation process
 	proto._bind = function(id){

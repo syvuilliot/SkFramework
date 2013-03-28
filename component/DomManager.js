@@ -62,10 +62,9 @@ define([
 				this._placer.removeEach(arg);
 			},
 
-			delete: function(id) {
+			delete: compose.before(function(id) {
 				this.unplace(this._componentsRegistry.get(id));
-				this._componentsRegistry.remove(id);
-			}
+			}),
 		}
 	);
 });

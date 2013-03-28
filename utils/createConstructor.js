@@ -4,7 +4,7 @@ define([
 	mixin
 ) {
 	return function(ctor, proto) {
-		if (typeof ctro !== "function") {
+		if (typeof ctor !== "function") {
 			proto = ctor;
 			ctor = function() {};
 		}
