@@ -54,6 +54,19 @@ define([
 			target.job = "cowboy";
 			assert.equal(target.job, "cowboy");
 		},
+		"accessors must not be called at mixin time": function(){
+			var called = false;
+			mixin(target, {
+				get data(){
+					called = true;
+					return this._data;
+				}
+			});
+			assert.isFalse(called);
+			target._data = "test";
+			assert.equal(target.data, "test");
+			assert(called);
+		},
 		"valueDescriptors": function(){
 			mixin(target, valueDescriptors);
 			assert.deepEqual(propDesc(target, "dog"), {value: "medor", writable: false, enumerable: true, configurable: false});

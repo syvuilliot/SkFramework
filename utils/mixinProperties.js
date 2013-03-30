@@ -15,7 +15,7 @@ define([], function(){
 		if (value._isDescriptor === true) {
 			return true;
 		}
-		// if one key of value (own or inherited) is not a descriptor attribute, it is considered not to be a descriptor
+		// if one own enumerable key of value is not a descriptor attribute, it is considered not to be a descriptor
 		// in other words, a descriptor value must only have keys that form a descriptor and nothing else
 		return Object.keys(value).every(function(key){
 			return ["value", "writable", "enumerable", "get", "set", "configurable"].indexOf(key) !== -1;
@@ -26,7 +26,11 @@ define([], function(){
 		var sources = [].slice.call(arguments, 1);
 		sources.forEach(function (source) {
 			Object.getOwnPropertyNames(source).forEach(function(propName) {
-				var descriptor = isDescriptor(source[propName]) ? source[propName] : Object.getOwnPropertyDescriptor(source, propName);
+				var descriptor = Object.getOwnPropertyDescriptor(source, propName);
+				// if descriptor value is an object, try to see if it looks like a descriptor
+				if (typeof descriptor.value === "object" && isDescriptor(source[propName])) {
+					descriptor =  source[propName];
+				}
 				Object.defineProperty(target, propName, descriptor);
 			});
 		});
