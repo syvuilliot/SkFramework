@@ -22,6 +22,10 @@ define([
 		get domNode() {
 			return this._components.get("domNode") || this._components.create("domNode");
 		},
+		_setPlacement: function(placement){
+			// use "domNode" as root
+			return UIComponent.prototype._setPlacement.call(this, ["domNode", placement]);
+		},
 	});
 
 });

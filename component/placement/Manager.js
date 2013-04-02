@@ -49,11 +49,11 @@ define([
 
 			// Remove all previously placed elements
 			this._placement.forEachPair(function(child, parent, options) {
-				this._placer.remove(child, parent);
-			});
+				this.remove(child);
+			}.bind(this));
 			// Place new configuration
 			parseAttributedTree(placement, function(child, parent, options) {
-				this.add(child, parent, options);
+				parent && this.add(child, parent, options);
 			}.bind(this));
 		},
 
@@ -71,9 +71,11 @@ define([
 			this._placer.addPlacer(placer);
 		},
 
+		isPlaced: function(cmp){
+			return this._placement.has(cmp);
+		}
 		// TODO ?
 		// get
-		// isPlaced
 
 	});
 });

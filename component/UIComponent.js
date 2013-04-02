@@ -14,10 +14,24 @@ define([
 		this._components = new Manager();
 		this._placement = new PlacementManager();
 	}, {
-		_setPlacement: function(placement){
+		_setPlacement: function(idTree){
+			// map tree of id to tree of components
 			// be sure that all components to be placed are created or create them
-			this._placement.set(placement);
-			// delete all non placed components
+			var mapFunction = function(value){
+				if (Array.isArray(value)) {
+					return value.map(mapFunction, this);
+				} else {
+					return this._components.get(value) || this._components.create(value);
+					//
+				}
+			};
+			var cmpTree = idTree.map(mapFunction, this);
+
+			// var unplaced = this._placement.delta(cmpTree)[0];
+			// do the placement
+			this._placement.set(cmpTree);
+			// delete all unplaced components
+			// unplaced.forEach(this._components._delete, this);
 		},
 		// create (if necessary) and place (call placer and register placement) one component
 		_place: function(component, container, options) {
@@ -40,9 +54,6 @@ define([
 			this._unplace(component);
 			this._components.delete(component);
 		},
-		_deleteEach: function(cmps){
-			cmps.forEach(this._delete, this);
-		}
 	});
 
 
