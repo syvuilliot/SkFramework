@@ -8,14 +8,14 @@ define([
 	/*
 	 * Placer delegating placement to multiple placers
 	 */
-	 return ctr(
+	return ctr(
 		/*
 		 * Constructor
 		 *
 		 * @param {Array}	placers		List of placers = placement implementation
 		 */
 		function MultiPlacers(placers) {
-			this._placers = placers;
+			this._placers = placers || [];
 		},
 		{
 		/*
@@ -50,6 +50,10 @@ define([
 				console.warn("Unable to unplace node", node, "from", parent);
 				return false;
 			}
+		},
+
+		addPlacer: function(placer){
+			this._placers.push(placer);
 		}
 	});
 });

@@ -49,8 +49,9 @@ define([
 */
 
 	proto.create = function(id){
+		if (this._componentsRegistry.has(id)) {throw "The component is already created";}
 		var cmpFactory = this._getComponentFactory(id);
-		var cmp = cmpFactory.call(this);
+		var cmp = cmpFactory.call();
 		this._componentsRegistry.add(cmp, id);
 		this._bind(id);
 		return cmp;
@@ -96,7 +97,7 @@ define([
 			if (cmpIds.some(someCb) && cmpIds.every(everyCb)) {
 				var factory = factories[i][1];
 				var cmps = cmpIds.map(mapCb);
-				var bindings = factory.apply(this, cmps);
+				var bindings = factory.apply(undefined, cmps);
 				this._componentsRegistry.addBindings(cmps, bindings);
 			}
 		}
