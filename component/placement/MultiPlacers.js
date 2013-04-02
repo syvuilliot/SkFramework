@@ -1,5 +1,5 @@
 define([
-	'ksf/utils/createConstructor',
+	'ksf/utils/constructor',
 	'dojo/_base/array'
 ], function(
 	ctr,
@@ -11,7 +11,7 @@ define([
 	 return ctr(
 		/*
 		 * Constructor
-		 * 
+		 *
 		 * @param {Array}	placers		List of placers = placement implementation
 		 */
 		function MultiPlacers(placers) {
@@ -20,7 +20,7 @@ define([
 		{
 		/*
 		 * Place a single node in a parent
-		 * 
+		 *
 		 * @param {Component}	child		Component
 		 * @param {Component}	parent		Component
 		 * @param {Object}		[options]	Placement options
@@ -35,7 +35,7 @@ define([
 				return false;
 			}
 		},
-		
+
 		/*
 		 * Unplace a node from the global tree
 		 *

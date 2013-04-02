@@ -1,5 +1,5 @@
 define([
-	'ksf/utils/createConstructor',
+	'ksf/utils/constructor',
 	'dojo/_base/lang',
 	'./DomInDom'
 ], function(
@@ -10,7 +10,7 @@ define([
 	var areSupported = function(child, parent) {
 		return parent.domNode && (child instanceof HTMLElement);
 	}
-	
+
 	var domInDom = new DomInDom();
 
 	return ctr({

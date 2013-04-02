@@ -1,20 +1,20 @@
 define([
-	'ksf/utils/createConstructor'
+	'ksf/utils/constructor'
 ], function(
 	ctr
 ) {
 	/*
 	 * Template for placer
 	 */
-	 
+
 	var isSupportedChild = function(element) {
 		return true;
 	};
-	
+
 	var isSupportedParent = function(element) {
 		return true;
 	};
-	
+
 	return ctr({
 		/*
 		 * Place child in parent
@@ -26,7 +26,7 @@ define([
 			}
 			return false;
 		},
-		
+
 		/*
 		 * Configure placed child
 		 */
@@ -37,7 +37,7 @@ define([
 			}
 			return false;
 		},
-		
+
 		/*
 		 * Remove child from parent
 		 */

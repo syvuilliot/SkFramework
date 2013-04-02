@@ -1,5 +1,5 @@
 define([
-	'ksf/utils/createConstructor',
+	'ksf/utils/constructor',
 	'dojo/_base/lang'
 ], function(
 	ctr,
