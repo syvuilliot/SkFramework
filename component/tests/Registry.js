@@ -1,7 +1,7 @@
 define([
 	'teststack!object',
 	'teststack/chai!assert',
-	'../ComponentsRegistry',
+	'../Registry',
 ], function(
 	registerSuite,
 	assert,
