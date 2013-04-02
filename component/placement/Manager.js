@@ -1,50 +1,71 @@
 define([
-	'ksf/utils/createConstructor',
-	'ksf/utils/AttributeTree'
+	'dojo/_base/lang',
+	'ksf/utils/constructor',
+	'ksf/utils/AttributeTree',	'ksf/utils/parseTree',
+	'./MultiPlacers'
 ], function(
+	lang,
 	ctr,
-	AttributeTree
+	AttributeTree,				parseTree,
+	MultiPlacers
 ) {
+	function isAttributedNode(item) {
+		return lang.isArray(item) && item.length === 2 && !lang.isArray(item[1]);
+	}
+
+	function parseAttributedTree(tree, callback) {
+		parseTree(tree, function(child, parent) {
+			var options;
+			if (isAttributedNode(child)) {
+				child = child[0];
+				options = child[1];
+			}
+			if (isAttributedNode(parent)) {
+				parent = parent[0];
+			}
+			callback(child, parent, options);
+		});
+	}
+
 	/*
-	 * Placer delegating placement to multiple placers
+	 * Placement manager
 	 */
-	 return ctr(
+	return ctr(
 		/*
 		 * Constructor
-		 * 
-		 * @param {Array}	placer		Placer = placement implementation
-		 */
-		function PlacementManager(placer) {
-			this._placer = placer;
-			this._placement = new AttributeTree();
-		},
-		{
-		/*
-		 * Place a single node in a parent
-		 * 
-		 * @param {Component}	child		Component
-		 * @param {Component}	parent		Component
-		 * @param {Object}		[options]	Placement options
-		 */
-		put: function(child, parent, options) {
-			this._placement.set(child, parent, options);
-			this._placer.put(child, parent, options);
-		},
-
-		/*
-		 * Configure placed child
-		 */
-		set: function(child, options) {
-			this._placer.set(child, this._placement.get(child), options);
-		},
-
-		/*
-		 * Unplace a node from the global tree
 		 *
-		 * @param {Component}	child		Component
+		 * @param {Array}	placers		List of Placer = placement implementations
 		 */
+		function PlacementManager(placers) {
+			this._placer = new MultiPlacers(placers);
+			this._placement = new AttributeTree();
+			this._configurationParser = parseAttributedTree;
+		}, {
+		/*
+		 * Place a configuration of components
+		 *
+		 * @param {Tree}	placement		Tree of components
+		 */
+		set: function(placement) {
+			// TODO: optimize placement changes using 'set' method of placers for already placed elements
+
+			// Remove all previously placed elements
+			this._placement.forEachPair(function(child, parent, options) {
+				this.remove(child);
+			});
+			// Place new configuration
+			parseAttributedTree(placement, function(child, parent, options) {
+				this.add(child, parent, options);
+			}.bind(this));
+		},
+
+		add: function(child, parent, options) {
+			this._placer.put(child, parent, options);
+			this._placement.set(child, parent, options);
+		},
+
 		remove: function(child) {
-			this._placer.remove(child, this._placement.getParent(child), this._placement.getAttribute(child));
+			this._placer.remove(child, this._placement.getParent(child)/*, this._placement.getAttribute(options)*/);
 			this._placement.remove(child);
 		}
 	});

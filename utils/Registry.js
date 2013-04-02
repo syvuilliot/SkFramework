@@ -85,6 +85,7 @@ define([
 	proxy.methods(proto, "_values", {
 		"has": "has",
 		"getKey": "get",
+		'items': 'items'
 	});
 
 	proxy.methods(proto, "_index", {

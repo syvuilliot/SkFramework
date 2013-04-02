@@ -38,6 +38,15 @@ define([
 			return this._tree.getValues(parent);
 		},
 
+		/*
+		 * Loop over pairs of [child, parent(, options)]
+		 */
+		forEachPair: function(callback) {
+			return this._tree.items().forEach(function(item) {
+				callback(item[0], item[1], this.getAttribute(item[0]));
+			}.bind(this));
+		},
+
 		getParent: function(child) {
 			return this._tree.getKey(child);
 		},
