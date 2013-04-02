@@ -53,6 +53,9 @@ define([
 
 		getAttribute: function(node) {
 			return this._attributes.get(node);
+		},
+		has: function(node){
+			return this._tree.has(node);
 		}
 	});
 });

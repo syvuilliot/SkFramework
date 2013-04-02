@@ -1,25 +1,19 @@
 define([
-	'dojo/_base/lang'
 ], function(
-	lang
 ) {
 	function isTree(item) {
-		return lang.isArray(item) && item.length == 2 && lang.isArray(item[1]);
+		return Array.isArray(item) && item.length === 2 && Array.isArray(item[1]);
 	}
 
-	var parseTree = function(tree, callback) {
-		if (isTree(tree)) {
-			tree[1].forEach(function(item) {
-				if (isTree(item)) {
-					callback(item[0], tree[0]);
-					parseTree(item, callback);
-				} else {
-					callback(item, tree[0]);
-				}
+	var parseTree = function(node, callback, parent) {
+		if (isTree(node)) {
+			callback(node[0], parent);
+			node[1].forEach(function(child){
+				parseTree(child, callback, node[0]);
 			});
 		} else {
-			throw "Argument is not a tree";
+			callback(node, parent);
 		}
 	};
 	return parseTree;
-})
+});
