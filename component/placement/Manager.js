@@ -1,29 +1,12 @@
 define([
 	'ksf/utils/constructor',
-	'ksf/utils/AttributeTree',	'ksf/utils/parseTree',
+	'ksf/utils/AttributeTree',
 	'./MultiPlacers'
 ], function(
 	ctr,
-	AttributeTree,				parseTree,
+	Tree,
 	MultiPlacers
 ) {
-	function isAttributedNode(item) {
-		return Array.isArray(item) && item.length === 2 && !Array.isArray(item[1]);
-	}
-
-	function parseAttributedTree(tree, callback) {
-		parseTree(tree, function(child, parent) {
-			var options;
-			if (isAttributedNode(child)) {
-				child = child[0];
-				options = child[1];
-			}
-			if (isAttributedNode(parent)) {
-				parent = parent[0];
-			}
-			callback(child, parent, options);
-		});
-	}
 
 	/*
 	 * Placement manager
@@ -36,23 +19,24 @@ define([
 		 */
 		function PlacementManager(placers) {
 			this._placer = new MultiPlacers(placers);
-			this._placement = new AttributeTree();
-			this._configurationParser = parseAttributedTree;
+			this._placement = new Tree();
 		}, {
 		/*
 		 * Place a configuration of components
 		 *
 		 * @param {Tree}	placement		Tree of components
 		 */
-		set: function(placement) {
+		set: function(placementTree) {
+			// convert literal placementTree to a tree
+			placementTree = new Tree(placementTree);
 			// TODO: optimize placement changes using 'set' method of placers for already placed elements
 
 			// Remove all previously placed elements
-			this._placement.forEachPair(function(child, parent, options) {
-				this.remove(child);
+			this._placement.forEach(function(child, parent, options) {
+				parent && this.remove(child);
 			}.bind(this));
 			// Place new configuration
-			parseAttributedTree(placement, function(child, parent, options) {
+			placementTree.forEach(function(child, parent, options) {
 				parent && this.add(child, parent, options);
 			}.bind(this));
 		},

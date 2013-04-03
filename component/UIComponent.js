@@ -2,11 +2,13 @@ define([
 	'ksf/utils/constructor',
 	'./Manager',
 	'./placement/Manager',
+	'ksf/utils/AttributeTree',
 	'ksf/utils/proxyFunctions',
 ], function(
 	ctr,
 	Manager,
 	PlacementManager,
+	Tree,
 	proxy
 ) {
 
@@ -15,17 +17,13 @@ define([
 		this._placement = new PlacementManager();
 	}, {
 		_setPlacement: function(idTree){
+			// convert literal placementTree to a tree
+			idTree = new Tree(idTree);
 			// map tree of id to tree of components
 			// be sure that all components to be placed are created or create them
-			var mapFunction = function(value){
-				if (Array.isArray(value)) {
-					return value.map(mapFunction, this);
-				} else {
-					return this._components.get(value) || this._components.create(value);
-					//
-				}
-			};
-			var cmpTree = idTree.map(mapFunction, this);
+			var cmpTree = idTree.map(function(id){
+				return this._components.get(id) || this._components.create(id);
+			}, this);
 
 			// var unplaced = this._placement.delta(cmpTree)[0];
 			// do the placement
