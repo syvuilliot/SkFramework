@@ -1,20 +1,21 @@
 define([
 	'ksf/utils/constructor',
-	'./UIComponent',
+	'./Manager',
 	'./placement/samples/KsDomInDom',
 	'./placement/samples/DomInKsDom',
 	'./placement/samples/DomInDom',
 ], function(
 	ctr,
-	UIComponent,
+	Manager,
 	KsDomInDom,
 	DomInKsDom,
 	DomInDom
 ) {
 
-	return ctr(UIComponent, function DomComponent(){
-		UIComponent.apply(this, arguments);
-		[new DomInDom(), new KsDomInDom(), new DomInKsDom()].forEach(this._placement.addPlacer, this._placement);
+	return ctr(function DomComponent(){
+		this._components = new Manager({
+			placers: [new DomInDom(), new KsDomInDom(), new DomInKsDom()],
+		});
 		this._components.addComponentFactory("domNode", function(){
 			return document.createElement(this._domTag || "div");
 		}.bind(this));
@@ -24,7 +25,7 @@ define([
 		},
 		_setPlacement: function(placement){
 			// use "domNode" as root
-			return UIComponent.prototype._setPlacement.call(this, ["domNode", placement]);
+			return this._components.place(["domNode", placement]);
 		},
 	});
 

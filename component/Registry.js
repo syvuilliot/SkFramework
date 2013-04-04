@@ -28,17 +28,17 @@ define([
 	 *
 	 * @param {Component|String}	component	Component or id
 	 */
-	proto.remove = function (cmp) {
+	proto.delete = function (cmp) {
 		cmp = this.get(cmp);
 		if (!cmp) {return;}
 		this.unbind(cmp);
 		this._components.remove(cmp);
 	};
 
-	proto.removeEach = function(cmps){
+	proto.deleteEach = function(cmps){
 		if (typeof cmps.forEach === "function") {
 			cmps.forEach(function (cmp) {
-				this.remove(cmp);
+				this.delete(cmp);
 			}, this);
 		}
 	};
