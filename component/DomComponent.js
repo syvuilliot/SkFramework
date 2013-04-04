@@ -23,7 +23,7 @@ define([
 		get domNode() {
 			return this._components.get("domNode") || this._components.create("domNode");
 		},
-		_setPlacement: function(placement){
+		_place: function(placement){
 			// use "domNode" as root
 			return this._components.place(["domNode", placement]);
 		},
