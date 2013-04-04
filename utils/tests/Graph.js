@@ -13,20 +13,15 @@ define([
 	registerSuite({
 		name : "Graph path",
 		beforeEach : function() {
-			g = new Graph();
-			g.addNode("init");
-			g.addNode("undef");
-			g.addNode("simple");
-			g.addNode("number");
-			g.addNode("list");
-			g.addEdge("init", "undef", "init>undef");
-			g.addEdge("undef", "init", "undef>init");
-			g.addEdge("init", "simple", "init>simple");
-			g.addEdge("simple", "init", "simple>init");
-			g.addEdge("simple", "number", "simple>number");
-			g.addEdge("number", "simple", "number>simple");
-			g.addEdge("simple", "list", "simple>list");
-			g.addEdge("list", "simple", "list>simple");
+			g = window.g = new Graph();
+			g.set("init", "undef", "init>undef");
+			g.set("undef", "init", "undef>init");
+			g.set("init", "simple", "init>simple");
+			g.set("simple", "init", "simple>init");
+			g.set("simple", "number", "simple>number");
+			g.set("number", "simple", "number>simple");
+			g.set("simple", "list", "simple>list");
+			g.set("list", "simple", "list>simple");
 		},
 		"path": function(){
 			var path = g.getPath("list", "undef");

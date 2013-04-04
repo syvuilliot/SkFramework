@@ -1,20 +1,57 @@
 define([
-	"../utils/createConstructor",
+	"../utils/constructor",
+	"collections/map",
 ], function(
-	ctr
+	ctr,
+	Map
 ) {
 
+	// for tests only
+	window.map = new Map({
+		"un": 1,
+		"deux": 2
+	});
+
 	return ctr(function Graph(){
-		this._nodes = {};
+		this._store = new Map();
 	}, {
 		addNode: function(node){
-			this._nodes[node] = {};
+			this._store.set(node, new Map());
 		},
-		addEdge: function(from, to, value){
-			this._nodes[from][to] = value;
+		removeNode: function(node){
+			var adjacents = this.getAdjacents(node);
+			adjacents.forEach(function(relatedNode){
+				relatedNode.delete(node);
+			});
+			this._store.delete(node);
+		},
+		set: function(from, to, value){
+			if (! this.has(from)) {this.addNode(from);}
+			if (! this.has(to)) {this.addNode(to);}
+			this._store.get(from).set(to, value);
+		},
+		get: function(from, to){
+			return this._store.get(from).get(to);
+		},
+		has: function(node){
+			return this._store.has(node);
+		},
+		// for each node, call cb(adjacents, node, graph)
+		// not very usefull, no ?
+		forEachNode: function(cb, scope){
+			return this._store.forEach(cb, scope);
+		},
+		// for each value, call cb(value, [from, to], graph)
+		forEach: function(cb, scope){
+			var graph = this;
+			this._store.forEach(function(adjacents, node){
+				adjacents.forEach(function(value, adjacent){
+					cb.call(scope, value, [node, adjacent], graph);
+				});
+			});
 		},
 		getAdjacents: function(node){
-			return Object.keys(this._nodes[node]);
+			return this._store.get(node).keys();
 		},
 		getPath: function(start, end){
 			var visited = {start: undefined}; //keep visisted nodes and store their "parent" (the upper level begining from start)
@@ -43,13 +80,6 @@ define([
 				}
 				return path;
 			}
-		}
-
+		},
 	});
-
-
-
-
-
-
 });
