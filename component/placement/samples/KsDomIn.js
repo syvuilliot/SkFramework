@@ -1,32 +1,28 @@
 define([
 	'ksf/utils/constructor',
-	'dojo/_base/lang',
-	'./DomInDom'
 ], function(
-	ctr,
-	lang,
-	DomInDom
+	ctr
 ) {
 	var areSupported = function(child, parent) {
 		return child.domNode && (parent instanceof HTMLElement);
-	}
+	};
 
-	var domInDom = new DomInDom();
-
-	return ctr({
+	return ctr(function KsDomPlacer(placer){
+		this._placer = placer;
+	}, {
 		put: function(child, parent, options) {
 			if (areSupported(child, parent)) {
-				return domInDom.put(child.domNode, parent, options);
+				return this._placer.put(child.domNode, parent, options);
 			}
 		},
 		set: function(child, parent, options) {
 			if (areSupported(child, parent)) {
-				return domInDom.set(child.domNode, parent, options);
+				return this._placer.set(child.domNode, parent, options);
 			}
 		},
 		remove: function(child, parent, options) {
 			if (areSupported(child, parent)) {
-				return domInDom.remove(child.domNode, parent, options);
+				return this._placer.remove(child.domNode, parent, options);
 			}
 		}
 	});

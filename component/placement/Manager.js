@@ -1,4 +1,4 @@
-define([
+<define([
 	'ksf/utils/constructor',
 	'ksf/utils/AttributeTree',
 	'./MultiPlacers'

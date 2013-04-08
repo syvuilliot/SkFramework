@@ -24,6 +24,9 @@ define([
 		});
 	});
 
+	proxy.methods(Manager.prototype, "_registry", [
+		"getId",
+	]);
 	proxy.methods(Manager.prototype, "_registryFactory", [
 		"addComponentFactory",
 		"addEachComponentFactory",
