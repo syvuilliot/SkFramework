@@ -9,7 +9,7 @@ define([
 ){
 	return ctr(function DisablementManager(args){
 		this._registry = args.registry;
-		this._actionners = args.actionners;
+		this._actionner = args.actionner;
 		this._disabled = new Set();
 		this._observers = {};
 		// bind to registry : when a component is deleted remove it from our list
