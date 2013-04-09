@@ -7,14 +7,14 @@ define([
 ){
 	return ctr(function PlacerWithIdClass(args){
 		this._placer = args.placer;
-		this._regitry = args.registry;
+		this._registry = args.registry;
 		// TODO: injecter le styler
 	}, {
 		// when a domNode is placed, add its id as a css class
 		put: function(cmp, parent, options){
 			var res = this._placer.put(cmp, parent, options);
 			if (res) {
-				domClass.add(cmp, this._regitry.getId(cmp));
+				domClass.add(cmp, this._registry.getId(cmp));
 			}
 			return res;
 		},
@@ -25,7 +25,7 @@ define([
 		remove: function(cmp, parent, options){
 			var res = this._placer.remove(cmp, parent, options);
 			if (res){
-				domClass.remove(cmp, this._regitry.getId(cmp));
+				domClass.remove(cmp, this._registry.getId(cmp));
 			}
 			return res;
 		}

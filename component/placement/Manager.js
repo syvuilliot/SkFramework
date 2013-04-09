@@ -1,11 +1,9 @@
-<define([
+define([
 	'ksf/utils/constructor',
-	'ksf/utils/AttributeTree',
-	'./MultiPlacers'
+	'ksf/utils/AttributeTree'
 ], function(
 	ctr,
-	Tree,
-	MultiPlacers
+	Tree
 ) {
 
 	/*
@@ -17,18 +15,18 @@
 		 *
 		 * @param {Array}	placers		List of Placer = placement implementations
 		 */
-		function PlacementManager(placers) {
-			this._placer = new MultiPlacers(placers);
+		function PlacementManager(args) {
+			this._placer = args.placer;
 			this._placement = new Tree();
 		}, {
 		/*
 		 * Place a configuration of components
 		 *
-		 * @param {Tree}	placement		Tree of components
+		 * @param {Tree}	tree	Tree
 		 */
-		set: function(placementTree) {
+		set: function(tree) {
 			// convert literal placementTree to a tree
-			placementTree = new Tree(placementTree);
+			var placementTree = new Tree(tree);
 			// TODO: optimize placement changes using 'set' method of placers for already placed elements
 
 			// Remove all previously placed elements
@@ -47,19 +45,9 @@
 		},
 
 		remove: function(child) {
-			this._placer.remove(child, this._placement.getParent(child));
+			var parent = this._placement.getParent(child);
+			this._placer.remove(child, parent);
 			this._placement.remove(child);
-		},
-
-		addPlacer: function(placer){
-			this._placer.addPlacer(placer);
-		},
-
-		isPlaced: function(cmp){
-			return this._placement.has(cmp);
 		}
-		// TODO ?
-		// get
-
 	});
 });
