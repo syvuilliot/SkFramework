@@ -8,7 +8,7 @@ define([
 	'./placement/samples/KsDomIn',
 	'./placement/samples/InKsDom',
 	'./placement/samples/DomInDom',
-	'./managers/Name',
+	'./managers/Name',	'./managers/Style',
 	'./managers/TryEach',
 	'dojo/dom-class',
 ], function(
@@ -21,7 +21,7 @@ define([
 	KsDomIn,
 	InKsDom,
 	DomInDom,
-	NameManager,
+	NameManager,		StyleManager,
 	TryEach,
 	domClass
 ) {
@@ -48,6 +48,11 @@ define([
 					return true;
 				}}
 			),
+		});
+		this._style = new StyleManager({
+			component: 'domNode',
+			registry: this._components,
+			styler: domClass
 		});
 
 		this._placement = new RegistryFactoryPlacement({
