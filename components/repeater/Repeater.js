@@ -1,10 +1,9 @@
 define([
 	'ksf/utils/constructor',
-	'frb/observe',
-
+	'frb/bind',
 ], function(
 	ctr,
-	observe
+	bind
 ){
 
 	var creator = function(value){
@@ -24,41 +23,45 @@ define([
 
 
 	return ctr(function Repeater(args){
-		this.domNode = document.createElement(args && args.domTag || "div");
-		this._create = args && args.create || creator;
-		this._destroy = args && args.destroy || destructor;
-		this._place = args && args.place || placer;
-		this._unplace = args && args.unplace || unplacer;
-		this._components = [];
-		this.collection = args && args.collection;
+		// all properties are non enumerable (like on an array object) so they are not considered as items contained in this
+		Object.defineProperties(this, {
+			container: {value: args && args.container || document.createElement("div")},
+			_create: {value: args && args.create || creator},
+			_destroy: {value: args && args.destroy || destructor},
+			_place: {value: args && args.place || placer},
+			_unplace: {value: args && args.unplace || unplacer},
+			components: {value: []},
+			collection: {value: args && args.collection, configurable: true, writable: true},
+			_cancelBinding: {writable: true},
+		});
+		this._cancelBinding = bind(this, ".rangeContent()", {"<-": "collection"});
 
-		var rangeChangeListener = function (added, removed, position) {
-			var cmp;
-			// console.log("rangeChangeListener arguments", arguments);
-			removed.forEach(function(){
-				cmp = this._components.splice(position, 1)[0];
-				this._unplace(cmp, this.domNode, position);
+	}, {
+		swap: function(position, removed, added){
+			// console.log("swap called", arguments);
+			this.components.splice(position, removed).forEach(function(cmp){
+				this._unplace(cmp, this.container, position);
 				this._destroy(cmp);
 			}, this);
+			var cmp;
 			added.forEach(function(value, index){
 				cmp = this._create(value);
-				this._components.splice(position+index, 0, cmp);
-				this._place(cmp, this.domNode, position+index);
+				this.components.splice(position+index, 0, cmp);
+				this._place(cmp, this.container, position+index);
 			}, this);
-		}.bind(this);
-
-		this._cancelCollectionObserving = observe(this, "collection", function (collection) {
-			this._rangeChangeCanceler && this._rangeChangeCanceler(); // cancel previous collection change listener
-			// destroy components from previous collection
-			rangeChangeListener([], this._components, 0);
-			// start observing new collection
-			this._rangeChangeCanceler = collection.addRangeChangeListener(rangeChangeListener);
-			rangeChangeListener(collection, [], 0);
-		}.bind(this));
-	}, {
+		},
+		clear: function(){
+			// console.log("clear called", arguments);
+			// I don't know why this function is called but it is mandatory so I redirect it to "components"
+			return this.components.clear.apply(this.components, arguments);
+		},
+		// frb need a way to know how many values are contained in this in order to remove them when a new collection is setted
+		// it uses Array.from which delegate to array.addEach which uses "forEach" if available
+		forEach: function () {
+			return this.components.forEach.apply(this.components, arguments);
+		},
 		destroy: function(){
-			this._cancelCollectionObserving();
-			this._rangeChangeCanceler && this._rangeChangeCanceler();
+			this._cancelBinding();
 		},
 	});
 

@@ -29,7 +29,7 @@
 		){
 
 			window.repeater = new Repeater({
-				domTag: "ul",
+				container: put("ul"),
 				create: function(value){
 					return put("li", value);
 				},
@@ -37,10 +37,10 @@
 					li.innerHTML = "destroyed";
 				},
 			});
-			document.body.appendChild(repeater.domNode);
+			document.body.appendChild(repeater.container);
 
 			window.collection = ["a", "b", "c"];
-			window.repeaterDomChildren = repeater.domNode.children;
+			window.repeaterDomChildren = repeater.container.children;
 
 			function assertDomUpdated (){
 				console.assert(collection.length === repeaterDomChildren.length, "Collection and dom nodes are not the same lentgh");
@@ -50,6 +50,7 @@
 			}
 
 			// set a non empty collection
+			// bind(repeater, ".rangeContent()", {"<-": "$", source: collection});
 			repeater.collection = collection;
 			assertDomUpdated();
 
@@ -72,7 +73,7 @@
 
 			// remove one value at the beginning of the collection
 			// check that the corresponding component has been destroyed
-			var li = repeater._components[0];
+			var li = repeater.components[0];
 			collection.shift();
 			assertDomUpdated();
 			console.assert(li.innerHTML === "destroyed");
@@ -106,19 +107,7 @@
 			collection = [syv, aur, ant];
 
 
-/*			InputComponent = declare(DomComponent, {
-				domTag: "input",
-				constructor: function(){
-					this._cancelValueBinding =
-				},
-				destroy: function(){
-					this._cancelValueBinding();
-					this.inherited(arguments);
-				},
-			});
-*/
 			window.repeater = new Repeater({
-				domTag: "div",
 				create: function(value){
 					return bindings.defineBinding(document.createElement("input"), "value", {
 						"<->": "name", source: value
@@ -128,11 +117,11 @@
 					bindings.cancelBinding(el, "value");
 				},
 			});
-			document.body.appendChild(repeater.domNode);
+			document.body.appendChild(repeater.container);
 
 			repeater.collection = collection;
 
-			repeaterDomChildren = repeater.domNode.children;
+			repeaterDomChildren = repeater.container.children;
 			function assertDomInputUpdated (){
 				console.assert(collection.length === repeaterDomChildren.length, "Collection and dom nodes are not the same lentgh");
 				collection.forEach(function(value, index){
@@ -156,7 +145,7 @@
 			assertDomInputUpdated();
 
 			// simulate a change from user
-			window.input = repeater._components[0];
+			window.input = repeater.components[0];
 			input.value = "Aurélie";
 			on.emit(input, "change", {});
 			assertDomInputUpdated();
