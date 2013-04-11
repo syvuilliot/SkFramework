@@ -1,95 +1,65 @@
 define([
-	'dojo/_base/declare',
-	'../../component/DomComponent',	'../../component/Container',
-	'../../component/_WithDomNode',	'../../component/_WithDijit',
-	'../../component/Presenter',
-	'../../utils/binding',
-	"put-selector/put",
-	'frb/bind',
+	'ksf/utils/constructor',
+	'frb/observe',
 
 ], function(
-	declare,
-	DomComponent,							Container,
-	_WithDom,								_WithDijit,
-	PresenterBase,
-	binding,
-	put,
-	bind
+	ctr,
+	observe
 ){
-	var Presenter = declare([PresenterBase], {
-		constructor: function(){
-		},
-		_valueSetter: function(value){
-			//TODO: test that value is a collection
-			this.value = value;
-		},
-	});
+
+	var creator = function(value){
+		var div = document.createElement("div");
+		div.innerHTML = value;
+		return div;
+	};
+	var destructor = function(cmp){
+		cmp.destroy && cmp.destroy();
+	};
+	var placer = function(cmp, container, index){
+		container.insertBefore(cmp, container.children[index]);
+	};
+	var unplacer = function(cmp, container){
+		container.removeChild(cmp);
+	};
 
 
-	return declare([DomComponent, _WithDom, _WithDijit], {
-		domAttrs: {
-		},
-		collectionProperty: "value",
-		//default class for sub components that binds its value to its innerHTML
-		componentConstructor: declare(DomComponent, {
-			constructor: function(){
-				this._cancelValueBinding = bind(this, "domNode.innerHTML", {"<-": "_presenter.value"});
-			},
-			destroy: function(){
-				// console.log("destroy called on", this);
-				this._cancelValueBinding();
-				this.inherited(arguments);
-			},
-		}),
-		componentConstructorArguments: {},
+	return ctr(function Repeater(args){
+		this.domNode = document.createElement(args && args.domTag || "div");
+		this._create = args && args.create || creator;
+		this._destroy = args && args.destroy || destructor;
+		this._place = args && args.place || placer;
+		this._unplace = args && args.unplace || unplacer;
+		this._components = [];
+		this.collection = args && args.collection;
 
-		constructor: function() {
-			//create presenter
-			this._presenter = new Presenter();
+		var rangeChangeListener = function (added, removed, position) {
+			var cmp;
+			// console.log("rangeChangeListener arguments", arguments);
+			removed.forEach(function(){
+				cmp = this._components.splice(position, 1)[0];
+				this._unplace(cmp, this.domNode, position);
+				this._destroy(cmp);
+			}, this);
+			added.forEach(function(value, index){
+				cmp = this._create(value);
+				this._components.splice(position+index, 0, cmp);
+				this._place(cmp, this.domNode, position+index);
+			}, this);
+		}.bind(this);
 
-			this._componentsCollection = [];
-			//bind this to presenter value to call swap method
-			this._cancelCollectionBinding = bind(this, ".rangeContent()", {"<-": "_presenter."+this.collectionProperty});
-
-		},
-		swap: function(start, length, values){
-			// console.log("swap called", arguments);
-			// delete components
-			for(var i=0; i<length; i++){
-				this._deleteItemComponent(start);
-			}
-			// add components
-			values.forEach(function(value, index){
-				this._addItemComponent(value, start+index);
-			}.bind(this));
-		},
-		clear: function(){
-			// console.log("clear called", arguments);
-			//delete all components
-		},
-		_addItemComponent : function(value, index){
-			var component = this.createComponent(value);
-			this._componentsCollection.splice(index, 0, component);
-			this._addComponent(component);
-			this._placeComponent(component, index);
-		},
-		_deleteItemComponent: function(index){
-			var component = this._componentsCollection[index];
-			if(component) {//TODO: prevent frb from detecting own properties
-				this._componentsCollection.splice(index, 1);
-				this._deleteComponent(component);
-			}
-		},
-		createComponent: function(value){
-			var args = this.componentConstructorArguments;
-			var comp = new this.componentConstructor(args);
-			comp.set("value", value);
-			return comp;
-		},
+		this._cancelCollectionObserving = observe(this, "collection", function (collection) {
+			this._rangeChangeCanceler && this._rangeChangeCanceler(); // cancel previous collection change listener
+			// destroy components from previous collection
+			rangeChangeListener([], this._components, 0);
+			// start observing new collection
+			this._rangeChangeCanceler = collection.addRangeChangeListener(rangeChangeListener);
+			rangeChangeListener(collection, [], 0);
+		}.bind(this));
+	}, {
 		destroy: function(){
-			this._cancelCollectionBinding();
-			this.inherited(arguments);
+			this._cancelCollectionObserving();
+			this._rangeChangeCanceler && this._rangeChangeCanceler();
 		},
-
 	});
+
 });

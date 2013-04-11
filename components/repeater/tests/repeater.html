@@ -2,33 +2,42 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<title>Repeater test</title>
-	<link rel="stylesheet" href="../../../../dijit/themes/claro/claro.css">
+	<title>Repeater demo</title>
 </head>
-<body class="claro">
-	<script src="../../../../dojo/dojo.js"></script>
+<body>
+	<script src="../../../deps/dojo/dojo.js"></script>
 	<script>
 		require({
 			paths: {
+				ksf: "../../../SkFramework",
 				frb: "../frb-amd",
 				collections: "../collections-amd",
 			}
 		},[
 			"../Repeater.js",
-			"dojo/_base/declare",
-			"SkFramework/component/DomComponent",
+			"put-selector/put",
 			"frb/bind",
+			"frb/bindings",
 			"dojo/on",
 			"frb/dom",
-			// 'dojo/domReady!',
-		], function(Repeater, declare, DomComponent, bind, on){
+		], function(
+			Repeater,
+			put,
+			bind,
+			bindings,
+			on
+		){
 
 			window.repeater = new Repeater({
 				domTag: "ul",
-				componentConstructorArguments: {domTag: "li"},
+				create: function(value){
+					return put("li", value);
+				},
+				destroy: function(li){
+					li.innerHTML = "destroyed";
+				},
 			});
-			document.body.appendChild(repeater.render());
-			repeater.set('inDom');
+			document.body.appendChild(repeater.domNode);
 
 			window.collection = ["a", "b", "c"];
 			window.repeaterDomChildren = repeater.domNode.children;
@@ -41,7 +50,7 @@
 			}
 
 			// set a non empty collection
-			repeater.set("value", collection);
+			repeater.collection = collection;
 			assertDomUpdated();
 
 
@@ -62,11 +71,11 @@
 			assertDomUpdated();
 
 			// remove one value at the beginning of the collection
-			//check that its internal binding is canceled
-			var c = repeater._componentsCollection[0];
+			// check that the corresponding component has been destroyed
+			var li = repeater._components[0];
 			collection.shift();
 			assertDomUpdated();
-			console.assert(Object.getOwnPropertyDescriptor(c._presenter, "value").set === undefined);
+			console.assert(li.innerHTML === "destroyed");
 
 			//remove many values from the collection
 			collection.splice(1, 3);
@@ -74,19 +83,18 @@
 
 			//set an empty collection
 			collection = [];
-			repeater.set("value", collection);
+			repeater.collection = collection;
 			assertDomUpdated();
 
 			// set a new non empty collection in the repeater
 			collection = ["un", "deux", "trois"];
-			repeater.set("value", collection);
+			repeater.collection = collection;
 			assertDomUpdated();
 
 			//destroy repeater
 			repeater.destroy();
 			//check that the value binding is canceled
-			//certainly not the best way, but I check that the setter installed by frb is well removed
-			console.assert(Object.getOwnPropertyDescriptor(repeater._presenter, "value").set === undefined);
+			console.assert(collection.getRangeChangeDescriptor().changeListeners.length === 0);
 
 
 			// other tests with object items
@@ -97,24 +105,32 @@
 			leo = {name: "Léonie", child: true, sexe:"F"};
 			collection = [syv, aur, ant];
 
-			InputComponent = declare(DomComponent, {
+
+/*			InputComponent = declare(DomComponent, {
 				domTag: "input",
 				constructor: function(){
-					this._cancelValueBinding = bind(this, "domNode.value", {"<->": "_presenter.value.name"});
+					this._cancelValueBinding =
 				},
 				destroy: function(){
 					this._cancelValueBinding();
 					this.inherited(arguments);
 				},
 			});
-
-			repeater = new Repeater({
-				// value: collection, // why can we not do that ?
-				componentConstructor: InputComponent,
+*/
+			window.repeater = new Repeater({
+				domTag: "div",
+				create: function(value){
+					return bindings.defineBinding(document.createElement("input"), "value", {
+						"<->": "name", source: value
+					});
+				},
+				destroy: function(el){
+					bindings.cancelBinding(el, "value");
+				},
 			});
-			document.body.appendChild(repeater.render());
-			repeater.set("value", collection);
-			repeater.set('inDom');
+			document.body.appendChild(repeater.domNode);
+
+			repeater.collection = collection;
 
 			repeaterDomChildren = repeater.domNode.children;
 			function assertDomInputUpdated (){
@@ -140,7 +156,7 @@
 			assertDomInputUpdated();
 
 			// simulate a change from user
-			window.input = repeater._componentsCollection[0].domNode
+			window.input = repeater._components[0];
 			input.value = "Aurélie";
 			on.emit(input, "change", {});
 			assertDomInputUpdated();
