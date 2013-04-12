@@ -69,13 +69,19 @@ define([
 		this._factory.add("domNode", function(){
 			var domNode = document.createElement(this._domTag || "div");
 			domClass.add(domNode, this.constructor.name);
-			// this.name must be defined at the creation of domNode
-			domClass.add(domNode, this.name);
 			return domNode;
 		}.bind(this));
 	}, {
 		get domNode() {
 			return this._components.get("domNode") || this._factory.create("domNode");
 		},
+		get name() {
+			return this._name;
+		},
+		set name(val) {
+			this._name && domClass.remove(this.domNode, this._name);
+			this._name = val;
+			domClass.add(this.domNode, this._name);
+		}
 	});
 });
