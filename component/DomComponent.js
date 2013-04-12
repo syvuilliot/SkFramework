@@ -29,8 +29,7 @@ define([
 		this._components = new Registry();
 		this._factory = new ComponentFactory({ registry: this._components });
 		this._bindings = new BindingFactory({
-			registry: this._components,
-			componentsFactory: this._factory
+			registry: this._components
 		});
 		this._namer = new NameManager({
 			registry: this._components,

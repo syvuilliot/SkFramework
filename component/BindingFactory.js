@@ -7,11 +7,10 @@ define([
 ) {
 	return ctr(function Factory(args) {
 		this._componentsRegistry = args.registry;
-		this._componentsFactory = args.componentsFactory;
 		this._bindingsFactories = [];
 
-		// hook components factory's 'create' method for auto-binding feature on creation:
-		this._cancelFactoryHook = aspect.after(this._componentsFactory, 'create', function(id) {
+		// hook components registry's 'add' method for auto-binding feature:
+		this._cancelHook = aspect.after(this._componentsRegistry, 'add', function(cmp, id) {
 			this.bind(id);
 		}.bind(this), true);
 	}, {
@@ -58,7 +57,7 @@ define([
 		},
 
 		destroy: function() {
-			this._cancelFactoryHook();
+			this._cancelHook();
 		}
 	});
 });
