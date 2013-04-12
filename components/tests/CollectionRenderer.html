@@ -2,10 +2,10 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<title>Repeater demo</title>
+	<title>CollectionRenderer tests</title>
 </head>
 <body>
-	<script src="../../../deps/dojo/dojo.js"></script>
+	<script src="../../deps/dojo/dojo.js"></script>
 	<script>
 		require({
 			paths: {
@@ -14,28 +14,36 @@
 				collections: "../collections-amd",
 			}
 		},[
-			"../Repeater.js",
+			"../CollectionRenderer.js",
 			"put-selector/put",
 			"frb/bind",
 			"frb/bindings",
 			"dojo/on",
 			"frb/dom",
 		], function(
-			Repeater,
+			CollectionRenderer,
 			put,
 			bind,
 			bindings,
 			on
 		){
 
-			window.repeater = new Repeater({
+			window.repeater = new CollectionRenderer({
 				container: put("ul"),
-				create: function(value){
-					return put("li", value);
-				},
-				destroy: function(li){
-					li.innerHTML = "destroyed";
-				},
+				renderer: {
+					create: function(value){
+						return put("li", value);
+					},
+					destroy: function(li){
+						li.innerHTML = "destroyed";
+					},
+					place: function(cmp, container, index){
+						container.insertBefore(cmp, container.children[index]);
+					},
+					unplace: function(cmp, container, index){
+						container.removeChild(cmp);
+					},
+				}
 			});
 			document.body.appendChild(repeater.container);
 
@@ -50,7 +58,6 @@
 			}
 
 			// set a non empty collection
-			// bind(repeater, ".rangeContent()", {"<-": "$", source: collection});
 			repeater.collection = collection;
 			assertDomUpdated();
 
@@ -73,7 +80,7 @@
 
 			// remove one value at the beginning of the collection
 			// check that the corresponding component has been destroyed
-			var li = repeater.components[0];
+			var li = repeater._components[0];
 			collection.shift();
 			assertDomUpdated();
 			console.assert(li.innerHTML === "destroyed");
@@ -107,15 +114,23 @@
 			collection = [syv, aur, ant];
 
 
-			window.repeater = new Repeater({
-				create: function(value){
-					return bindings.defineBinding(document.createElement("input"), "value", {
-						"<->": "name", source: value
-					});
-				},
-				destroy: function(el){
-					bindings.cancelBinding(el, "value");
-				},
+			window.repeater = new CollectionRenderer({
+				renderer: {
+					create: function(value){
+						return bindings.defineBinding(document.createElement("input"), "value", {
+							"<->": "name", source: value
+						});
+					},
+					destroy: function(el){
+						bindings.cancelBinding(el, "value");
+					},
+					place: function(cmp, container, index){
+						container.insertBefore(cmp, container.children[index]);
+					},
+					unplace: function(cmp, container, index){
+						container.removeChild(cmp);
+					},
+				}
 			});
 			document.body.appendChild(repeater.container);
 
@@ -145,7 +160,7 @@
 			assertDomInputUpdated();
 
 			// simulate a change from user
-			window.input = repeater.components[0];
+			window.input = repeater._components[0];
 			input.value = "Aurélie";
 			on.emit(input, "change", {});
 			assertDomInputUpdated();
