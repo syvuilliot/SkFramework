@@ -6,12 +6,12 @@ define([
 	bind
 ){
 	var renderer = {
-		create: function(value){
+		create: function(value, index){
 			var div = document.createElement("div");
 			div.innerHTML = value;
 			return div;
 		},
-		destroy: function(cmp){
+		destroy: function(cmp, index){
 			cmp.destroy && cmp.destroy();
 		},
 		place: function(cmp, container, index){
@@ -40,11 +40,11 @@ define([
 			// console.log("swap called", arguments);
 			this._components.splice(position, removed).forEach(function(cmp){
 				this._renderer.unplace(cmp, this.container, position);
-				this._renderer.destroy(cmp);
+				this._renderer.destroy(cmp, position);
 			}, this);
 			var cmp;
 			added.forEach(function(value, index){
-				cmp = this._renderer.create(value);
+				cmp = this._renderer.create(value, position+index);
 				this._components.splice(position+index, 0, cmp);
 				this._renderer.place(cmp, this.container, position+index); // même signature que domConstruct.place
 			}, this);
@@ -59,8 +59,13 @@ define([
 		forEach: function () {
 			return this._components.forEach.apply(this._components, arguments);
 		},
+		// do we really need a destroy method ? if the user of this component, unplace container and forget about this component, wouldn't the subcomponents be garbage collected ? even if they have themselves created bindings ?
 		destroy: function(){
 			this._cancelBinding();
+			this._components.forEach(function(cmp){
+				this._renderer.unplace(cmp, this.container, 0);
+				this._renderer.destroy(cmp, 0);
+			}, this);
 			// ce n'est pas au CollectionRenderer de détruire le renderer qu'on lui a fourni... car on ne sait pas comment le faire et surtout il peut être utilisé ailleur. C'est bien au propriétaire du renderer de le détruire si besoin en même temps qu'il détruit le CollectionRenderer.
 		},
 	});

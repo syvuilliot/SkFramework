@@ -43,6 +43,12 @@ function makeUnobservable(key) {
     }
 }
 
+// by doing that we prevent installing the default JS object observer (ES5 get/set) on non supported keys because it breaks the DOM
+var HTMLElement = Object.getPrototypeOf(Object.getPrototypeOf(document.createElement("div")));
+HTMLElement.makePropertyObservable = makeObservable;
+HTMLElement.makePropertyUnobservable = makeUnobservable;
+
+/*
 var HTMLInputElement = Object.getPrototypeOf(document.createElement("input"));
 HTMLInputElement.makePropertyObservable = makeObservable;
 HTMLInputElement.makePropertyUnobservable = makeUnobservable;
@@ -54,7 +60,6 @@ HTMLTextAreaElement.makePropertyUnobservable = makeUnobservable;
 var HTMLSelectElement = Object.getPrototypeOf(document.createElement("select"));
 HTMLSelectElement.makePropertyObservable = makeObservable;
 HTMLSelectElement.makePropertyUnobservable = makeUnobservable;
-
-// TODO make window.history state observable
+*/
 
 });
