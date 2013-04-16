@@ -7,41 +7,40 @@ define([
 	Map,
 	Registry
 ) {
-
-
 	function isLiteralTree(item) {
 		return Array.isArray(item) && item.length === 2 && Array.isArray(item[1]);
 	}
-
-	var parseLiteralTree = function(node, callback, parent) {
-		if (isLiteralTree(node)) {
-			callback(node[0], parent);
-			node[1].forEach(function(child){
-				parseLiteralTree(child, callback, node[0]);
-			});
-		} else {
-			callback(node, parent);
-		}
-	};
-
 
 	function isAttributedNode(item) {
 		return Array.isArray(item) && item.length === 2 && !Array.isArray(item[1]);
 	}
 
-	function parseLiteralAttributedTree(tree, callback) {
-		parseLiteralTree(tree, function(node, parent) {
-			var options;
+	var parseLiteralTree = function(tree, callback, root) {
+		var node, options;
+		if (isLiteralTree(tree)) {
+			node = tree[0];
 			if (isAttributedNode(node)) {
 				options = node[1];
 				node = node[0];
 			}
-			if (isAttributedNode(parent)) {
-				parent = parent[0];
+			callback(node, root, options);
+
+			tree[1].forEach(function(child){
+				parseLiteralTree(child, callback, node);
+			});
+		} else if (tree instanceof Tree) {
+			tree.forEach(function(node, parent, options) {
+				callback(node, parent || root, options);
+			});
+		} else {
+			node = tree;
+			if (isAttributedNode(node)) {
+				options = node[1];
+				node = node[0];
 			}
-			callback(node, parent, options);
-		});
-	}
+			callback(node, root, options);
+		}
+	};
 
 	/*
 	 * Tree with attributed nodes
@@ -53,7 +52,7 @@ define([
 			this._attributes = new Map();
 			if (tree !== undefined){
 				if (isLiteralTree(tree)){
-					parseLiteralAttributedTree(tree, function(node, parent, attr){
+					parseLiteralTree(tree, function(node, parent, attr){
 						this.set(node, parent, attr);
 					}.bind(this));
 				} else if (tree instanceof Tree){
@@ -92,6 +91,9 @@ define([
 		},
 		getRoot: function(){
 			return this._root;
+		},
+		isLeaf: function(node) {
+			return !this._tree.hasKey(node);
 		},
 
 		/*
