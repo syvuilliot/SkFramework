@@ -7,6 +7,7 @@ define([
 		return child.domNode && (parent instanceof HTMLElement);
 	};
 
+	// domIn placer
 	return ctr(function KsDomPlacer(placer){
 		this._placer = placer;
 	}, {
