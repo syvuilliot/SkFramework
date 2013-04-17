@@ -34,6 +34,8 @@ define([
 			assertSynced();
 			source.pop();
 			assertSynced();
+			source.splice(1, 2, "f", "g");
+			assertSynced();
 			source.clear();
 			assertSynced();
 			handler.remove();
@@ -99,6 +101,39 @@ define([
 			source.pop();
 			assertSynced();
 		},
+		"row argument": function(){
+			function assertSynced(){
+				source.forEach(function(value, index){
+					var mappedValue = target.mapped[index];
+					assert(mappedValue.value === value);
+					assert(mappedValue.index === index);
+				});
+			}
+
+			var source = ["a", "b", "c"];
+			var target = window.target = {
+				mapped: [],
+				add: function(value, index, row){
+					this.mapped.splice(index, 0, row);
+				},
+				remove: function(value, index, row){
+					this.mapped.splice(index, 1);
+				},
+			};
+			var handler = new binding.ReactiveMapping(source, target);
+			assertSynced();
+			source.push("d");
+			assertSynced();
+			source.pop();
+			assertSynced();
+			source.splice(1, 2, "f", "g");
+			assertSynced();
+			source.clear();
+			assertSynced();
+			handler.remove();
+			source.push("e");
+			assert(source.length === target.mapped.length + 1);
+		}
 
 	});
 

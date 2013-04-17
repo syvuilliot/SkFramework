@@ -152,7 +152,7 @@ define([
 		// all properties are non enumerable (like on an array object) so they are not considered as items contained in this by frb
 		Object.defineProperties(this, {
 			// keep values to give them back to "remove" method and to allow forEach to work correctly when source is switched
-			_values: {value: []},
+			_rows: {value: []},
 			_target: {value: args.target},
 			_addMethod: {value: args.target[args.addMethod || "add"]},
 			_removeMethod: {value: args.target[args.removeMethod || "remove"]},
@@ -160,12 +160,17 @@ define([
 	}, {
 		swap: function(position, removed, added){
 			// console.log("swap called", arguments);
-			this._values.splice(position, removed).forEach(function(value){
-				this._removeMethod.call(this._target, value, position);
+			var rows = this._rows;
+			rows.splice(position, removed).forEach(function(row){
+				this._removeMethod.call(this._target, row.value, position, row);
 			}, this);
 			added.forEach(function(value, index){
-				this._values.splice(position+index, 0, value);
-				this._addMethod.call(this._target, value, position+index);
+				var row = {
+					value: value,
+					get index(){return rows.indexOf(this);},
+				};
+				rows.splice(position+index, 0, row);
+				this._addMethod.call(this._target, value, position+index, row);
 			}, this);
 		},
 		// I don't know why this function is called but it is mandatory
@@ -175,7 +180,7 @@ define([
 		// frb need a way to know how many values are contained in this in order to remove them when a new collection is setted
 		// it uses Array.from which delegate to array.addEach which uses "forEach" if available
 		forEach: function () {
-			return this._values.forEach.apply(this._values, arguments);
+			return this._rows.forEach.apply(this._rows, arguments);
 		},
 	});
 

@@ -2,20 +2,22 @@ define([
 	'ksf/utils/constructor',
 	"frb/bind",
 	'frb/bindings',
+	'ksf/utils/binding',
 	"./CollectionRenderer",
 	'ksf/component/DomComponent',
 ], function(
 	ctr,
 	bind,
 	bindings,
+	binding,
 	CollectionRenderer,
 	DomComponent
 ){
 
-	var BodyCell = ctr(function(configLine, item, index){
+	var BodyCell = ctr(function(itemRef, configLine){
 		this.domNode = document.createElement("td");
 		this._renderer = configLine.renderer;
-		this._cmp = this._renderer.create(item, index);
+		this._cmp = this._renderer.create(itemRef.value, itemRef);
 		this._renderer.place(this._cmp, this.domNode);
 	},  {
 		destroy: function(){
@@ -24,32 +26,32 @@ define([
 		},
 	});
 
-	var BodyRow = ctr(function BodyRow(item, index){
+	var BodyRow = ctr(function BodyRow(itemRef){
 		this.domNode = document.createElement("tr");
-		this._cells = new CollectionRenderer({
-			container: this.domNode,
-			renderer: {
-				create: function(configLine){
-					return new BodyCell(configLine, item, index);
-				},
-				destroy: function(cell){
-					cell.destroy();
-				},
-				place: function(cmp, container, index){
-					container.insertBefore(cmp.domNode, container.children[index]);
-				},
-				unplace: function(cmp, container, index){
-					container.removeChild(cmp.domNode);
-				},
-			}
+		this.itemRef = itemRef;
+		this._cells = [];
+		this._observeConfig = new binding.ReactiveMapping(this, this, {
+			sourceProp: "config",
+			addMethod: "_add",
+			removeMethod: "_remove",
 		});
 	}, {
-		set config(config){
-			this._cells.collection = config;
+		_add: function(configLine, index){
+			var cell = new BodyCell(this.itemRef, configLine);
+			this._cells.splice(index, 0, cell);
+			this.domNode.insertBefore(cell.domNode, this.domNode.children[index]);
+		},
+		_remove: function(configLine, index){
+			var cell = this._cells.splice(index, 1)[0];
+			this.domNode.removeChild(cell.domNode);
+			cell.destroy();
 		},
 		destroy: function(){
-			this._cells.destroy();
-		}
+			this._observeConfig.remove();
+			while(this._cells.length){
+				this._remove(undefined, 0);
+			}
+		},
 /*		constructor: function(){
 			this.own(on(this.domNode, "click", function(){
 				this.emit("selected");
@@ -57,37 +59,34 @@ define([
 		},
 */	});
 
-	var TableBody = ctr(function TableBody() {
+	var Body = ctr(function Body() {
 		this.domNode = document.createElement("tbody");
-		var body = this;
-		this._rows = new CollectionRenderer({
-			container: this.domNode,
-			renderer: {
-				create: function(item, index){
-					return bindings.defineBinding(new BodyRow(item, index), "config", {
-						"<-": "config",
-						source: body,
-					});
-				},
-				destroy: function(row){
-					bindings.cancelBinding(row, "config");
-					row.destroy();
-				},
-				place: function(cmp, container, index){
-					container.insertBefore(cmp.domNode, container.children[index]);
-				},
-				unplace: function(cmp, container, index){
-					container.removeChild(cmp.domNode);
-				},
-			}
+		this._rows = [];
+		this._observeItems = new binding.ReactiveMapping(this, this, {
+			sourceProp: "items",
+			addMethod: "_add",
+			removeMethod: "_remove",
 		});
 	}, {
-		set items(items){
-			this._rows.collection = items;
+		_add: function(item, index, ref){
+			var row = new BodyRow(ref);
+			this._rows.splice(index, 0, row);
+			bindings.defineBinding(row, "config", {
+				"<-": "config",
+				source: this,
+			});
+			this.domNode.insertBefore(row.domNode, this.domNode.children[index]);
+		},
+		_remove: function(item, index){
+			var row = this._rows.splice(index, 1)[0];
+			bindings.cancelBinding(row, "config");
+			this.domNode.removeChild(row.domNode);
+			row.destroy();
 		},
 		destroy: function(){
-			this._rows.destroy();
-		}
+			this._observeItems.remove();
+			this.items && this.items.forEach(this._remove, this);
+		},
 	});
 
 /*select: function(value){
@@ -120,58 +119,51 @@ define([
 	// console.log("selected index", this.get("selectedIndex"));
 }
 */
+	var Head = function(){
+		var thead = document.createElement("thead");
+		var tr = document.createElement("tr");
+		thead.appendChild(tr);
+		return {
+			domNode: thead,
+			add: function(configLine, index){
+				var th = document.createElement("th");
+				th.innerHTML = configLine.title;
+				tr.insertBefore(th, tr.children[index]);
+			},
+			remove: function(configLine, index){
+				tr.removeChild(tr.children[index]);
+			}
+		};
+	};
 
 	return ctr(DomComponent, function Table() {
 		DomComponent.apply(this, arguments);
 		//register components
 		this._factory.addEach({
-			"head":  function(){
-				return document.createElement("thead");
-			},
-			"headRow": function(){
-				var headRow = new CollectionRenderer({
-					container: document.createElement("tr"),
-					renderer: {
-						create: function(configLine){
-							var th = document.createElement("th");
-							th.innerHTML = configLine.title;
-							return th;
-						},
-						destroy: function(){},
-						place: function(cmp, container, index){
-							container.insertBefore(cmp, container.children[index]);
-						},
-						unplace: function(cmp, container, index){
-							container.removeChild(cmp);
-						},
-					}
-				});
-				headRow.domNode = headRow.container; // give it the domComponent interface
-				return headRow;
-			},
-			"body": function(){
-				return new TableBody();
-			},
+			"head":  Head,
+			"body": function(){return new Body();},
 		});
 
 		//bind components
 		this._bindings.addEach([
-			["headRow", function(headRow){
-				return bind(headRow, "collection", {source: this, "<-": "config"});
+			["head", function(head){
+				// return bind(head, "collection", {source: this, "<-": "config"});
+				return new binding.ReactiveMapping(this, head, {sourceProp: "config"});
 			}.bind(this)],
 			["body", function(body){
 				return [
+					// new binding.ReactiveMapping(this, body, {sourceProp: "value"}),
 					bind(body, "items", {source: this,	"<-": "value"}),
 					bind(body, "config", {source: this, "<-": "config"}),
-					bind(body, "selection", {source: this,"<->": "selection"}),
-					bind(body, "selectedIndex", {source: this,	"<->": "selectedIndex"}),
+					bind(body, "activeRow", {source: this,	"<->": "activeRow"}),
+					// bind(body, "selection", {source: this,"<->": "selection"}),
 				];
 			}.bind(this)],
 		]);
 
 		//place components views
 		this._placement.set([
-			["head", ["headRow"]],
+			"head",
 			"body",
 		]);
 	}, {

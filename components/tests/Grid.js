@@ -33,7 +33,7 @@ define([
 				});
 				return cmp;
 			},
-			destroy: function(input){
+			destroy: function(){
 				cancel();
 			},
 			place: function(input, td){
@@ -44,10 +44,84 @@ define([
 			},
 		};
 	};
+	var DeleteButton = function(collection){
+		var cb;
+		return {
+			create: function(item, itemRef){
+				var button = document.createElement("button");
+				button.innerHTML = "X";
+				cb = function(){
+					collection.splice(itemRef.index, 1);
+				};
+				button.addEventListener("click", cb);
+				return button;
+			},
+			destroy: function (button) {
+				button.removeEventListener("click", cb);
+			},
+			place: function(el, td){
+				td.appendChild(el);
+			},
+			unplace: function(el, td){
+				td.removeChild(el);
+			},
+		};
+	};
+	var MoveButton = function(collection, direction){
+		var cb;
+		return {
+			create: function(item, itemRef){
+				var button = document.createElement("button");
+				button.innerHTML = (direction === 1 ? "v" : "^");
+				cb = function(){
+					var index = itemRef.index;
+					collection.splice(index, 1);
+					collection.splice(index+direction, 0, item);
+				};
+				button.addEventListener("click", cb);
+				return button;
+			},
+			destroy: function (button) {
+				button.removeEventListener("click", cb);
+			},
+			place: function(el, td){
+				td.appendChild(el);
+			},
+			unplace: function(el, td){
+				td.removeChild(el);
+			},
+		};
+	};
+	var ActionButtons = function(collection){
+		var del = DeleteButton(collection);
+		var up = MoveButton(collection, -1);
+		var down = MoveButton(collection, 1);
+		return {
+			create: function(item, itemRef){
+				return [
+					del.create(item, itemRef),
+					up.create(item, itemRef),
+					down.create(item, itemRef),
+				];
+			},
+			destroy: function (buttons) {
+				del.destroy(buttons[0]);
+				up.destroy(buttons[1]);
+				down.destroy(buttons[2]);
+			},
+			place: function(buttons, td){
+				buttons.forEach(td.appendChild, td);
+			},
+			unplace: function(buttons, td){
+				buttons.forEach(td.removeChild, td);
+			},
+		};
+	};
 
 	var config = window.config = [
 		{title: "Nom", renderer: DivRenderer("name")},
 		{title: "Sexe", renderer: DivRenderer("sexe")},
+		{title: "Actions", renderer: ActionButtons(collection)},
 	];
 	grid.config = config;
 
