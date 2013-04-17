@@ -45,9 +45,11 @@ define([
 		},
 
 		remove: function(child) {
-			var parent = this._placement.getParent(child);
-			this._placer.remove(child, parent);
-			this._placement.remove(child);
+			if (this._placement.has(child)) {
+				var parent = this._placement.getParent(child);
+				this._placer.remove(child, parent);
+				this._placement.remove(child);
+			}
 		}
 	});
 });

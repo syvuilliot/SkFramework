@@ -19,16 +19,19 @@ define([
 			delete this._componentFactories[id];
 		},
 
-		// private method to abstract _componentFactories implementation
-		_getComponentFactory: function(id) {
+		get: function(id) {
 			return this._componentFactories[id];
+		},
+
+		has: function(id) {
+			return this.get(id) !== undefined;
 		},
 
 		create: function(id) {
 			// Check in the registry whether it already exists
 			if (this._componentsRegistry.has(id)) { throw "The component is already created"; }
 			// Create the component
-			var cmpFactory = this._getComponentFactory(id);
+			var cmpFactory = this.get(id);
 			var cmp = cmpFactory.call();
 			this._componentsRegistry.add(cmp, id);
 			return cmp;

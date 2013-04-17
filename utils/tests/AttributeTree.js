@@ -128,6 +128,31 @@ define([
 			assert(tree.getAttribute(sub2) === undefined);
 		},
 
+		"create from hybrid-literal 2 levels with values": function(){
+			var tree = new AttributeTree([[root, rootAttr], [
+				new AttributeTree([[sub1, sub1Attr], [
+					[subSub1, subSub1Attr],
+					subSub2,
+				]]),
+				sub2,
+			]]);
+			assert(tree.getRoot() === root);
+			assert(tree.has(root));
+			assert(tree.has(sub1));
+			assert(tree.has(sub2));
+			assert(tree.length === 5);
+			assert.deepEqual(tree.getChildren(root), [sub1, sub2]);
+			assert(tree.getParent(sub1) === root);
+			assert(tree.getParent(sub2) === root);
+			assert.deepEqual(tree.getChildren(sub1), [subSub1, subSub2]);
+			assert(tree.getParent(subSub1) === sub1);
+			assert(tree.getParent(subSub2) === sub1);
+			assert(tree.getAttribute(root) === rootAttr);
+			assert(tree.getAttribute(sub1) === sub1Attr);
+			assert(tree.getAttribute(subSub1) === subSub1Attr);
+			assert(tree.getAttribute(sub2) === undefined);
+		},
+
 		forEach: function(){
 			var tree = new AttributeTree([[root, rootAttr], [
 				[[sub1, sub1Attr], [
@@ -153,6 +178,5 @@ define([
 				return node.name;
 			});
 		}
-
 	});
 });

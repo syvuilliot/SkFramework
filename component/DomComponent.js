@@ -69,6 +69,7 @@ define([
 		this._factory.add("domNode", function(){
 			var domNode = document.createElement(this._domTag || "div");
 			domClass.add(domNode, this.constructor.name);
+			this.name && domClass.add(domNode, this.name);
 			return domNode;
 		}.bind(this));
 	}, {
@@ -79,9 +80,12 @@ define([
 			return this._name;
 		},
 		set name(val) {
-			this._name && domClass.remove(this.domNode, this._name);
+			var domNode = this._components.get('domNode');
+			if (domNode) {
+				this._name && domClass.remove(domNode, this._name);
+				domClass.add(domNode, val);
+			}
 			this._name = val;
-			domClass.add(this.domNode, this._name);
 		}
 	});
 });

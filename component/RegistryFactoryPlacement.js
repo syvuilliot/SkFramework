@@ -8,21 +8,21 @@ define([
 	aspect
 ) {
 	return ctr(function(args){
-		this._registry = args.registry;
-		this._factory = args.factory;
-		this._placementManager = args.placementManager;
-		this._root = args.root;
+		this.registry = args.registry;
+		this.factory = args.factory;
+		this.placementManager = args.placementManager;
+		this.root = args.root;
 
 		// hook components registry's 'delete' method:
-		this._cancelDeleteHook = aspect.before(this._registry, 'delete', function(arg) {
+		this._cancelDeleteHook = aspect.before(this.registry, 'delete', function(arg) {
 			this.remove(arg);
 		}.bind(this), true);
 	}, {
 		_getOrCreate: function(id) {
-			return this._registry.get(id) || this._factory.create(id);
+			return this.registry.get(id) || this.factory.create(id);
 		},
 		set: function(config) {
-			var idTree = new Tree([this._root, config]);
+			var idTree = new Tree([this.root, config]);
 			
 			// map tree of id to tree of components
 			// be sure that all components to be placed are created or create them
@@ -30,17 +30,17 @@ define([
 				return this._getOrCreate(id);
 			}, this);
 
-			this._placementManager.set(cmpTree);
+			this.placementManager.set(cmpTree);
 		},
 		remove: function(cmpId) {
-			var cmp = this._registry.get(cmpId);
+			var cmp = this.registry.get(cmpId);
 			if (cmp) {
-				this._placementManager.remove(cmp);
+				this.placementManager.remove(cmp);
 			}
 		},
 		add: function(child, parent, options) {
-			parent = parent || this._root;
-			return this._placementManager.add(
+			parent = parent || this.root;
+			return this.placementManager.add(
 				this._getOrCreate(child),
 				this._getOrCreate(parent),
 				options
