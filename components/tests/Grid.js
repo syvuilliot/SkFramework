@@ -2,12 +2,19 @@ define([
 	'teststack!object',	'teststack/chai!assert',
 	"../Grid",
 	"frb/bind",
+	"frb/observe",
 	"ksf/utils/frb-dom",
 ], function(
 	registerSuite, assert,
 	Grid,
-	bind
+	bind,
+	observe
 ){
+	// create css rules
+	var css = document.createElement("style");
+	css.type = "text/css";
+	document.head.appendChild(css);
+	css.sheet.insertRule('.active { background-color: red; }', css.sheet.cssRules.length);
 
 	var grid = window.grid = new Grid({
 	});
@@ -16,25 +23,24 @@ define([
 	var syv = window.syv = {name: "Sylvain", age: 31, sexe: "M"};
 	var aur = window.aur = {name: "Aurélie", age: 30, sexe:"F"};
 	var ant = window.ant = {name: "Antonin", age: 2, sexe:"M"};
-	var leo = window.leo = {name: "Léonie", age: 0, sexe:"F"};
+	var leo = window.leo = {name: "Léonie", age: 1, sexe:"F"};
 	var collection = window.collection = [syv, aur, ant];
 
 
 	grid.value = collection;
 
 	var DivRenderer = function(prop){
-		var cancel;
 		return {
-			create: function(item){
+			create: function(item, cell){
 				var cmp = document.createElement("input");
-				cancel = bind(cmp, "value", {
+				cmp.destroy = bind(cmp, "value", {
 					"<->": prop,
 					source: item,
 				});
 				return cmp;
 			},
-			destroy: function(){
-				cancel();
+			destroy: function(cmp){
+				cmp.destroy();
 			},
 			place: function(input, td){
 				td.appendChild(input);
@@ -45,19 +51,18 @@ define([
 		};
 	};
 	var DeleteButton = function(collection){
-		var cb;
 		return {
-			create: function(item, itemRef){
+			create: function(item, cell){
 				var button = document.createElement("button");
 				button.innerHTML = "X";
-				cb = function(){
-					collection.splice(itemRef.index, 1);
+				cell.deleteClickHandler = function(ev){
+					collection.splice(cell.item.index, 1);
 				};
-				button.addEventListener("click", cb);
+				button.addEventListener("click", cell.deleteClickHandler);
 				return button;
 			},
-			destroy: function (button) {
-				button.removeEventListener("click", cb);
+			destroy: function (button, cell) {
+				button.removeEventListener("click", cell.deleteClickHandler);
 			},
 			place: function(el, td){
 				td.appendChild(el);
@@ -70,11 +75,11 @@ define([
 	var MoveButton = function(collection, direction){
 		var cb;
 		return {
-			create: function(item, itemRef){
+			create: function(item, cell){
 				var button = document.createElement("button");
 				button.innerHTML = (direction === 1 ? "v" : "^");
 				cb = function(){
-					var index = itemRef.index;
+					var index = cell.item.index;
 					collection.splice(index, 1);
 					collection.splice(index+direction, 0, item);
 				};
@@ -97,17 +102,17 @@ define([
 		var up = MoveButton(collection, -1);
 		var down = MoveButton(collection, 1);
 		return {
-			create: function(item, itemRef){
+			create: function(item, cell){
 				return [
-					del.create(item, itemRef),
-					up.create(item, itemRef),
-					down.create(item, itemRef),
+					del.create(item, cell),
+					up.create(item, cell),
+					down.create(item, cell),
 				];
 			},
-			destroy: function (buttons) {
-				del.destroy(buttons[0]);
-				up.destroy(buttons[1]);
-				down.destroy(buttons[2]);
+			destroy: function (buttons, cell) {
+				del.destroy(buttons[0], cell);
+				up.destroy(buttons[1], cell);
+				down.destroy(buttons[2], cell);
 			},
 			place: function(buttons, td){
 				buttons.forEach(td.appendChild, td);
@@ -140,5 +145,13 @@ define([
 	// select via a click
 
 	// select programatically
+
+	// observe activeItem
+	observe(grid, "activeItem", function(item){
+		console.log("active item changed to", item.name);
+	});
+	observe(grid, "activeItemIndex", function(index){
+		console.log("active item index changed to", index);
+	});
 
 });

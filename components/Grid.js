@@ -1,28 +1,31 @@
 define([
 	'ksf/utils/constructor',
+	"dojo/dom-class",
 	"frb/bind",
 	'frb/bindings',
 	'ksf/utils/binding',
-	"./CollectionRenderer",
 	'ksf/component/DomComponent',
 ], function(
 	ctr,
+	domClass,
 	bind,
 	bindings,
 	binding,
-	CollectionRenderer,
 	DomComponent
 ){
 
 	var BodyCell = ctr(function(itemRef, configLine){
 		this.domNode = document.createElement("td");
+		this.item = itemRef;
+		this.columnConfig = configLine;
 		this._renderer = configLine.renderer;
-		this._cmp = this._renderer.create(itemRef.value, itemRef);
+		this._cmp = this._renderer.create(itemRef.value, this);
 		this._renderer.place(this._cmp, this.domNode);
 	},  {
+
 		destroy: function(){
 			this._renderer.unplace(this._cmp, this.domNode);
-			this._renderer.destroy(this._cmp);
+			this._renderer.destroy(this._cmp, this);
 		},
 	});
 
@@ -52,12 +55,13 @@ define([
 				this._remove(undefined, 0);
 			}
 		},
-/*		constructor: function(){
-			this.own(on(this.domNode, "click", function(){
-				this.emit("selected");
-			}.bind(this)));
+		active: function(){
+			domClass.add(this.domNode, "active");
 		},
-*/	});
+		unactive: function(){
+			domClass.remove(this.domNode, "active");
+		},
+	});
 
 	var Body = ctr(function Body() {
 		this.domNode = document.createElement("tbody");
@@ -66,6 +70,18 @@ define([
 			sourceProp: "items",
 			addMethod: "_add",
 			removeMethod: "_remove",
+		});
+		this._activeRow = undefined;
+		bindings.defineBinding(this, "activeRow", {
+			"<->": "activeItem",
+			convert: function(item){
+				// console.log("convert called with", item);
+				return this.items && this._rows[this.items.indexOf(item)];
+			},
+			revert: function(row){
+				// console.log("revert called with", row);
+				return row && row.itemRef.value;
+			},
 		});
 	}, {
 		_add: function(item, index, ref){
@@ -76,16 +92,44 @@ define([
 				source: this,
 			});
 			this.domNode.insertBefore(row.domNode, this.domNode.children[index]);
+			row.clickHandler = function(){
+				this._rowClicked(row);
+			}.bind(this);
+			row.domNode.addEventListener("click", row.clickHandler);
 		},
 		_remove: function(item, index){
 			var row = this._rows.splice(index, 1)[0];
+			if (row === this._activeRow){
+				this.activeRow = undefined;
+			}
 			bindings.cancelBinding(row, "config");
 			this.domNode.removeChild(row.domNode);
+			row.domNode.removeEventListener("click", row.clickHandler);
 			row.destroy();
 		},
 		destroy: function(){
 			this._observeItems.remove();
+			bindings.cancelBinding(this, "activeRow");
 			this.items && this.items.forEach(this._remove, this);
+		},
+		activeRow: {
+			set : function(row){
+				// unactive current activeRow
+				this._activeRow && this._activeRow.unactive();
+				// active new row
+				if (row){
+					this._activeRow = row;
+					this._activeRow.active();
+				}
+			},
+			get : function(){
+				return this._activeRow;
+			},
+			configurable: true,
+			enumerable: true,
+		},
+		_rowClicked: function(row){
+			this.activeRow = row;
 		},
 	});
 
@@ -155,7 +199,8 @@ define([
 					// new binding.ReactiveMapping(this, body, {sourceProp: "value"}),
 					bind(body, "items", {source: this,	"<-": "value"}),
 					bind(body, "config", {source: this, "<-": "config"}),
-					bind(body, "activeRow", {source: this,	"<->": "activeRow"}),
+					bind(body, "activeItem", {source: this,	"<->": "activeItem"}),
+					bind(body, "activeItemIndex", {source: this,	"<->": "activeItemIndex"}),
 					// bind(body, "selection", {source: this,"<->": "selection"}),
 				];
 			}.bind(this)],
