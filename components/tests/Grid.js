@@ -3,12 +3,14 @@ define([
 	"../Grid",
 	"frb/bind",
 	"frb/observe",
+	"collections/sorted-array",
 	"ksf/utils/frb-dom",
 ], function(
 	registerSuite, assert,
 	Grid,
 	bind,
-	observe
+	observe,
+	SortedArray
 ){
 	// create css rules
 	var css = document.createElement("style");
@@ -123,9 +125,52 @@ define([
 		};
 	};
 
-	var config = window.config = [
-		{title: "Nom", renderer: DivRenderer("name")},
-		{title: "Sexe", renderer: DivRenderer("sexe")},
+	var Sorter = function(prop, label, grid){
+		return {
+			create: function(cell){
+				this.view = cell;
+				this.grid = grid;
+				this.view.innerHTML = label;
+			},
+			destroy: function(){
+			},
+			sort: function(){
+				if (this.direction === 1){
+					// sort in descending order
+					this.direction = -1;
+					this.view.innerHTML = label + " (z->a)";
+					this.grid.value = new SortedArray(this.grid.value, null, function compare(b, a) {
+						if (a[prop] < b[prop])	return -1;
+						if (a[prop] > b[prop])	return 1;
+						return 0;
+					});
+
+				} else if (!this.direction || this.direction === -1) {
+					// sorting in ascending order
+					this.direction = 1;
+					this.view.innerHTML = label + " (a->z)";
+					this.grid.value = new SortedArray(this.grid.value, null, function compare(a, b) {
+						if (a[prop] < b[prop])	return -1;
+						if (a[prop] > b[prop])	return 1;
+						return 0;
+					});
+				}
+			},
+			unsort: function(){
+				this.view.innerHTML = label;
+				this.direction = 0;
+			},
+		};
+	};
+
+
+	var config = window.config = [{
+		header: Sorter("name", "Nom", grid),
+		renderer: DivRenderer("name")
+	}, {
+		header: Sorter("age", "Age", grid),
+		renderer: DivRenderer("age")
+	},
 		{title: "Actions", renderer: ActionButtons(collection)},
 	];
 	grid.config = config;

@@ -51,9 +51,9 @@ define([
 		},
 		destroy: function(){
 			this._observeConfig.remove();
-			while(this._cells.length){
-				this._remove(undefined, 0);
-			}
+			this.config && this.config.forEach(function(config){
+				this._remove(config, 0);
+			}.bind(this));
 		},
 		active: function(){
 			domClass.add(this.domNode, "active");
@@ -163,28 +163,61 @@ define([
 	// console.log("selected index", this.get("selectedIndex"));
 }
 */
-	var Head = function(){
-		var thead = document.createElement("thead");
-		var tr = document.createElement("tr");
-		thead.appendChild(tr);
-		return {
-			domNode: thead,
-			add: function(configLine, index){
-				var th = document.createElement("th");
+	var Head = ctr(function(){
+		this.domNode = document.createElement("thead");
+		this.tr = document.createElement("tr");
+		this.domNode.appendChild(this.tr);
+		this._observeConfig = new binding.ReactiveMapping(this, this, {
+			sourceProp: "config",
+			addMethod: "_add",
+			removeMethod: "_remove",
+		});
+	}, {
+		_add: function(configLine, index){
+			var th = document.createElement("th");
+			this.tr.insertBefore(th, this.tr.children[index]);
+			if (configLine.title){
 				th.innerHTML = configLine.title;
-				tr.insertBefore(th, tr.children[index]);
-			},
-			remove: function(configLine, index){
-				tr.removeChild(tr.children[index]);
+			} else {
+				configLine.header.create(th);
+				th.clickHandler = function(){
+					this.activeSorter(configLine.header);
+				}.bind(this);
+				th.addEventListener("click", th.clickHandler);
 			}
-		};
-	};
+		},
+		_remove: function(configLine, index){
+			var th = this.tr.removeChild(this.tr.children[index]);
+			th.removeEventListener("click", th.clickHandler);
+			if (configLine.header === this._activeSorter){
+				this.activeSorter(undefined);
+			}
+			if (configLine.header){
+				configLine.header.destroy();
+			}
+		},
+		activeSorter: function(sorter){
+			if (sorter === this._activeSorter){
+				sorter.sort();
+			} else {
+				this._activeSorter && this._activeSorter.unsort();
+				sorter && sorter.sort();
+				this._activeSorter = sorter;
+			}
+		},
+		destroy: function(){
+			this._observeConfig.remove();
+			this.config && this.config.forEach(function(config){
+				this._remove(config, 0);
+			}.bind(this));
+		},
+	});
 
 	return ctr(DomComponent, function Table() {
 		DomComponent.apply(this, arguments);
 		//register components
 		this._factory.addEach({
-			"head":  Head,
+			"head": function(){return new Head();},
 			"body": function(){return new Body();},
 		});
 
@@ -192,7 +225,10 @@ define([
 		this._bindings.addEach([
 			["head", function(head){
 				// return bind(head, "collection", {source: this, "<-": "config"});
-				return new binding.ReactiveMapping(this, head, {sourceProp: "config"});
+				return [
+					bind(head, "config", {source: this, "<-": "config"}),
+					bind(head, "sortingColumn", {"<->": "sortingColumn", source: this}),
+				];
 			}.bind(this)],
 			["body", function(body){
 				return [
@@ -200,7 +236,6 @@ define([
 					bind(body, "items", {source: this,	"<-": "value"}),
 					bind(body, "config", {source: this, "<-": "config"}),
 					bind(body, "activeItem", {source: this,	"<->": "activeItem"}),
-					bind(body, "activeItemIndex", {source: this,	"<->": "activeItemIndex"}),
 					// bind(body, "selection", {source: this,"<->": "selection"}),
 				];
 			}.bind(this)],
