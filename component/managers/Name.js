@@ -13,7 +13,9 @@ define([
 		this._observers = {};
 		// bind to registry : when a component is created set its name
 		this._observers.registryAdd = aspect.after(this._registry, "add", function(cmp, id){
-			this.actionner.execute(cmp, str.hyphenate(id));
+			if (id) {
+				this.actionner.execute(cmp, str.hyphenate(id));
+			}
 		}.bind(this), true);
 
 
