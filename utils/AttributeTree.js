@@ -1,10 +1,10 @@
 define([
 	'./constructor',
-	'collections/map',
+	'collections/map',	'collections/set',
 	'./Registry'
 ], function(
 	constructor,
-	Map,
+	Map,				Set,
 	Registry
 ) {
 	function isLiteralTree(item) {
@@ -46,19 +46,19 @@ define([
 	 * Tree with attributed nodes
 	 */
 	var Tree = constructor(function Tree (tree) {
-			// register child <-> parent relations
-			this._tree = new Registry();
-			// map attributes to nodes
-			this._attributes = new Map();
+			// register parents -> children + attributes relations
+			this._topDown = new Map();
+			this._bottomUp = new Map();
+
 			if (tree !== undefined){
 				if (isLiteralTree(tree)){
 					parseLiteralTree(tree, function(node, parent, attr){
-						this.set(node, parent, attr);
+						parent && this.set(node, parent, attr);
 					}.bind(this));
 				} else if (tree instanceof Tree){
 					this.addTree(tree);
 				} else {
-					this.setRoot(tree);
+					this.set(tree);
 				}
 			}
 		}, {
@@ -66,46 +66,58 @@ define([
 		/*
 		 * Add node with attribute in tree as a child of parent
 		 */
-		set: function(node, parent, attr) {
-			if (parent === undefined){
-				this.setRoot(node, attr);
+		set: function(child, parent, attr) {
+			if (parent) {
+				var parents = this._bottomUp.get(child);
+				if (!parents) {
+					parents = new Set();
+					this._bottomUp.set(child, parents);
+				}
+				parents.add(parent);
+
+				if (!this._root) {
+					this._root = parent;
+				}
+				var children = this._topDown.get(parent);
+				if (!children) {
+					children = new Map();
+					this._topDown.set(parent, children);
+				}
+				children.set(child, attr);
 			} else {
-				if (!this._tree.has(parent)) {
-					this.setRoot(parent, attr);
-				}
-				if (!this._tree.has(node)) {
-					this._tree.add(node, parent);
-				}
-				this._attributes.set(node, attr);
+				this._root = child;
 			}
 		},
 
-		setRoot: function(root, attr){
-			if (! this.hasOwnProperty("_root")){
-				this._root = root;
-				this._tree.add(root);
-				this._attributes.set(root, attr);
-			} else {
-				throw "The root node is already defined and cannot be changed";
-			}
-		},
-		getRoot: function(){
+		get root() {
 			return this._root;
 		},
 		isLeaf: function(node) {
-			return !this._tree.hasKey(node);
+			return !this._topDown.has(node);
 		},
 
 		/*
 		 * Remove node from tree
 		 */
-		remove: function(node) {
-			this._tree.remove(node);
-			this._attributes.delete(node);
+		remove: function(child, parent) {
+			var children = this._topDown.get(parent);
+			children && children.delete(child);
+			var parents = this._bottomUp.get(child);
+			parents && parents.delete(parent);
 		},
 
 		getChildren: function(parent) {
-			return this._tree.getValues(parent);
+			var children = this._topDown.get(parent);
+			return children && children.keys();
+		},
+
+		getParents: function(child) {
+			var parents = this._bottomUp.get(child)
+			return parents && parents.toArray();
+		},
+
+		get length() {
+			return this._bottomUp.length + 1;
 		},
 
 		/*
@@ -114,35 +126,28 @@ define([
 		forEach: function(callback, scope) {
 			var tree = this;
 			function processNode(node, cb, parent){
-				cb.call(scope, node, parent, tree.getAttribute(node));
-				tree.getChildren(node).forEach(function(child){
+				cb.call(scope, node, parent, tree.getAttribute(node, parent));
+				!tree.isLeaf(node) && tree.getChildren(node).forEach(function(child){
 					processNode(child, cb, node);
 				});
 			}
 			if (this.hasOwnProperty("_root")){
-				processNode(this.getRoot(), callback);
+				processNode(this._root, callback);
 			}
 		},
 
-		getParent: function(child) {
-			return this._tree.getKey(child);
+		getAttribute: function(child, parent) {
+			return parent && this._topDown.get(parent).get(child);
 		},
-
-		getAttribute: function(node) {
-			return this._attributes.get(node);
-		},
-		has: function(node){
-			return this._tree.has(node);
+		has: function(node) {
+			return this._topDown.has(node) || this._bottomUp.has(node) || this._root === node;
 		},
 		addTree: function(tree, attachNode){
 			tree.forEach(function(node, parent, attr){
 				this.set(node, parent || attachNode, attr);
 			}.bind(this));
 		},
-		get length(){
-			return this._tree.length;
-		},
-		map: function(cb, scope){
+		map: function(cb, scope) {
 			var clone = new Tree();
 			var mapping = new Map();
 			this.forEach(function(node, parent, attr){
@@ -151,6 +156,25 @@ define([
 			});
 			return clone;
 		},
+		toLiteral: function(node, parent) {
+			var literal;
+			node = node || this.root;
+
+			var attr = this.getAttribute(node, parent);
+			if (attr) {
+				literal = [node, attr];
+			} else {
+				literal = node;
+			}
+
+			var children = this.getChildren(node);
+			if (children) {
+				literal = [literal, children.map(function(child) {
+					return this.toLiteral(child, node);
+				}.bind(this))];
+			}
+			return literal;
+		}
 
 	});
 
