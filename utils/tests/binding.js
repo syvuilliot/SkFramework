@@ -137,4 +137,138 @@ define([
 
 	});
 
+	registerSuite({
+		name : "selection binding",
+		"basic": function(){
+			var collection = ["a", "b", "c"];
+			var selection = ["b"];
+			var canceler = binding.Selection(collection, selection);
+
+			// initial values are not changed
+			assert.deepEqual(collection.slice(), ["a", "b", "c"]);
+			assert.deepEqual(selection.slice(), ["b"]);
+
+			// can add value to selection
+			selection.add("a");
+			assert.deepEqual(selection.slice(), ["b","a"]);
+
+			// can remove value from selection
+			selection.delete("b");
+			assert.deepEqual(selection.slice(), ["a"]);
+
+			// cannot add an unknown value to selection
+			selection.add("d");
+			assert.deepEqual(selection.slice(), ["a"]);
+
+			// can add value to collection
+			collection.add("d");
+			assert.deepEqual(collection.slice(), ["a", "b", "c", "d"]);
+
+			// can remove value from collection
+			// selection is updated
+			collection.delete("a");
+			assert.deepEqual(collection.slice(), ["b", "c", "d"]);
+			assert.deepEqual(selection.slice(), []);
+
+			canceler.remove();
+			// selection is no more updated
+			selection.add("b");
+			collection.delete("b");
+			assert.deepEqual(collection.slice(), ["c", "d"]);
+			assert.deepEqual(selection.slice(), ["b"]);
+		},
+		"with property paths": function(){
+			var cmp = {
+				collection: ["a", "b", "c"],
+				selection: ["b"],
+			};
+			var canceler = binding.Selection(cmp, cmp, {
+				sourceProp: "collection",
+				targetProp: "selection",
+			});
+
+			var collection = cmp.collection;
+			var selection = cmp.selection;
+
+			// initial values are not changed
+			assert.deepEqual(collection.slice(), ["a", "b", "c"]);
+			assert.deepEqual(selection.slice(), ["b"]);
+
+			// can add value to selection
+			selection.add("a");
+			assert.deepEqual(selection.slice(), ["b","a"]);
+
+			// can remove value from selection
+			selection.delete("b");
+			assert.deepEqual(selection.slice(), ["a"]);
+
+			// cannot add an unknown value to selection
+			selection.add("d");
+			assert.deepEqual(selection.slice(), ["a"]);
+
+			// can add value to collection
+			collection.add("d");
+			assert.deepEqual(collection.slice(), ["a", "b", "c", "d"]);
+
+			// can remove value from collection
+			// selection is updated
+			collection.delete("a");
+			assert.deepEqual(collection.slice(), ["b", "c", "d"]);
+			assert.deepEqual(selection.slice(), []);
+		},
+		"change collection": function(){
+			var cmp = {
+				collection: ["a", "b", "c"],
+				selection: ["b"],
+			};
+			var canceler = binding.Selection(cmp, cmp, {
+				sourceProp: "collection",
+				targetProp: "selection",
+			});
+
+			// change collection
+			// selection is cleared even if the values are also in the new collection
+			cmp.collection = ["b", "d"];
+			assert.deepEqual(cmp.collection.slice(), ["b", "d"]);
+			assert.deepEqual(cmp.selection.slice(), []);
+
+			// can add value to selection
+			cmp.selection.add("b");
+			assert.deepEqual(cmp.selection.slice(), ["b"]);
+			// cannot add an unknown value to selection
+			cmp.selection.add("a");
+			assert.deepEqual(cmp.selection.slice(), ["b"]);
+			// when removing value from collection, selection is updated
+			cmp.collection.delete("b");
+			assert.deepEqual(cmp.collection.slice(), ["d"]);
+			assert.deepEqual(cmp.selection.slice(), []);
+		},
+		"change selection": function(){
+			var cmp = {
+				collection: ["a", "b", "c"],
+				selection: ["b"],
+			};
+			var canceler = binding.Selection(cmp, cmp, {
+				sourceProp: "collection",
+				targetProp: "selection",
+			});
+
+			// change selection
+			// unknow values are not added
+			cmp.selection = ["b", "d"];
+			assert.deepEqual(cmp.collection.slice(), ["a", "b", "c"]);
+			assert.deepEqual(cmp.selection.slice(), ["b"]);
+
+			// can add value to selection
+			cmp.selection.add("a");
+			assert.deepEqual(cmp.selection.slice(), ["b", "a"]);
+			// cannot add an unknown value to selection
+			cmp.selection.add("d");
+			assert.deepEqual(cmp.selection.slice(), ["b", "a"]);
+			// when removing value from collection, selection is updated
+			cmp.collection.delete("b");
+			assert.deepEqual(cmp.collection.slice(), ["a", "c"]);
+			assert.deepEqual(cmp.selection.slice(), ["a"]);
+		}
+	});
 });

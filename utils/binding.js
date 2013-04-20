@@ -198,5 +198,35 @@ define([
 	});
 
 
+	binding.Selection = declare(Binding, {
+		constructor: function(source, target, params){
+			this.handlers.push(new binding.ReactiveMapping(source, {
+				add: function(collectionItem, index){},
+				remove: function(collectionItem, index){
+					var selection = params && params.targetProp ? target[params.targetProp]: target;
+					if (selection.has(collectionItem)){
+						selection.delete(collectionItem);
+					}
+				},
+			}, {
+				sourceProp: params && params.sourceProp || "$",
+			}));
+			this.handlers.push(new binding.ReactiveMapping(target, {
+				add: function(selectionItem, index){
+					var collection = params && params.sourceProp ? source[params.sourceProp]: source;
+					var selection = params && params.targetProp ? target[params.targetProp]: target;
+					if (! collection.has(selectionItem)){
+						selection.delete(selectionItem);
+					}
+				},
+				remove: function(selectionItem, index){
+				},
+			}, {
+				sourceProp: params && params.targetProp || "$",
+			}));
+		},
+	});
+
+
 	return binding;
 });
