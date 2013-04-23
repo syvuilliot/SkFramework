@@ -17,6 +17,7 @@ define([
 	css.type = "text/css";
 	document.head.appendChild(css);
 	css.sheet.insertRule('.active { background-color: red; }', css.sheet.cssRules.length);
+	css.sheet.insertRule('.selected { background-color: blue; }', css.sheet.cssRules.length);
 
 	var grid = window.grid = new Grid({
 	});
@@ -163,8 +164,37 @@ define([
 		};
 	};
 
+	var Selector = function(grid){
+		return {
+			create: function(item, cell){
+				var cmp = document.createElement("button");
+				cmp.clickHandler = function(ev){
+					if (grid.selection.has(item)){
+						grid.selection.delete(item);
+					} else {
+						grid.selection.add(item);
+					}
+				};
+				cmp.addEventListener("click", cmp.clickHandler);
+				return cmp;
+			},
+			destroy: function(cmp){
+				cmp.removeEventListener("click", cmp.clickHandler);
+			},
+			place: function(el, td){
+				td.appendChild(el);
+			},
+			unplace: function(el, td){
+				td.removeChild(el);
+			},
+		};
+	};
+
 
 	var config = window.config = [{
+		title: "Selection",
+		renderer: Selector(grid),
+	}, {
 		header: Sorter("name", "Nom", grid),
 		renderer: DivRenderer("name")
 	}, {

@@ -197,7 +197,7 @@ define([
 		},
 	});
 
-
+	// take an array as collection in source[sourceProp] and an array as selection in target[targetProp] and maintain selection so that it never contains elements not contained in the collection
 	binding.Selection = declare(Binding, {
 		constructor: function(source, target, params){
 			this.handlers.push(new binding.ReactiveMapping(source, {

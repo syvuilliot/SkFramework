@@ -61,6 +61,12 @@ define([
 		unactive: function(){
 			domClass.remove(this.domNode, "active");
 		},
+		select: function(){
+			domClass.add(this.domNode, "selected");
+		},
+		unselect: function(){
+			domClass.remove(this.domNode, "selected");
+		}
 	});
 
 	var Body = ctr(function Body() {
@@ -68,8 +74,8 @@ define([
 		this._rows = [];
 		this._observeItems = new binding.ReactiveMapping(this, this, {
 			sourceProp: "items",
-			addMethod: "_add",
-			removeMethod: "_remove",
+			addMethod: "_addRow",
+			removeMethod: "_removeRow",
 		});
 		this._activeRow = undefined;
 		bindings.defineBinding(this, "activeRow", {
@@ -83,8 +89,20 @@ define([
 				return row && row.itemRef.value;
 			},
 		});
+		// selection logic
+		this.selection = [];
+		this._selectionBinding = binding.Selection(this, this, {
+			sourceProp: "items",
+			targetProp: "selection",
+		});
+		this._observeSelection = new binding.ReactiveMapping(this, this, {
+			sourceProp: "selection",
+			addMethod: "_selectRow",
+			removeMethod: "_unselectRow",
+		});
+
 	}, {
-		_add: function(item, index, ref){
+		_addRow: function(item, index, ref){
 			var row = new BodyRow(ref);
 			this._rows.splice(index, 0, row);
 			bindings.defineBinding(row, "config", {
@@ -92,12 +110,13 @@ define([
 				source: this,
 			});
 			this.domNode.insertBefore(row.domNode, this.domNode.children[index]);
+			// active logic
 			row.clickHandler = function(){
 				this._rowClicked(row);
 			}.bind(this);
 			row.domNode.addEventListener("click", row.clickHandler);
 		},
-		_remove: function(item, index){
+		_removeRow: function(item, index){
 			var row = this._rows.splice(index, 1)[0];
 			if (row === this._activeRow){
 				this.activeRow = undefined;
@@ -107,9 +126,20 @@ define([
 			row.domNode.removeEventListener("click", row.clickHandler);
 			row.destroy();
 		},
+		_selectRow: function(item){
+			var index = this.items.indexOf(item);
+			var row = this._rows[index];
+			row.select();
+		},
+		_unselectRow: function(item){
+			var index = this.items.indexOf(item);
+			var row = this._rows[index];
+			row.unselect();
+		},
 		destroy: function(){
 			this._observeItems.remove();
 			bindings.cancelBinding(this, "activeRow");
+			this._selectionBinding.remove();
 			this.items && this.items.forEach(this._remove, this);
 		},
 		activeRow: {
@@ -215,6 +245,8 @@ define([
 
 	return ctr(DomComponent, function Table() {
 		DomComponent.apply(this, arguments);
+		this.selection = [];
+
 		//register components
 		this._factory.addEach({
 			"head": function(){return new Head();},
@@ -236,7 +268,7 @@ define([
 					bind(body, "items", {source: this,	"<-": "value"}),
 					bind(body, "config", {source: this, "<-": "config"}),
 					bind(body, "activeItem", {source: this,	"<->": "activeItem"}),
-					// bind(body, "selection", {source: this,"<->": "selection"}),
+					bind(body, "selection", {source: this,"<->": "selection"}),
 				];
 			}.bind(this)],
 		]);
