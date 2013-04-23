@@ -1,15 +1,16 @@
 define([
 	"ksf/utils/constructor",
 	"collections/map",
+	"ksf/component/Registry",
 ], function(
 	ctr,
-	Map
+	Map,
+	Registry
 ){
 	/**
 	Registry of components that are created on demand on "get" and are destroyed (forgotten) if nobody use them
 	*/
-	return ctr(function(factory){
-		this._components = new Map();
+	return ctr(Registry, function(factory){
 		this._usersCount = new Map();
 		this._factory = factory;
 	}, {
@@ -24,6 +25,7 @@ define([
 			if (count <=0){
 				this._usersCount.delete(cmp);
 				this._factory.destroy(id);
+				this._components.delete(id);
 			} else {
 				this._usersCount.set(cmp, count);
 			}
