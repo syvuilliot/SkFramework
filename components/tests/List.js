@@ -1,16 +1,11 @@
 define([
 	'teststack!object',	'teststack/chai!assert',
-	"../List",
-	"frb/bind",
-	"frb/observe",
-	"collections/sorted-array",
-	"ksf/utils/frb-dom",
+	"../ActiveList",
+	"dojo/dom-class",
 ], function(
 	registerSuite, assert,
-	List,
-	bind,
-	observe,
-	SortedArray
+	ActiveList,
+	domClass
 ){
 	// create css rules
 	var css = document.createElement("style");
@@ -19,7 +14,7 @@ define([
 	css.sheet.insertRule('.active { background-color: red; }', css.sheet.cssRules.length);
 	css.sheet.insertRule('.selected { background-color: blue; }', css.sheet.cssRules.length);
 
-	var list = window.list = new List({
+	var list = window.list = new ActiveList({
 		domTag: "ul",
 		factory: {
 			create: function (item) {
@@ -27,9 +22,27 @@ define([
 				li.innerHTML = item.name;
 				return li;
 			},
-			destroy: function(){},
+			destroy: function(item, cmp){},
+		},
+		activeListener:	{
+			add: function(cmp, cb){
+				cmp.addEventListener("click", cb);
+			},
+			remove: function(cmp, cb, returned){
+				cmp.removeEventListener("click", returned);
+			},
+		},
+		activeSetter: {
+			set: function(cmp){
+				domClass.add(cmp, "active");
+			},
+			unset: function(cmp, returned){
+				domClass.remove(cmp, "active");
+			},
 		},
 	});
+
+
 	document.body.appendChild(list.domNode);
 
 	var syv = window.syv = {name: "Sylvain", age: 31, sexe: "M"};
