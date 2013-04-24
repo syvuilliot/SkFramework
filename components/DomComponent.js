@@ -1,16 +1,17 @@
 define([
 	'ksf/utils/constructor',
-	'./Registry',
-	'./ComponentFactory',	'./BindingFactory',
-	'./RegistryFactoryPlacement',
-	'./placement/Manager',
-	'./placement/MultiPlacer',
-	'./placement/samples/KsDomIn',
-	'./placement/samples/InKsDom',
-	'./placement/samples/DomInDom',
-	'./managers/Name',	'./managers/Style',
-	'./managers/TryEach',
+	'ksf/component/Registry',
+	'ksf/component/ComponentFactory',	'ksf/component/BindingFactory',
+	'ksf/component/RegistryFactoryPlacement',
+	'ksf/component/placement/Manager',
+	'ksf/component/placement/MultiPlacer',
+	'ksf/component/placement/samples/KsDomIn',
+	'ksf/component/placement/samples/InKsDom',
+	'ksf/component/placement/samples/DomInDom',
+	'ksf/component/managers/Name',	'ksf/component/managers/Style',
+	'ksf/component/managers/TryEach',
 	'dojo/dom-class',
+	'ksf/utils/string'
 ], function(
 	ctr,
 	Registry,
@@ -23,7 +24,8 @@ define([
 	DomInDom,
 	NameManager,		StyleManager,
 	TryEach,
-	domClass
+	domClass,
+	str
 ) {
 	return ctr(function DomComponent(){
 		this._components = new Registry();
@@ -43,8 +45,17 @@ define([
 				}},
 				// all others
 				{execute: function(cmp, name){
-					cmp.name = name;
-					return true;
+					if ('name' in cmp) {
+						cmp.name = name;
+						return true;
+					}
+				}},
+				// all others
+				{execute: function(cmp, name){
+					if ('domNode' in cmp) {
+						domClass.add(cmp.domNode, name);
+						return true;
+					}
 				}}
 			),
 		});
@@ -67,12 +78,20 @@ define([
 			}),
 		});
 		this._factory.add("domNode", function(){
-			var domNode = document.createElement(this._domTag || "div");
-			domClass.add(domNode, this.constructor.name);
+			return document.createElement(this._domTag);
+		}.bind(this));
+
+		this._bindings.add(['domNode'], function(domNode) {
+			this._layout();
+		}.bind(this));
+
+		this._bindings.add(['domNode'], function(domNode) {
+			domClass.add(domNode, str.hyphenate(this.constructor.name));
 			this.name && domClass.add(domNode, this.name);
-			return domNode;
 		}.bind(this));
 	}, {
+		_domTag: 'div',
+
 		get domNode() {
 			return this._components.get("domNode") || this._factory.create("domNode");
 		},
@@ -80,12 +99,13 @@ define([
 			return this._name;
 		},
 		set name(val) {
-			var domNode = this._components.get('domNode');
-			if (domNode) {
-				this._name && domClass.remove(domNode, this._name);
-				domClass.add(domNode, val);
+			if (this._components.has('domNode')) {
+				this._name && domClass.remove(this.domNode, this._name);
+				domClass.add(this.domNode, val);
 			}
 			this._name = val;
-		}
+		},
+
+		_layout: function() {}
 	});
 });

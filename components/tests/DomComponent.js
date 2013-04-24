@@ -42,7 +42,7 @@ define([
 		},
 
 		"add a css class with constructor.name on domNode": function(){
-			assert(owner.domNode.classList.contains("DomComponent"));
+			assert(owner.domNode.classList.contains("dom-component"));
 		},
 
 		"Place component tree": function() {
