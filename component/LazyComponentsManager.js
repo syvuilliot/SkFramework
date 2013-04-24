@@ -32,7 +32,7 @@ define([
 			if (count <=0){
 				this._usersCount.delete(cmp);
 				this._factory.destroy(id);
-				this.delete(id);
+				this.delete(cmp);
 			} else {
 				this._usersCount.set(cmp, count);
 			}

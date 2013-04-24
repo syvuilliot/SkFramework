@@ -1,54 +1,37 @@
 define([
-	"dojo/_base/declare",
-	"../repeater/Repeater",
-	"../../component/DomComponent",
+	"ksf/utils/constructor",
+	"../List",
 	"frb/bind",
-	"put-selector/put",
-	"../../utils/frb-dom"
-], function(declare, Repeater, DomComponent, bind, put){
+	"ksf/utils/frb-dom",
+], function(
+	ctr,
+	List,
+	bind
+){
 
-	var Option = declare(DomComponent, {
-		domTag: "option",
-		constructor: function(params){
-			this._cancelLabelBinding = bind(this, "domNode.label", {"<-": "_presenter.value."+params.labelProp});
-			this._cancelValueBinding = bind(this, "domNode.value", {"<-": "_presenter.value."+params.valueProp});
-		},
+	return ctr(function(args){
+		this._list = new List({
+			domTag: "select",
+			factory: {
+				create: function (item) {
+					var option = document.createElement("option");
+					option.innerHTML = item[args.labelProp];
+					option.value = item[args.valueProp];
+					return option;
+				},
+				destroy: function(item, cmp){},
+			},
+		});
+		this.domNode = this._list.domNode;
+		this.options = args.options;
+		this.value = args.value;
+		this._cancelValueBinding = bind(this, "_list.domNode.value", {"<->": "value", source: this});
+		this._cancelOptionsBinding = bind(this, "_list.value", {"<->": "options", source: this});
+	}, {
 		destroy: function(){
-			this._cancelLabelBinding();
 			this._cancelValueBinding();
-			this.inherited(arguments);
-		},
-	});
-
-	return declare(Repeater, {
-		domTag: "select",
-		collectionProperty: "options",
-		componentConstructor: Option,
-		constructor: function(params){
-			this.componentConstructorArguments = {
-				labelProp: params.labelProp || "label",
-				valueProp: params.valueProp || "value",
-			};
-			this._cancelValueBinding = bind(this, "domNode.value", {
-				"<->": "_presenter.value",
-				// trace: true,
-			});
-		},
-		swap: function(){
-			this.inherited(arguments);
-			// HACK: ensure that domNode.value is always in sync
-			if (this.domNode){
-				this.domNode.value = this.get("value");
-			}
-		},
-		_insertComponentIntoDom: function(){
-			this.inherited(arguments);
-			// HACK: ensure that domNode.value is always in sync
-			this.domNode.value = this.get("value");
-		},
-		destroy: function(){
-			this._cancelValueBinding && this._cancelValueBinding(); // should be in _unrender
-			this.inherited(arguments);
-		},
+			this._cancelOptionsBinding();
+			this._list.destroy();
+		}
 	});
 });
