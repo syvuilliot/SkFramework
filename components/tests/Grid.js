@@ -19,9 +19,6 @@ define([
 	css.sheet.insertRule('.active { background-color: red; }', css.sheet.cssRules.length);
 	css.sheet.insertRule('.selected { background-color: blue; }', css.sheet.cssRules.length);
 
-	var grid = window.grid = new Grid({
-	});
-	document.body.appendChild(grid.domNode);
 
 	var syv = window.syv = {name: "Sylvain", age: 31, sexe: "M"};
 	var aur = window.aur = {name: "Aurélie", age: 30, sexe:"F"};
@@ -29,12 +26,14 @@ define([
 	var leo = window.leo = {name: "Léonie", age: 1, sexe:"F"};
 	var collection = window.collection = [syv, aur, ant];
 
+	var grid = window.grid = new Grid({});
+	document.body.appendChild(grid.domNode);
 
 	grid.value = collection;
 
-	var DivRenderer = function(prop){
+	var InputRenderer = function(prop){
 		return {
-			create: function(item, cell){
+			create: function(item){
 				var cmp = document.createElement("input");
 				cmp.destroy = bind(cmp, "value", {
 					"<->": prop,
@@ -42,171 +41,30 @@ define([
 				});
 				return cmp;
 			},
-			destroy: function(cmp){
+			destroy: function(item, cmp){
 				cmp.destroy();
 			},
-			place: function(input, td){
-				td.appendChild(input);
-			},
-			unplace: function(input, td){
-				td.removeChild(input);
-			},
-		};
-	};
-	var DeleteButton = function(collection){
-		return {
-			create: function(item, cell){
-				var button = document.createElement("button");
-				button.innerHTML = "X";
-				cell.deleteClickHandler = function(ev){
-					collection.splice(cell.item.index, 1);
-				};
-				button.addEventListener("click", cell.deleteClickHandler);
-				return button;
-			},
-			destroy: function (button, cell) {
-				button.removeEventListener("click", cell.deleteClickHandler);
-			},
-			place: function(el, td){
-				td.appendChild(el);
-			},
-			unplace: function(el, td){
-				td.removeChild(el);
-			},
-		};
-	};
-	var MoveButton = function(collection, direction){
-		var cb;
-		return {
-			create: function(item, cell){
-				var button = document.createElement("button");
-				button.innerHTML = (direction === 1 ? "v" : "^");
-				cb = function(){
-					var index = cell.item.index;
-					collection.splice(index, 1);
-					collection.splice(index+direction, 0, item);
-				};
-				button.addEventListener("click", cb);
-				return button;
-			},
-			destroy: function (button) {
-				button.removeEventListener("click", cb);
-			},
-			place: function(el, td){
-				td.appendChild(el);
-			},
-			unplace: function(el, td){
-				td.removeChild(el);
-			},
-		};
-	};
-	var ActionButtons = function(collection){
-		var del = DeleteButton(collection);
-		var up = MoveButton(collection, -1);
-		var down = MoveButton(collection, 1);
-		return {
-			create: function(item, cell){
-				return [
-					del.create(item, cell),
-					up.create(item, cell),
-					down.create(item, cell),
-				];
-			},
-			destroy: function (buttons, cell) {
-				del.destroy(buttons[0], cell);
-				up.destroy(buttons[1], cell);
-				down.destroy(buttons[2], cell);
-			},
-			place: function(buttons, td){
-				buttons.forEach(td.appendChild, td);
-			},
-			unplace: function(buttons, td){
-				buttons.forEach(td.removeChild, td);
-			},
 		};
 	};
 
-	var Sorter = function(prop, label, grid){
-		return {
-			create: function(cell){
-				this.view = cell;
-				this.grid = grid;
-				this.view.innerHTML = label;
-			},
-			destroy: function(){
-			},
-			sort: function(){
-				if (this.direction === 1){
-					// sort in descending order
-					this.direction = -1;
-					this.view.innerHTML = label + " (z->a)";
-					this.grid.value = new SortedArray(this.grid.value, null, function compare(b, a) {
-						if (a[prop] < b[prop])	return -1;
-						if (a[prop] > b[prop])	return 1;
-						return 0;
-					});
-
-				} else if (!this.direction || this.direction === -1) {
-					// sorting in ascending order
-					this.direction = 1;
-					this.view.innerHTML = label + " (a->z)";
-					this.grid.value = new SortedArray(this.grid.value, null, function compare(a, b) {
-						if (a[prop] < b[prop])	return -1;
-						if (a[prop] > b[prop])	return 1;
-						return 0;
-					});
-				}
-			},
-			unsort: function(){
-				this.view.innerHTML = label;
-				this.direction = 0;
-			},
-		};
-	};
-
-	var Selector = function(grid){
-		return {
-			create: function(item, cell){
-				var cmp = document.createElement("button");
-				cmp.clickHandler = function(ev){
-					if (grid.selection.has(item)){
-						grid.selection.delete(item);
-					} else {
-						grid.selection.add(item);
-					}
-				};
-				cmp.addEventListener("click", cmp.clickHandler);
-				return cmp;
-			},
-			destroy: function(cmp){
-				cmp.removeEventListener("click", cmp.clickHandler);
-			},
-			place: function(el, td){
-				td.appendChild(el);
-			},
-			unplace: function(el, td){
-				td.removeChild(el);
-			},
-		};
-	};
-
-
-	var config = window.config = [{
-		title: "Selection",
-		renderer: Selector(grid),
+	var columns = window.columns = [{
+		header: "Nom",
+		body: {
+			factory : InputRenderer("name"),
+		}
 	}, {
-		header: Sorter("name", "Nom", grid),
-		renderer: DivRenderer("name")
-	}, {
-		header: Sorter("age", "Age", grid),
-		renderer: DivRenderer("age")
-	},
-		{title: "Actions", renderer: ActionButtons(collection)},
-	];
-	grid.config = config;
+		header: "Age",
+		body: {
+			factory : InputRenderer("age"),
+		}
+	}];
+
+	grid.columns = columns;
 
 	// add column
-	// config.push({label: "Age", property: "age"});
+	columns.push({header: "Sexe", body: {
+		factory: InputRenderer("sexe"),
+	}});
 
 	// add row
 	collection.push(leo);

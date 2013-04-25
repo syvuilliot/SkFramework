@@ -31,7 +31,7 @@ define([
 			var count = (this._usersCount.get(cmp) || 0)-1;
 			if (count <=0){
 				this._usersCount.delete(cmp);
-				this._factory.destroy(id);
+				this._factory.destroy(id, cmp);
 				this.delete(cmp);
 			} else {
 				this._usersCount.set(cmp, count);
