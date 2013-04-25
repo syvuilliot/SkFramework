@@ -21,7 +21,14 @@ define([
 	 * @param {Component} component	Component instance to be added.
 	 * @param {String}		[id]		Id of component
 	 */
-	proxy.methods(proto, "_components", ["add", "addEach"]);
+	proxy.methods(proto, "_components", ["add"]);
+	proto.addEach = function(cmps){
+		if (typeof cmps.forEach === "function") {
+			cmps.forEach(function (cmp) {
+				this.add(cmp);
+			}, this);
+		}
+	};
 
 	/*
 	 * Delete a subcomponent
