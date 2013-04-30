@@ -1,11 +1,11 @@
 define([
 	'teststack!object',
 	'teststack/chai!assert',
-	'../Registry',
+	'../IndexedSet',
 ], function(
 	registerSuite,
 	assert,
-	Registry
+	IndexedSet
 ) {
 	var reg;
 	var values;
@@ -13,7 +13,7 @@ define([
 	registerSuite({
 		name : "Registering without key",
 		beforeEach : function() {
-			reg = new Registry();
+			reg = new IndexedSet();
 			values = [
 				0,
 				{},
@@ -56,7 +56,7 @@ define([
 	registerSuite({
 		name : "Registering with unique keys",
 		beforeEach : function() {
-			reg = new Registry();
+			reg = new IndexedSet();
 			values = {
 				v0: 0,
 				v1: {},
@@ -104,7 +104,7 @@ define([
 	registerSuite({
 		name : "Registering with non unique keys",
 		beforeEach : function() {
-			reg = new Registry();
+			reg = new IndexedSet();
 			childParentPairs = [
 				["1"],
 				["11", "1"],
@@ -141,4 +141,69 @@ define([
 		},
 	});
 
+	var i1, i2, i3;
+	registerSuite({
+		name : "Events",
+		beforeEach : function() {
+			reg = new IndexedSet();
+			i1 = {};
+			i2 = {};
+			i3 = {};
+		},
+		"add one component": function(){
+			var event;
+			var handler = reg.on("added", function(ev){
+				event = ev;
+			});
+			var event2;
+			var handler2 = reg.on("added", function(ev){
+				event2 = ev;
+			});
+			reg.add(i1, "i1");
+			assert.equal(event.value, i1);
+			assert.equal(event.key, "i1");
+			event = null;
+			event2 = null;
+			handler.remove();
+			reg.add(i2, i2);
+			assert.equal(event, null);
+			assert.equal(event2.value, i2);
+			assert.equal(event2.key, i2);
+		},
+		"add many components": function(){
+			var items = [i1, i2, i3];
+			var i = 0;
+			reg.on("added", function(ev){
+				assert.equal(ev.value, items[i]);
+				assert.equal(ev.key, i);
+				i++;
+			});
+			reg.addEach(items);
+			assert.equal(i, 3);
+		},
+		"remove one component": function(){
+			var items = [i1, i2, i3];
+			var i = 0;
+			reg.on("removed", function(ev){
+				assert.equal(ev.value, i2);
+				assert.equal(ev.key, 1);
+				i++;
+			});
+			reg.addEach(items);
+			reg.remove(i2);
+			assert.equal(i, 1);
+		},
+		"remove many components": function(){
+			var items = [i1, i2, i3];
+			var i = 0;
+			reg.on("removed", function(ev){
+				assert.equal(ev.value, items[i]);
+				assert.equal(ev.key, i);
+				i++;
+			});
+			reg.addEach(items);
+			reg.removeEach(items);
+			assert.equal(i, 3);
+		},
+	});
 });
