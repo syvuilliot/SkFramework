@@ -14,8 +14,7 @@ define([
 	'ksf/component/placement/samples/DomInDom',
 	'ksf/component/managers/Name',	'ksf/component/managers/Style',
 	'ksf/component/managers/TryEach',
-	'dojo/dom-class',
-	'ksf/utils/string',
+	'dojo/dom-class'
 ], function(
 	ctr,
 	IndexedSet,
@@ -32,8 +31,7 @@ define([
 	DomInDom,
 	NameManager,		StyleManager,
 	TryEach,
-	domClass,
-	str
+	domClass
 ) {
 	return ctr(function DomComponent(){
 		this._componentsRegistry = new IndexedSet();
@@ -86,6 +84,7 @@ define([
 
 		this._placement = new TreeByIdPlacer({
 			registry: this._components,
+			factory: this._factory,
 			root: 'domNode',
 			placementManager: new TreePlacer({
 				placer: new MultiPlacer([
@@ -104,7 +103,7 @@ define([
 		}.bind(this));
 
 		this._bindingFactories.add(['domNode'], function(domNode) {
-			domClass.add(domNode, str.hyphenate(this.constructor.name));
+			domClass.add(domNode, this.constructor.name);
 			this.name && domClass.add(domNode, this.name);
 		}.bind(this));
 	}, {
