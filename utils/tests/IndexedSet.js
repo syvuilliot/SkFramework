@@ -97,6 +97,19 @@ define([
 			});
 			assert(reg.length === 0);
 		},
+		"removeEach": function(){
+			reg.removeEach([values.v0, values.v1]);
+			assert(reg.length === 1);
+			assert(reg.has(values.v2));
+		},
+		"removeAll": function(){
+			reg.removeAll();
+			assert(reg.length === 0);
+			Object.keys(values).forEach(function(k){
+				assert(!reg.has(values[k]));
+				assert(!reg.hasKey(k));
+			});
+		},
 	});
 
 	var childParentPairs;

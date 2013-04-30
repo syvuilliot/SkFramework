@@ -86,6 +86,9 @@ define([
 			}, this);
 		}
 	};
+	proto.removeAll = function(){
+		this.removeEach(this._values.keys());
+	};
 
 	proto.getValues = function(key){
 		var valuesSet = this._index.get(key);
