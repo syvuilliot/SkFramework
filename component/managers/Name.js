@@ -15,7 +15,7 @@ define([
 		this._observers.registryAdd = this._registry.on("added", function(ev){
 			var id = ev.key;
 			var cmp = ev.value;
-			if (id) {
+			if (typeof id === 'string') {
 				this.actionner.execute(cmp, str.hyphenate(id));
 			}
 		}.bind(this), true);
