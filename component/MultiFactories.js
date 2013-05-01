@@ -11,10 +11,12 @@ define([
 		this.factories = args.factories;
 	}, {
 		create: function(id, args){
-			return this.factories.get(id).create(args);
+			var factory = this.factories.get(id);
+			return (typeof factory === "function") ? factory(args) : factory.create(args);
 		},
 		destroy: function(id, args){
-			return this.factories.get(id).destroy(args);
+			var factory = this.factories.get(id);
+			return (factory.destroy) ? factory.destroy(args) : undefined;
 		},
 		createEach: function(ids, args) {
 			if (typeof ids.forEach === "function") {
