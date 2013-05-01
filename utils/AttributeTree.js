@@ -1,7 +1,7 @@
 define([
 	'./constructor',
 	'collections/map',	'collections/set',
-	'./Registry'
+	'./IndexedSet'
 ], function(
 	constructor,
 	Map,				Set,
@@ -112,7 +112,7 @@ define([
 		},
 
 		getParents: function(child) {
-			var parents = this._bottomUp.get(child)
+			var parents = this._bottomUp.get(child);
 			return parents && parents.toArray();
 		},
 
