@@ -12,7 +12,9 @@ define([
 		this.actionner = args.actionner;
 		this._observers = {};
 		// bind to registry : when a component is created set its name
-		this._observers.registryAdd = aspect.after(this._registry, "add", function(cmp, id){
+		this._observers.registryAdd = this._registry.on("added", function(ev){
+			var id = ev.key;
+			var cmp = ev.value;
 			if (id) {
 				this.actionner.execute(cmp, str.hyphenate(id));
 			}

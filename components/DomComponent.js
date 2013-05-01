@@ -1,9 +1,13 @@
 define([
 	'ksf/utils/constructor',
-	'ksf/component/Registry',
-	'ksf/component/ComponentFactory',	'ksf/component/BindingFactory',
-	'ksf/component/RegistryFactoryPlacement',
-	'ksf/component/placement/Manager',
+	'ksf/utils/IndexedSet',
+	"ksf/component/LazyRegistry",
+	"ksf/component/MultiFactories",
+	'ksf/component/BindingManager',
+	'ksf/component/BindingFactories',
+	'collections/Map',
+	'ksf/component/placement/TreeById',
+	'ksf/component/placement/Tree',
 	'ksf/component/placement/MultiPlacer',
 	'ksf/component/placement/samples/KsDomIn',
 	'ksf/component/placement/samples/InKsDom',
@@ -11,13 +15,17 @@ define([
 	'ksf/component/managers/Name',	'ksf/component/managers/Style',
 	'ksf/component/managers/TryEach',
 	'dojo/dom-class',
-	'ksf/utils/string'
+	'ksf/utils/string',
 ], function(
 	ctr,
-	Registry,
-	ComponentFactory,		BindingFactory,
-	RegistryFactoryPlacement,
-	PlacementManager,
+	IndexedSet,
+	LazyRegistry,
+	MultiFactories,
+	BindingManager,
+	BindingFactories,
+	Map,
+	TreeByIdPlacer,
+	TreePlacer,
 	MultiPlacer,
 	KsDomIn,
 	InKsDom,
@@ -28,13 +36,24 @@ define([
 	str
 ) {
 	return ctr(function DomComponent(){
-		this._components = new Registry();
-		this._factory = new ComponentFactory({ registry: this._components });
-		this._bindings = new BindingFactory({
-			registry: this._components
-		});
+		this._componentsRegistry = new IndexedSet();
+		this._componentsFactories = new Map();
+		var componentsFactory = new MultiFactories({
+				factories: this._componentsFactories
+			});
+		this._components = new LazyRegistry({
+				registry: this._componentsRegistry,
+				factory: componentsFactory,
+			});
+		this._bindings = new BindingManager({
+				components: this._componentsRegistry,
+			});
+		this._bindingFactories = new BindingFactories({
+				components: this._componentsRegistry,
+				bindings: this._bindings,
+			});
 		this._namer = new NameManager({
-			registry: this._components,
+			registry: this._componentsRegistry,
 			actionner: new TryEach(
 				// HtmlElement
 				{execute: function(cmp, name){
@@ -61,15 +80,14 @@ define([
 		});
 		this._style = new StyleManager({
 			component: 'domNode',
-			registry: this._components,
+			registry: this._componentsRegistry,
 			styler: domClass
 		});
 
-		this._placement = new RegistryFactoryPlacement({
+		this._placement = new TreeByIdPlacer({
 			registry: this._components,
-			factory: this._factory,
 			root: 'domNode',
-			placementManager: new PlacementManager({
+			placementManager: new TreePlacer({
 				placer: new MultiPlacer([
 					new DomInDom(),
 					new KsDomIn(new DomInDom()),
@@ -77,15 +95,15 @@ define([
 				]),
 			}),
 		});
-		this._factory.add("domNode", function(){
+		this._componentsFactories.set("domNode", function(){
 			return document.createElement(this._domTag);
 		}.bind(this));
 
-		this._bindings.add(['domNode'], function(domNode) {
+		this._bindingFactories.add('domNode', function(domNode) {
 			this._layout();
 		}.bind(this));
 
-		this._bindings.add(['domNode'], function(domNode) {
+		this._bindingFactories.add(['domNode'], function(domNode) {
 			domClass.add(domNode, str.hyphenate(this.constructor.name));
 			this.name && domClass.add(domNode, this.name);
 		}.bind(this));
@@ -93,13 +111,13 @@ define([
 		_domTag: 'div',
 
 		get domNode() {
-			return this._components.get("domNode") || this._factory.create("domNode");
+			return this._components.get("domNode");
 		},
 		get name() {
 			return this._name;
 		},
 		set name(val) {
-			if (this._components.has('domNode')) {
+			if (this._componentsRegistry.has('domNode')) {
 				this._name && domClass.remove(this.domNode, this._name);
 				domClass.add(this.domNode, val);
 			}
