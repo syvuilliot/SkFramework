@@ -110,6 +110,15 @@ define([
 				assert(!reg.hasKey(k));
 			});
 		},
+		"forEach": function(){
+			var i = 0;
+			reg.forEach(function(value, key){
+				assert.equal(value, values[Object.keys(values)[i]]);
+				assert.equal(key, Object.keys(values)[i]);
+				i++;
+			});
+			assert.equal(i, 3);
+		}
 	});
 
 	var childParentPairs;

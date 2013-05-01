@@ -95,13 +95,17 @@ define([
 		return valuesSet ? valuesSet.toArray() : [];
 	};
 
+	proto.forEach = function(cb){
+		return this._values.forEach(function(value, key){
+			cb(key, value, this);
+		});
+	};
 
 	proxy.props(proto, "_values", ["length"]);
 
 	proxy.methods(proto, "_values", {
 		"has": "has",
 		"getKey": "get",
-		'items': 'items'
 	});
 
 	proxy.methods(proto, "_index", {
