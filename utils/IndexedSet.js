@@ -114,7 +114,7 @@ define([
 
 	// Provider API
 	proto.get = function(key){
-		return this.getValues()[0];
+		return this.getValues(key)[0];
 	};
 	proto.release = function(){};
 

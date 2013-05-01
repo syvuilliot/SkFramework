@@ -86,6 +86,11 @@ define([
 				assert.deepEqual(reg.getValues(k), [values[k]]);
 			});
 		},
+		"get": function(){
+			Object.keys(values).forEach(function(k){
+				assert.equal(reg.get(k), values[k]);
+			});
+		},
 		"length": function(){
 			assert(reg.length === 3);
 		},
