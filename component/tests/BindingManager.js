@@ -2,7 +2,7 @@ define([
 	'teststack!object',
 	'teststack/chai!assert',
 	'ksf/utils/IndexedSet',
-	'../BindingsManager',
+	'../BindingManager',
 ], function(
 	registerSuite,
 	assert,
