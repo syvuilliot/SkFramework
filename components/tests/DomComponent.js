@@ -58,7 +58,7 @@ define([
 		},
 
 		"add a css class with constructor.name on domNode": function(){
-			assert(owner.domNode.classList.contains("dom-component"));
+			assert(owner.domNode.classList.contains("DomComponent"));
 		},
 
 	});

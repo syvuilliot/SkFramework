@@ -5,7 +5,7 @@ define([
 	"ksf/component/MultiFactories",
 	'ksf/component/BindingManager',
 	'ksf/component/BindingFactories',
-	'collections/Map',
+	'collections/map',
 	'ksf/component/placement/TreeById',
 	'ksf/component/placement/Tree',
 	'ksf/component/placement/MultiPlacer',
