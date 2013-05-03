@@ -30,12 +30,13 @@ define([
 				[['subSub1', 'subSub2'], function() { return true; }]
 			]);
 
-			owner._placement.set([
+			owner._layout.set([
 				"sub1",
 				['sub2', [
 					'subSub1',
 					'subSub2'
-				]]
+				]],
+				function() { return document.createElement('div'); }
 			]);
 
 		},

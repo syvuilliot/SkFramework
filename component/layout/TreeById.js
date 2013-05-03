@@ -25,11 +25,13 @@ define([
 			this._placementManager.set(cmpTree);
 
 			// release components that are no more placed
-			oldTree && oldTree.forEach(function(id){
-				if (!idTree.has(id)){
-					this._registry.release && this._registry.release(id);
-				}
-			});
+			if (oldTree && this._registry.release) {
+				oldTree.forEach(function(id){
+					if (!idTree.has(id)){
+						this._registry.release(id);
+					}
+				}.bind(this));
+			}
 		},
 	});
 });

@@ -13,7 +13,9 @@ define([
 	}, {
 		put: function(child, parent, options) {
 			if (areSupported(child, parent)) {
-				return this._placer.put(child.domNode, parent, options);
+				this._placer.put(child.domNode, parent, options);
+				child.layout && child.layout();
+				return true;
 			}
 		},
 		set: function(child, parent, options) {

@@ -1,11 +1,11 @@
 define([
 	"ksf/utils/constructor",
 	'collections/map',
-	'ksf/component/placement/Manager',
-	'ksf/component/placement/MultiPlacer',
-	'ksf/component/placement/samples/KsDomIn',
-	'ksf/component/placement/samples/InKsDom',
-	'ksf/component/placement/samples/DomInDom',
+	'ksf/component/layout/Tree',
+	'ksf/component/layout/MultiPlacer',
+	'ksf/component/layout/samples/KsDomIn',
+	'ksf/component/layout/samples/InKsDom',
+	'ksf/component/layout/samples/DomInDom',
 	"collections/listen/property-changes",
 ], function(
 	ctr,

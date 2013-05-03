@@ -4,8 +4,8 @@ define([
 	"frb/bind",
 	'frb/bindings',
 	'ksf/components/DomComponent',
-	'ksf/component/placement/samples/DomInDom',
-	'ksf/component/placement/samples/KsDomIn',
+	'ksf/component/layout/samples/DomInDom',
+	'ksf/component/layout/samples/KsDomIn',
 ], function(
 	ctr,
 	List,

@@ -5,8 +5,8 @@ define([
 	"frb/bind",
 	'frb/bindings',
 	'ksf/components/DomComponent',
-	'ksf/component/placement/samples/DomInDom',
-	'ksf/component/placement/samples/KsDomIn',
+	'ksf/component/layout/samples/DomInDom',
+	'ksf/component/layout/samples/KsDomIn',
 	"dojo/dom-class",
 ], function(
 	ctr,
@@ -133,13 +133,13 @@ define([
 		this.columns = args && args.columns;
 
 		//register components
-		this._factory.addEach({
+		this._componentsFactories.addEach({
 			"head": function(){return args && args.header || new Head();},
 			"body": function(){return args && args.body || new Body();},
 		});
 
 		//bind components
-		this._bindings.addEach([
+		this._bindingFactories.addEach([
 			["head", function(head){
 				return [
 					bind(head, "columns", {source: this, "<-": "columns.map{header}"}),
@@ -155,7 +155,7 @@ define([
 		]);
 
 		//place components views
-		this._placement.set([
+		this._layout.set([
 			"head",
 			"body",
 			// "footer"

@@ -1,23 +1,25 @@
 define([
 	"ksf/utils/constructor",
 	"collections/map",
-	"ksf/component/placement/Manager",
-	'ksf/component/placement/samples/DomInDom',
+	"ksf/component/layout/Tree",
+	'ksf/component/layout/samples/DomInDom',
 	"ksf/utils/binding",
-	"ksf/component/LazyComponentsManager",
+	"ksf/component/LazyRegistry",
 ], function(
 	ctr,
 	Map,
 	PlacementManager,
 	DomInDom,
 	binding,
-	LazyComponentsManager
+	LazyRegistry
 ){
 
 	return ctr(function(args){
 		this.domNode = args.domNode || document.createElement(args.domTag || "ul");
 		this.value = args.value;
-		this._rows = new LazyComponentsManager(args.factory);
+		this._rows = new LazyRegistry({
+			factory: args.factory
+		});
 		this._placement = [];
 		this._placementManager = new PlacementManager({
 			placer: args.placer || new DomInDom(),

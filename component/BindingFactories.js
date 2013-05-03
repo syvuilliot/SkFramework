@@ -23,7 +23,9 @@ define([
 			this._factories.push([cmps, factory]);
 		},
 		addEach: function(cmpsAndFactory) {
-			this._factories.addEach(cmpsAndFactory);
+			cmpsAndFactory.forEach(function(arg) {
+				this.add.apply(this, arg);
+			}.bind(this));
 		},
 		// execute all bindings factories that reference this component and for which each dependant component is alive (registered in _componentsRegistry)
 		// it is a private method since the user should not execute bindings factories out of the component creation process

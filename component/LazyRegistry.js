@@ -19,7 +19,7 @@ define([
 			var cmp = this._registry.get(id);
 			if (!cmp){
 				cmp = this._factory.create(id);
-				this._registry.add(cmp, id);
+				cmp && this._registry.add(cmp, id);
 			}
 			if (cmp){
 				this._usersCount.set(cmp, (this._usersCount.get(cmp) || 0)+1);
@@ -28,8 +28,10 @@ define([
 		},
 		release: function(id){
 			var cmp = this._registry.get(id);
-			var count = (this._usersCount.get(cmp) || 0)-1;
-			if (count <=0){
+			if (!cmp) { return; }
+
+			var count = (this._usersCount.get(cmp) || 0) - 1;
+			if (count <= 0){
 				this._usersCount.delete(cmp);
 				this._factory.destroy(id, cmp);
 				this._registry.remove(cmp);

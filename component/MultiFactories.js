@@ -12,6 +12,8 @@ define([
 	}, {
 		create: function(id, args){
 			var factory = this.factories.get(id);
+			if (!factory) return;
+			
 			return (typeof factory === "function") ? factory(args) : factory.create(args);
 		},
 		destroy: function(id, args){

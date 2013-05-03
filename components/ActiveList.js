@@ -26,7 +26,7 @@ define([
 		this.updateView(this.activeItem);
 		observe(this, "activeItem", this.updateView.bind(this));
 		// observe la vue pour mettre à jour "selectedItem"
-		aspect.after(this._rows, "add", this.onRowAdded.bind(this), true);
+		aspect.after(this._rows._registry, "add", this.onRowAdded.bind(this), true);
 		// observer la collection pour mettre à null selectedItem s'il est supprimé de la collection
 		observe(this, "_items.rangeChange()", function(index, addedItems, removedItems){
 			if (removedItems.indexOf(this.activeItem) >= 0 ){
@@ -47,7 +47,7 @@ define([
 			}
 		},
 		onRowAdded: function(row){
-			var item = this._rows.getId(row);
+			var item = this._rows._registry.getKey(row);
 			this._listenerReturns.set(row, this._listener.add(row, function(){
 				this.activeItem = item;
 			}.bind(this)));

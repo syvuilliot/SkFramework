@@ -6,12 +6,12 @@ define([
 	'ksf/component/BindingManager',
 	'ksf/component/BindingFactories',
 	'collections/map',
-	'ksf/component/placement/TreeById',
-	'ksf/component/placement/Tree',
-	'ksf/component/placement/MultiPlacer',
-	'ksf/component/placement/samples/KsDomIn',
-	'ksf/component/placement/samples/InKsDom',
-	'ksf/component/placement/samples/DomInDom',
+	'ksf/component/layout/TreeById',
+	'ksf/component/layout/Tree',
+	'ksf/component/layout/MultiPlacer',
+	'ksf/component/layout/samples/KsDomIn',
+	'ksf/component/layout/samples/InKsDom',
+	'ksf/component/layout/samples/DomInDom',
 	'ksf/component/managers/Name',	'ksf/component/managers/Style',
 	'ksf/component/managers/TryEach',
 	'dojo/dom-class'
@@ -36,20 +36,30 @@ define([
 	return ctr(function DomComponent(){
 		this._componentsRegistry = new IndexedSet();
 		this._componentsFactories = new Map();
+		/*
+		this._componentsFactories = new (ctr(Map, function() {
+			Map.apply(this, arguments);
+		}, {
+			get: function(key) {
+				var factory = Map.prototype.get.apply(this, arguments);
+				return factory || key;
+			}
+		}));
+		*/
 		var componentsFactory = new MultiFactories({
-				factories: this._componentsFactories
-			});
+			factories: this._componentsFactories
+		});
 		this._components = new LazyRegistry({
-				registry: this._componentsRegistry,
-				factory: componentsFactory,
-			});
+			registry: this._componentsRegistry,
+			factory: componentsFactory,
+		});
 		this._bindings = new BindingManager({
-				components: this._componentsRegistry,
-			});
+			components: this._componentsRegistry,
+		});
 		this._bindingFactories = new BindingFactories({
-				components: this._componentsRegistry,
-				bindings: this._bindings,
-			});
+			components: this._componentsRegistry,
+			bindings: this._bindings,
+		});
 		this._namer = new NameManager({
 			registry: this._componentsRegistry,
 			actionner: new TryEach(
@@ -82,9 +92,8 @@ define([
 			styler: domClass
 		});
 
-		this._placement = new TreeByIdPlacer({
+		this._layout = new TreeByIdPlacer({
 			registry: this._components,
-			factory: this._factory,
 			root: 'domNode',
 			placementManager: new TreePlacer({
 				placer: new MultiPlacer([
@@ -99,7 +108,7 @@ define([
 		}.bind(this));
 
 		this._bindingFactories.add('domNode', function(domNode) {
-			this._layout();
+			this._init();
 		}.bind(this));
 
 		this._bindingFactories.add(['domNode'], function(domNode) {
@@ -116,13 +125,13 @@ define([
 			return this._name;
 		},
 		set name(val) {
-			if (this._componentsRegistry.has('domNode')) {
+			if (this._componentsRegistry.hasKey('domNode')) {
 				this._name && domClass.remove(this.domNode, this._name);
 				domClass.add(this.domNode, val);
 			}
 			this._name = val;
 		},
 
-		_layout: function() {}
+		_init: function() {}
 	});
 });
