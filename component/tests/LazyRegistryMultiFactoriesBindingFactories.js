@@ -1,6 +1,6 @@
 define([
-	'teststack!object',
-	'teststack/chai!assert',
+	'intern!object',
+	'intern/chai!assert',
 	'ksf/utils/IndexedSet',
 	"../LazyRegistry",
 	"../MultiFactories",

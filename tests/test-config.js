@@ -4,7 +4,7 @@ define({
 	loader: {
 		packages: [
 			{ name: 'compose', location: 'compose', main: 'compose' },
-			{ name: 'chai', location: 'dojo2-teststack/chai', main: 'chai' }
+			{ name: 'chai', location: 'intern/chai', main: 'chai' }
 		],
 		paths: {
 			"collections": "collections-amd",

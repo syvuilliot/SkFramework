@@ -3,18 +3,18 @@
 	<head>
 		<meta charset="utf-8">
 		<title>Browser test runner</title>
-		<script src="../deps/dojo2-teststack/dojo/dojo.js"></script>
+		<script src="../deps/intern/dojo/dojo.js"></script>
 		<script>
 (function () {
 	var ksfRoot = location.pathname.replace(/[^\/]+$/, '') + '../';
 	require({
 		baseUrl: ksfRoot + 'deps/',
 		packages: [
-			{ name: 'teststack', location: 'dojo2-teststack' },
+			{ name: 'intern', location: 'intern' },
 			{ name: 'ksf', location: ksfRoot }
 		],
-		map: { 'teststack': { 'dojo-ts': 'dojo2-teststack/dojo' } }
-	}, [ 'teststack/client' ]);
+		map: { 'intern': { 'dojo': 'intern/dojo' } }
+	}, [ 'intern/client' ]);
 })();
 		</script>
 	</head>

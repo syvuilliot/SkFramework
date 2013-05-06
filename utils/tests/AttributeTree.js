@@ -1,6 +1,6 @@
 
 define([
-	'teststack!object',	'teststack/chai!assert',
+	'intern!object',	'intern/chai!assert',
 	'dojo/_base/declare',
 	'../AttributeTree'
 ], function(

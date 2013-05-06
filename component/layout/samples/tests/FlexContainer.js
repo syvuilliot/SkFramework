@@ -1,5 +1,5 @@
 define([
-	'teststack!object',	'teststack/chai!assert',
+	'intern!object',	'intern/chai!assert',
 	'dojo/_base/declare',	'dojo/dom-style',
 	'../FlexContainer'
 ], function(

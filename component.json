@@ -9,6 +9,6 @@
     "compose": "kriszyp/compose#0.2.2",
     "frb": "montagejs/frb#0.1.25",
     "collections": "montagejs/collections#0.1.16",
-    "dojo2-teststack": "csnover/dojo2-teststack"
+    "intern": "theintern/intern"
   }
 }

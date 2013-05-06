@@ -1,5 +1,5 @@
 define([
-	'teststack!object',	'teststack/chai!assert',
+	'intern!object',	'intern/chai!assert',
 	"../Select",
 	"collections/listen/property-changes",
 ], function(
