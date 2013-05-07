@@ -8,7 +8,7 @@ define([
 	 */
 	var Mixin = function(args) {
 		this._usersCount = new Map();
-		this._factory = args.factory;
+		this.factory = args.factory;
 	};
 
 	Mixin.applyPrototype = function() {
@@ -17,7 +17,7 @@ define([
 		this.get = function(id) {
 			var cmp = baseGet(id);
 			if (!cmp) {
-				cmp = this._factory.create(id);
+				cmp = this.factory.create(id);
 				cmp && this.add(cmp, id);
 			}
 			if (cmp) {
@@ -33,7 +33,7 @@ define([
 			var count = (this._usersCount.get(cmp) || 0) - 1;
 			if (count <= 0){
 				this._usersCount.delete(cmp);
-				this._factory.destroy(id, cmp);
+				this.factory.destroy(id, cmp);
 				this.remove(cmp);
 			} else {
 				this._usersCount.set(cmp, count);

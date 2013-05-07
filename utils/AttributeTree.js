@@ -1,11 +1,9 @@
 define([
 	'./constructor',
-	'collections/map',	'collections/set',
-	'./IndexedSet'
+	'collections/map',	'collections/set'
 ], function(
 	constructor,
-	Map,				Set,
-	Registry
+	Map,				Set
 ) {
 	function isLiteralTree(item) {
 		return Array.isArray(item) && item.length === 2 && Array.isArray(item[1]);

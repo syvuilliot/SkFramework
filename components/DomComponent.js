@@ -3,8 +3,7 @@ define([
 	'ksf/utils/IndexedSet',
 	"ksf/component/_RegistryWithFactory",
 	"ksf/component/MultiFactories",
-	'ksf/component/BindingManager',
-	'ksf/component/BindingFactories',
+	'ksf/component/BindingFactory',
 	'collections/map',
 	'ksf/component/layout/TreeById',
 	'ksf/component/layout/Tree',
@@ -20,8 +19,7 @@ define([
 	IndexedSet,
 	_RegistryWithFactory,
 	MultiFactories,
-	BindingManager,
-	BindingFactories,
+	BindingFactory,
 	Map,
 	TreeByIdPlacer,
 	TreePlacer,
@@ -35,33 +33,27 @@ define([
 ) {
 	return ctr(function DomComponent() {
 		this._components = new IndexedSet();
-		this._componentsFactories = new Map();
-		/*
-		this._componentsFactories = new (ctr(Map, function() {
-			Map.apply(this, arguments);
-		}, {
-			get: function(key) {
-				var factory = Map.prototype.get.apply(this, arguments);
-				return factory || key;
-			}
-		}));
-		*/
-		var componentsFactory = new MultiFactories({
-			factories: this._componentsFactories
+		this._componentsFactory = new MultiFactories({
+			factories: new Map()
 		});
 		
 		_RegistryWithFactory.call(this._components, {
-			factory: componentsFactory,
+			factory: this._componentsFactory,
 		});
 		_RegistryWithFactory.applyPrototype.call(this._components);
 
-		this._bindings = new BindingManager({
+		this._bindingsFactory = new BindingFactory({
 			components: this._components,
+			binder: {
+				bind: function(factory, cmps) {
+					return factory.apply(undefined, cmps);
+				},
+				unbind: function(factory, cmps, bindReturn) {
+					bindReturn.remove && bindReturn.remove() || bindReturn();
+				}
+			}
 		});
-		this._bindingFactories = new BindingFactories({
-			components: this._components,
-			bindings: this._bindings,
-		});
+
 		this._namer = new NameManager({
 			registry: this._components,
 			actionner: new TryEach(
@@ -105,18 +97,18 @@ define([
 				]),
 			}),
 		});
-		this._componentsFactories.set("domNode", function(){
+		this._componentsFactory.add(function(){
 			return document.createElement(this._domTag);
-		}.bind(this));
+		}.bind(this), 'domNode');
 
-		this._bindingFactories.add('domNode', function(domNode) {
-			this._init();
-		}.bind(this));
-
-		this._bindingFactories.add(['domNode'], function(domNode) {
+		this._bindingsFactory.add(function(domNode) {
 			domClass.add(domNode, this.constructor.name);
 			this.name && domClass.add(domNode, this.name);
-		}.bind(this));
+		}.bind(this), ['domNode']);
+
+		this._bindingsFactory.add(function(domNode) {
+			this._init();
+		}.bind(this), ['domNode']);
 	}, {
 		_domTag: 'div',
 

@@ -115,7 +115,7 @@ define([
 		});
 
 		//bind components
-		this._bindings.addEach([
+		this._bindingsFactory.addEach([
 			["head", function(head){
 				return [
 					bind(head, "columns", {source: this, "<-": "columns.map{header}"}),

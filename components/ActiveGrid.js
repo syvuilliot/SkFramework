@@ -133,13 +133,13 @@ define([
 		this.columns = args && args.columns;
 
 		//register components
-		this._componentsFactories.addEach({
+		this._componentsFactory.addEach({
 			"head": function(){return args && args.header || new Head();},
 			"body": function(){return args && args.body || new Body();},
 		});
 
 		//bind components
-		this._bindingFactories.addEach([
+		this._bindingsFactory.addEach([
 			["head", function(head){
 				return [
 					bind(head, "columns", {source: this, "<-": "columns.map{header}"}),

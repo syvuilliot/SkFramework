@@ -1,13 +1,15 @@
 define([
 	"ksf/utils/constructor",
+	'ksf/utils/proxyFunctions'
 ], function(
-	ctr
+	ctr,
+	proxy
 ){
 	/**
 	Implements the factory API
 	Delegate to a collection of factories indexed by id
 	*/
-	return ctr(function(args){
+	var Ctor = ctr(function(args){
 		this.factories = args.factories;
 	}, {
 		create: function(id, args){
@@ -26,8 +28,13 @@ define([
 					this.create(id, args);
 				}, this);
 			}
-		},
+		}
 	});
 
+	proxy.methods(Ctor.prototype, "factories", [
+		'add',
+		'addEach'
+	]);
 
+	return Ctor;
 });
