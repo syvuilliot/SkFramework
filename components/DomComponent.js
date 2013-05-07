@@ -1,7 +1,7 @@
 define([
 	'ksf/utils/constructor',
 	'ksf/utils/IndexedSet',
-	"ksf/component/LazyRegistry",
+	"ksf/component/_RegistryWithFactory",
 	"ksf/component/MultiFactories",
 	'ksf/component/BindingManager',
 	'ksf/component/BindingFactories',
@@ -18,7 +18,7 @@ define([
 ], function(
 	ctr,
 	IndexedSet,
-	LazyRegistry,
+	_RegistryWithFactory,
 	MultiFactories,
 	BindingManager,
 	BindingFactories,
@@ -33,8 +33,8 @@ define([
 	TryEach,
 	domClass
 ) {
-	return ctr(function DomComponent(){
-		this._componentsRegistry = new IndexedSet();
+	return ctr(function DomComponent() {
+		this._components = new IndexedSet();
 		this._componentsFactories = new Map();
 		/*
 		this._componentsFactories = new (ctr(Map, function() {
@@ -49,19 +49,21 @@ define([
 		var componentsFactory = new MultiFactories({
 			factories: this._componentsFactories
 		});
-		this._components = new LazyRegistry({
-			registry: this._componentsRegistry,
+		
+		_RegistryWithFactory.call(this._components, {
 			factory: componentsFactory,
 		});
+		_RegistryWithFactory.applyPrototype.call(this._components);
+
 		this._bindings = new BindingManager({
-			components: this._componentsRegistry,
+			components: this._components,
 		});
 		this._bindingFactories = new BindingFactories({
-			components: this._componentsRegistry,
+			components: this._components,
 			bindings: this._bindings,
 		});
 		this._namer = new NameManager({
-			registry: this._componentsRegistry,
+			registry: this._components,
 			actionner: new TryEach(
 				// HtmlElement
 				{execute: function(cmp, name){
@@ -88,7 +90,7 @@ define([
 		});
 		this._style = new StyleManager({
 			component: 'domNode',
-			registry: this._componentsRegistry,
+			registry: this._components,
 			styler: domClass
 		});
 
@@ -125,7 +127,7 @@ define([
 			return this._name;
 		},
 		set name(val) {
-			if (this._componentsRegistry.hasKey('domNode')) {
+			if (this._components.hasKey('domNode')) {
 				this._name && domClass.remove(this.domNode, this._name);
 				domClass.add(this.domNode, val);
 			}

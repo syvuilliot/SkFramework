@@ -35,10 +35,8 @@ define([
 				['sub2', [
 					'subSub1',
 					'subSub2'
-				]],
-				function() { return document.createElement('div'); }
+				]]
 			]);
-
 		},
 
 		"DOM-node creation": function() {

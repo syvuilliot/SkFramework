@@ -4,22 +4,29 @@ define([
 	"ksf/component/layout/Tree",
 	'ksf/component/layout/samples/DomInDom',
 	"ksf/utils/binding",
-	"ksf/component/LazyRegistry",
+	'ksf/utils/IndexedSet',
+	"ksf/component/_RegistryWithFactory",
 ], function(
 	ctr,
 	Map,
 	PlacementManager,
 	DomInDom,
 	binding,
-	LazyRegistry
+	IndexedSet,
+	_RegistryWithFactory
 ){
 
 	return ctr(function(args){
 		this.domNode = args.domNode || document.createElement(args.domTag || "ul");
 		this.value = args.value;
-		this._rows = new LazyRegistry({
+		// rows registry
+		this._rows = new IndexedSet();
+		// make it lazy
+		_RegistryWithFactory.call(this._rows, {
 			factory: args.factory
 		});
+		_RegistryWithFactory.applyPrototype.call(this._rows);
+
 		this._placement = [];
 		this._placementManager = new PlacementManager({
 			placer: args.placer || new DomInDom(),

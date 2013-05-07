@@ -1,14 +1,12 @@
 define([
 	"ksf/utils/constructor",
 	"./List",
-	"dojo/aspect",
 	"frb/observe",
 	"frb/bind",
 	"collections/map",
 ], function(
 	ctr,
 	List,
-	aspect,
 	observe,
 	bind,
 	Map
@@ -26,7 +24,7 @@ define([
 		this.updateView(this.activeItem);
 		observe(this, "activeItem", this.updateView.bind(this));
 		// observe la vue pour mettre à jour "selectedItem"
-		aspect.after(this._rows._registry, "add", this.onRowAdded.bind(this), true);
+		this._rows.on("added", this.onRowAdded.bind(this));
 		// observer la collection pour mettre à null selectedItem s'il est supprimé de la collection
 		observe(this, "_items.rangeChange()", function(index, addedItems, removedItems){
 			if (removedItems.indexOf(this.activeItem) >= 0 ){
@@ -34,7 +32,7 @@ define([
 			}
 		});
 		// observe la vue pour supprimer les observer lorsque les lignes sont supprimées
-		aspect.after(this._rows, "delete", this.onRowRemoved.bind(this), true);
+		this._rows.on("deleted", this.onRowRemoved.bind(this));
 	}, {
 		updateView: function(activeItem){
 			// unactive current active row
@@ -46,22 +44,20 @@ define([
 				this._activeRowReturn = this._setter.set(this.activeRow);
 			}
 		},
-		onRowAdded: function(row){
-			var item = this._rows._registry.getKey(row);
-			this._listenerReturns.set(row, this._listener.add(row, function(){
-				this.activeItem = item;
+		onRowAdded: function(row) {
+			this._listenerReturns.set(row.key, this._listener.add(row.value, function(){
+				this.activeItem = row.key;
 			}.bind(this)));
 			// et on en profite aussi pour vérifier si la ligne ajoutée ne correspond pas à activeItem au cas où elle n'existait pas lorsque selectedItem a été modifié
-			if (item === this.activeItem){
-				this.updateView(item);
+			if (row.key === this.activeItem){
+				this.updateView(row.key);
 			}
 		},
 		onRowRemoved: function(row){
-			this._listener.remove(row, this._listenerReturns.get(row));
-			this._listenerReturns.delete(row);
+			this._listener.remove(row.value, this._listenerReturns.get(row.key));
+			this._listenerReturns.delete(row.key);
 		},
-		destroy: function(){
-		},
+		destroy: function() {},
 	});
 
 
