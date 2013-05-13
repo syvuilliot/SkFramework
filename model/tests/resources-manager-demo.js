@@ -2,7 +2,7 @@ define([
 	'intern!object',
 	'intern/chai!assert',
 	'../../utils/IndexedSet',
-	'../_Factory',
+	'ksf/component/_RegistryWithFactory',
 	'../_Versioning',
 	'../_Connected',
 	'../_Syncable',
@@ -15,7 +15,7 @@ define([
 	registerSuite,
 	assert,
 	Registry,
-	_Factory,
+	_WithFactory,
 	_Versioning,
 	_Connected,
 	_Syncable,
@@ -78,11 +78,12 @@ define([
 
 	var Manager = compose(
 		Registry,
-		_Factory,
+		_WithFactory,
 		_Versioning,
 		_Connected,
 		_Syncable
 	);
+	_WithFactory.applyPrototype.call(Manager.prototype);
 
 	function setup(tmp){
 
@@ -103,15 +104,17 @@ define([
 
 
 		tmp.personsManager = new Manager({
-			createResource: function(data){
-				var rsc = new Person(data && data.fullName);
-				if (data && data.id) rsc.id = data.id;
-				return rsc;
+			factory: {
+				create: function(data){
+					var rsc = new Person(data && data.fullName);
+					if (data && data.id) rsc.id = data.id;
+					return rsc;
+				},
+				update: function(person, data){
+					person.fullName = data.fullName;
+				},
+				destroy: function(person){}, //nothing to do
 			},
-			updateResource: function(person, data){
-				person.fullName = data.fullName;
-			},
-			destroyResource: function(person){}, //nothing to do
 			dataSource: tmp.personsDataSource,
 			keyProperty: "id",
 			serialize: function(person){
@@ -139,8 +142,8 @@ define([
 			},
 		});
 
-		tmp.toto = tmp.personsManager.create({
-			id: "1",
+		tmp.toto = tmp.personsManager.get("1");
+		tmp.personsManager.factory.update(tmp.toto, {
 			fullName: "Toto Cobaye"
 		});
 

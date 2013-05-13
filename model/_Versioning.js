@@ -41,7 +41,7 @@ define([
 	};
 
 	proto.restoreState = function(rsc, position){
-		this.update(rsc, this.getStoredState(rsc, position));
+		this.factory.update(rsc, this.getStoredState(rsc, position));
 	};
 
 	proto.unregister = compose.after(function(rsc){

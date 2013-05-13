@@ -61,7 +61,7 @@ define([
 
 	// there could be other merge logic (for example, only merging if rsc was not updated localy otherwise registering a conflict)
 	proto.merge = function(rsc){
-		this.update(rsc, this.getSourceData(rsc));
+		this.factory.update(rsc, this.getSourceData(rsc));
 	};
 
 	proto.pull = function(rsc){

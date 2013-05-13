@@ -12,10 +12,10 @@ define([
 	};
 
 	Mixin.applyPrototype = function() {
-		var baseGet = this.get.bind(this);
+		var baseGet = this.get;
 
 		this.get = function(id) {
-			var cmp = baseGet(id);
+			var cmp = baseGet.call(this, id);
 			if (!cmp) {
 				cmp = this.factory.create(id);
 				cmp && this.add(cmp, id);
@@ -27,7 +27,7 @@ define([
 		};
 
 		this.release = function(id) {
-			var cmp = baseGet(id);
+			var cmp = baseGet.call(this, id);
 			if (!cmp) { return; }
 
 			var count = (this._usersCount.get(cmp) || 0) - 1;
