@@ -97,16 +97,18 @@ define([
 					site.description = data.description;
 					site.status = tmp.statusManager.get(data.status);
 				},
-				destroy: function(id, site){}, //nothing to do
+				destroy: function(id, site){
+					tmp.statusManager.release(site.status);
+				},
 			},
 			dataSource: tmp.sitesDataSource,
 			keyProperty: "id",
 			serialize: function(site){
-				return JSON.stringify({
+				return {
 					id: site.id,
 					description: site.description,
 					status: site.status.id,
-				});
+				};
 			},
 			compare: function(appState, sourceState){
 				// in case of difference, we consider that appState should be saved
@@ -120,7 +122,7 @@ define([
 				return resp;
 			},
 			pushResponse2id: function(resp){
-				return resp; // the memory store return only the id
+				return resp; // the memory store only returns the id
 			},
 			pushResponse2data: function(resp){
 				return null; // we do not get data in push response
