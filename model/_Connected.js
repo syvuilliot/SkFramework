@@ -1,9 +1,11 @@
 define([
 	"compose/compose",
 	"dojo/when",
+	"collections/map",
 ], function(
 	compose,
-	when
+	when,
+	Map
 ) {
 	/*
 	* Mixin that allow communication with a dataSource based on resource references
@@ -16,14 +18,14 @@ define([
 	var proto = Connected.prototype;
 
 	proto.requestGet = function(rsc) {
-		var result = this._dataSource.get(this.getId(rsc));
+		var result = this._dataSource.get(this.getKey(rsc));
 		this._logStatus(rsc, "get", result);
 		return result;
 	};
 
 	proto.requestPut = function(rsc, data) {
 		var options = {};
-		var id = this.getId(rsc);
+		var id = this.getKey(rsc);
 		if (id) {options.id = id;}
 		var result = this._dataSource.put(data, options);
 		this._logStatus(rsc, "put", result);
@@ -31,7 +33,7 @@ define([
 	};
 
 	proto.resquestDelete = function(rsc){
-		var result = this._dataSource.remove(this.getId(rsc));
+		var result = this._dataSource.remove(this.getKey(rsc));
 		this._logStatus(rsc, "delete", result);
 		return result;
 	};
@@ -60,7 +62,7 @@ define([
 		});
 	};
 
-	proto.unregister = compose.after(function(rsc){
+	proto.remove = compose.after(function(rsc){
 		this._requestsStatus.delete(rsc);
 	});
 

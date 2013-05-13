@@ -1,7 +1,7 @@
 define([
-	'../../utils/wru-amd',
-	'../../utils/Registry',
-	'../../utils/_IdMapping',
+	'intern!object',
+	'intern/chai!assert',
+	'../../utils/IndexedSet',
 	'../_Factory',
 	'../_Versioning',
 	'../_Connected',
@@ -12,9 +12,9 @@ define([
 	"dojo/Deferred",
 	"dojo/promise/all",
 ], function(
-	wru,
+	registerSuite,
+	assert,
 	Registry,
-	_IdMapping,
 	_Factory,
 	_Versioning,
 	_Connected,
@@ -79,7 +79,6 @@ define([
 	var Manager = compose(
 		Registry,
 		_Factory,
-		_IdMapping,
 		_Versioning,
 		_Connected,
 		_Syncable
@@ -114,7 +113,7 @@ define([
 			},
 			destroyResource: function(person){}, //nothing to do
 			dataSource: tmp.personsDataSource,
-			idProperty: "id",
+			keyProperty: "id",
 			serialize: function(person){
 				var state = {};
 				state.fullName = person.fullName;
@@ -141,74 +140,56 @@ define([
 		});
 
 		tmp.toto = tmp.personsManager.create({
+			id: "1",
 			fullName: "Toto Cobaye"
 		});
 
 	}
 
-	wru.test([
-		{
-			name: "creation and registering",
-			test: function (tmp) {
-				wru.assert(tmp.personsManager.has(tmp.toto));
-			},
-			setup: setup,
+	var tmp;
+	registerSuite({
+		"beforeEach": function(){
+			tmp = {};
+			setup(tmp);
 		},
-		{
-			name: "serialisation",
-			setup: setup,
-			test: function(tmp){
-				wru.assert(tmp.personsManager.getState(tmp.toto).fullName === "Toto Cobaye");
-			},
+		"creation and registering": function () {
+			assert(tmp.personsManager.has(tmp.toto));
 		},
-		{
-			name: "reverting",
-			setup: setup,
-			test: function (tmp) {
-				tmp.personsManager.storeState(tmp.toto);
-				tmp.toto.firstName = "titi";
-				tmp.personsManager.restoreState(tmp.toto, 0);
-				wru.assert(tmp.personsManager.getState(tmp.toto).fullName === "Toto Cobaye");
-			},
+		"serialisation": function(){
+			assert(tmp.personsManager.getState(tmp.toto).fullName === "Toto Cobaye");
 		},
-		{
-			name: "saving in dataSource",
-			setup: setup,
-			test: function(tmp){
-				tmp.toto.firstName = "titi";
-				tmp.personsManager.push(tmp.toto).then(wru.async(function(){
-					wru.assert(tmp.personsDataSource.data[3].fullName === "titi Cobaye");
-				}));
-			},
+		"reverting": function () {
+			tmp.personsManager.storeState(tmp.toto);
+			tmp.toto.firstName = "titi";
+			tmp.personsManager.restoreState(tmp.toto, 0);
+			assert(tmp.personsManager.getState(tmp.toto).fullName === "Toto Cobaye");
 		},
-		{
-			name: "pulling from dataSource",
-			setup: setup,
-			test: function(tmp){
-				tmp.personsManager.setId(tmp.toto, "1");
-				var reqStatus;
-				tmp.personsManager.pull(tmp.toto).then(wru.async(function(){
-					wru.assert(reqStatus.stage === "success");
-					wru.assert(tmp.toto.firstName === "Sylvain");
-					wru.log(tmp.toto);
-				}));
-				reqStatus = tmp.personsManager.getRequestStatus(tmp.toto);
-				wru.assert(reqStatus.stage === "inProgress");
-			},
+		"saving in dataSource": function(){
+			tmp.toto.firstName = "titi";
+			return tmp.personsManager.push(tmp.toto).then(function(){
+				assert(tmp.personsDataSource.data[0].fullName === "titi Cobaye");
+				console.log(tmp.personsDataSource.data[0].fullName); // to be sure that async assertion is well executed
+			});
 		},
-		{
-			name: "unregistering",
-			setup: setup,
-			test: function(tmp){
-				var toto = tmp.toto;
-				var personsManager = tmp.personsManager;
-				personsManager.unregister(toto);
-				wru.assert(personsManager.has(toto) === false);
-				wru.assert(personsManager.getStoredState(toto) === undefined);
-				wru.assert(personsManager.getRequestStatus(toto) === undefined);
-			},
+		"pulling from dataSource": function(){
+			var pullRequest = tmp.personsManager.pull(tmp.toto);
+			var reqStatus = tmp.personsManager.getRequestStatus(tmp.toto);
+			assert(reqStatus.stage === "inProgress");
+			return pullRequest.then(function(){
+				assert(reqStatus.stage === "success");
+				assert(tmp.toto.firstName === "Sylvain");
+				console.log(tmp.toto);
+			});
 		},
-	]);
+		"unregistering": function(){
+			var toto = tmp.toto;
+			var personsManager = tmp.personsManager;
+			personsManager.remove(toto);
+			assert(personsManager.has(toto) === false);
+			assert(personsManager.getStoredState(toto) === undefined);
+			assert(personsManager.getRequestStatus(toto) === undefined);
+		},
+	});
 
 
 });

@@ -1,7 +1,9 @@
 define([
 	"compose/compose",
+	"collections/map",
 ], function(
-	compose
+	compose,
+	Map
 ) {
 	/*
 	* Mixin that allow storing the state of a resource multiple time and restoring it on demand

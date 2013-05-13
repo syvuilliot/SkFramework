@@ -2,10 +2,12 @@ define([
 	"compose/compose",
 	"dojo/Deferred",
 	"dojo/when",
+	"collections/map",
 ], function(
 	compose,
 	Deferred,
-	when
+	when,
+	Map
 ) {
 	/*
 	* Mixin that allow syncing between resources and data from a dataSource
@@ -38,7 +40,7 @@ define([
 		when(result, function(response){
 			// we update id if different (on most cases it should be at creation only)
 			var responseId = this._pushResponse2id(response);
-			if (responseId !== this.getId(rsc)){
+			if (responseId !== this.getKey(rsc)){
 				this.setId(rsc, responseId);
 			}
 			// we update data if server send them in its response
@@ -118,7 +120,7 @@ define([
 
 	};
 
-	proto.unregister = compose.after(function(rsc){
+	proto.remove = compose.after(function(rsc){
 		this._sourceMirror.delete(rsc);
 		this._sourceMirrorDate.delete(rsc);
 	});
