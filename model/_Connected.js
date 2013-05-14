@@ -2,10 +2,12 @@ define([
 	"compose/compose",
 	"dojo/when",
 	"collections/map",
+	"ksf/utils/mixinProperties",
 ], function(
 	compose,
 	when,
-	Map
+	Map,
+	mixin
 ) {
 	/*
 	* Mixin that allow communication with a dataSource based on resource references
@@ -38,29 +40,42 @@ define([
 		return result;
 	};
 
+	// allow to observe an object that reflects the status of the last started request
+	// this is a simplified mechanism for a view to observe the network activity concerning a resource
 	proto.getRequestStatus = function(rsc){
 		return this._requestsStatus.get(rsc);
 	};
 
 	proto._logStatus = function(rsc, type, result) {
-		var status = {
+		var status = this._requestsStatus.get(rsc);
+		mixin(status, {
 			type: type,
-			startedDate: new Date(),
+			started: new Date(),
 			stage: "inProgress",
-			finishedDate: null,
+			finished: null,
 			response: null,
-		};
-		this._requestsStatus.set(rsc, status);
+			request: result,
+		});
 		when(result, function(response){
-			status.stage = "success";
-			status.finishedDate = new Date();
-			status.response = response;
+			// prevent an "old" request from changing status
+			if (status.request === result){
+				status.stage = "success";
+				status.response = response;
+				status.finished = new Date();
+			}
 		}, function(response){
-			status.stage = "error";
-			status.finishedDate = new Date();
-			status.response = response;
+			// prevent an "old" request from changing status
+			if (status.request === result){
+				status.stage = "error";
+				status.response = response;
+				status.finished = new Date();
+			}
 		});
 	};
+
+	proto.add = compose.after(function(rsc){
+		this._requestsStatus.set(rsc, {});
+	});
 
 	proto.remove = compose.after(function(rsc){
 		this._requestsStatus.delete(rsc);

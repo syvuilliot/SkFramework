@@ -231,10 +231,9 @@ define([
 			assert.equal(site1.status, undefined);
 
 			var requestStatus = tmp.siteManager.getRequestStatus(site1);
-			assert.equal(requestStatus, undefined);
+			assert.equal(requestStatus.stage, undefined);
 
 			var request = tmp.siteManager.pull(site1);
-			requestStatus = tmp.siteManager.getRequestStatus(site1);
 			assert(requestStatus.stage === "inProgress");
 
 			return request.then(function(){

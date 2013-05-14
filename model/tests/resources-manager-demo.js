@@ -192,6 +192,25 @@ define([
 			assert(personsManager.getStoredState(toto) === undefined);
 			assert(personsManager.getRequestStatus(toto) === undefined);
 		},
+		"request status update in concurent requests": function(){
+			var personsManager = tmp.personsManager;
+			var syv = personsManager.get("1");
+			var status = personsManager.getRequestStatus(syv);
+			var req1 = personsManager.fetch(syv);
+			assert.equal(status.request, req1);
+			var startDate1 = status.started;
+			var req2 = personsManager.fetch(syv);
+			assert.equal(status.request, req2);
+			var startDate2 = status.started;
+			assert.notEqual(startDate1, startDate2);
+			req1.then(function(){
+				assert.equal(status.stage, "inProgress"); // the status is not updated on req1 success since another request has been fired since
+			});
+			return req2.then(function(){
+				assert.equal(status.stage, "success");
+			});
+
+		}
 	});
 
 
