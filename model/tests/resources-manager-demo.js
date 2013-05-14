@@ -210,6 +210,25 @@ define([
 				assert.equal(status.stage, "success");
 			});
 
+		},
+		"active requests": function(){
+			var personsManager = tmp.personsManager;
+			var syv = personsManager.get("1");
+			var activeRequests = personsManager.getActiveRequests(syv);
+			var req1 = personsManager.fetch(syv);
+			assert.equal(activeRequests.length, 1);
+			assert.equal(activeRequests[0].request, req1);
+			var req2 = personsManager.fetch(syv);
+			assert.equal(activeRequests.length, 2);
+			assert.equal(activeRequests[1].request, req2);
+			req1.then(function(){
+				assert.equal(activeRequests.length, 1);
+				assert.equal(activeRequests[0].request, req2);
+				console.log("req1 successfull");
+			});
+			return req2.then(function(){
+				assert.equal(activeRequests.length, 0);
+			});
 		}
 	});
 

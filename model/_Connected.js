@@ -15,6 +15,7 @@ define([
 	function Connected(args){
 		this._dataSource = args && args.dataSource; // in this implementation, dataSource should conform to the dojo store API
 		this._requestsStatus = new Map();
+		this._activeRequests = new Map();
 	}
 
 	var proto = Connected.prototype;
@@ -46,35 +47,55 @@ define([
 		return this._requestsStatus.get(rsc);
 	};
 
+	proto.getActiveRequests = function(rsc){
+		return this._activeRequests.get(rsc);
+	};
+
 	proto._logStatus = function(rsc, type, result) {
-		var status = this._requestsStatus.get(rsc);
-		mixin(status, {
+		var latestStatus = this._requestsStatus.get(rsc);
+		var status = {
 			type: type,
 			started: new Date(),
 			stage: "inProgress",
 			finished: null,
 			response: null,
 			request: result,
-		});
+		};
+		mixin(latestStatus, status);
+		var activeRequests = this._activeRequests.get(rsc);
+		activeRequests.push(status);
 		when(result, function(response){
-			// prevent an "old" request from changing status
-			if (status.request === result){
-				status.stage = "success";
-				status.response = response;
-				status.finished = new Date();
+			// update status
+			status.stage = "success";
+			status.response = response;
+			status.finished = new Date();
+			// remove it from active requests
+			activeRequests.delete(status);
+			// prevent an "old" request from changing latest status
+			if (latestStatus.request === result){
+				latestStatus.stage = "success";
+				latestStatus.response = response;
+				latestStatus.finished = new Date();
 			}
 		}, function(response){
-			// prevent an "old" request from changing status
-			if (status.request === result){
-				status.stage = "error";
-				status.response = response;
-				status.finished = new Date();
+			// update status
+			status.stage = "error";
+			status.response = response;
+			status.finished = new Date();
+			// remove it from active requests
+			activeRequests.delete(status);
+			// prevent an "old" request from changing latest status
+			if (latestStatus.request === result){
+				latestStatus.stage = "error";
+				latestStatus.response = response;
+				latestStatus.finished = new Date();
 			}
 		});
 	};
 
 	proto.add = compose.after(function(rsc){
 		this._requestsStatus.set(rsc, {});
+		this._activeRequests.set(rsc, []);
 	});
 
 	proto.remove = compose.after(function(rsc){
