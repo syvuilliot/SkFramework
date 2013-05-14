@@ -22,7 +22,7 @@ define([
 		name : "mixinProperties",
 		beforeEach : function() {
 			target = {name: "toto"};
-			simpleliteralObject = {age: 3, friend: "titi", cool: true, address: {city: "Choisy"}};
+			simpleliteralObject = {age: 3, friend: "titi", cool: true, address: {city: "Choisy"}, birthDate: new Date()};
 			literalObjectWithAccessors = {
 				_job: "student",
 				get job(){return this._job;},
@@ -46,6 +46,7 @@ define([
 			mixin(target, simpleliteralObject);
 			assert.deepEqual(propDesc(target, "age"), propDesc(simpleliteralObject, "age"));
 			assert.equal(target.address.city, "Choisy");
+			assert.equal(target.birthDate, simpleliteralObject.birthDate);
 		},
 		"literalObjectWithAccessors": function(){
 			mixin(target, literalObjectWithAccessors);

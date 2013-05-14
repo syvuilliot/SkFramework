@@ -15,7 +15,9 @@ define([], function(){
 		if (value._isDescriptor === true) {
 			return true;
 		}
-		// if one own enumerable key of value is not a descriptor attribute, it is considered not to be a descriptor
+		// if value has no enumerable key, its is considered not a descriptor
+		if (! Object.keys(value).length) return false;
+		// if one enumerable key of value is not a descriptor attribute, it is considered not to be a descriptor
 		// in other words, a descriptor value must only have keys that form a descriptor and nothing else
 		return Object.keys(value).every(function(key){
 			return ["value", "writable", "enumerable", "get", "set", "configurable"].indexOf(key) !== -1;
