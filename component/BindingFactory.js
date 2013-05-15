@@ -64,6 +64,8 @@ define([
 
 		unbind: function(id) {
 			this._activeDeps.remove(id);
+			if (!this._activeBindings.hasKey(id)) { return; }
+			
 			this._activeBindings.getValues(id).forEach(function(args) {
 				this.binder.unbind.apply(this.binder, args);
 			}.bind(this));
