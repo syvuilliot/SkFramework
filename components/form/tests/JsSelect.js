@@ -31,10 +31,6 @@ define([
 
 			assert.equal(select.value, aur);
 			assert.equal(select.domNode.value, aur.name);
-/*			PropertyChanges.addOwnPropertyChangeListener(select, "value", function(value){
-				console.log("select value changed to", value);
-			});
-*/
 		},
 		"no args at creation": function(){
 			var select = window.select = new Select({
@@ -76,6 +72,32 @@ define([
 			select.options = collection;
 			select.value = aur;
 			select.options = [leo, ant, aur];
+
+			assert.equal(select.value, aur);
+			assert.equal(select.domNode.value, aur.name);
+		},
+
+		"user triggered change": function(){
+			var select = window.select = new Select({
+				labelProp: "name",
+			});
+			document.body.appendChild(select.domNode);
+			select.options = collection;
+
+			assert.equal(select.value, undefined);
+			assert.equal(select.domNode.value, "");
+
+			var observerCalled = false;
+			PropertyChanges.addOwnPropertyChangeListener(select, "value", function(value){
+				assert.equal(value, aur);
+				observerCalled = true;
+			});
+
+			select.domNode.selectedIndex = 1;
+			on.emit(select.domNode, "change", {
+				bubbles: true,
+				cancelable: true
+			});
 
 			assert.equal(select.value, aur);
 			assert.equal(select.domNode.value, aur.name);
