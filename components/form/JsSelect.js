@@ -1,48 +1,54 @@
 define([
-	"dojo/_base/declare",
-	"../../components/repeater/Repeater",
-	"../../component/DomComponent",
-	'../../component/Presenter',
-	"frb/bind",
-	"put-selector/put",
-	"../../utils/frb-dom",
-], function(declare, Repeater, DomComponent, PresenterBase, bind, put){
+	"ksf/utils/constructor",
+	"../List",
+	"frb/bindings",
+	"ksf/utils/frb-dom",
+], function(
+	ctr,
+	List,
+	bindings
+){
 
-	var Option = declare(DomComponent, {
-		domTag: "option",
-		constructor: function(params){
-			this._cancelLabelBinding = bind(this, "domNode.label", {"<-": "_presenter.value."+params.labelProp});
+	return ctr(function(args){
+		this._list = new List({
+			domTag: "select",
+			factory: {
+				create: function (item) {
+					return bindings.defineBindings(document.createElement("option"), {
+						"text": {"<-": args.labelProp, source: item},
+					});
+				},
+				destroy: function(item, cmp){
+					bindings.cancelBindings(cmp);
+				},
+			},
+		});
+		this.domNode = this._list.domNode;
+		this.options = args.options;
+		this.value = args.value;
+		bindings.defineBindings(this, {
+			"_list.value": {"<-": "_options"},
+			"domNode.selectedIndex": {
+				"<->": "value",
+				source: this,
+				convert: function(item){
+					return this._options && this._options.indexOf(item);
+				}.bind(this),
+				revert: function(index){
+					return this._options && this._options[index];
+				}.bind(this),
+			},
+		});
+
+	}, {
+		set options(value){
+			this._options = value;
+			// keep domNode in sync when changing options (by default the browser select the first option)
+			this.domNode.selectedIndex = this._options && this._options.indexOf(this.value);
 		},
 		destroy: function(){
-			this._cancelLabelBinding();
-			this.inherited(arguments);
-		},
-	});
-
-	return declare(Repeater, {
-		domTag: "select",
-		collectionProperty: "options",
-		componentConstructor: Option,
-		constructor: function(params){
-			this.componentConstructorArguments = {
-				labelProp: params.labelProp || "label",
-			};
-			this._cancelValueBinding = bind(this, "domNode.selectedIndex", {
-				"<->": "_presenter.value",
-				convert: function(value){
-					var options = this._presenter.options;
-					return options ? options.indexOf(value) : -1;
-				},
-				revert: function(selectedIndex){
-					var options = this._presenter.options;
-					return options ? options[selectedIndex] : undefined;
-				},
-				trace: true,
-			});
-		},
-		destroy: function(){
-			this._cancelValueBinding();
-			this.inherited(arguments);
-		},
+			bindings.cancelBindings(this);
+			this._list.destroy();
+		}
 	});
 });
