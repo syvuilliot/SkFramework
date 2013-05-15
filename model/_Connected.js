@@ -2,12 +2,12 @@ define([
 	"compose/compose",
 	"dojo/when",
 	"collections/map",
-	"ksf/utils/mixinProperties",
+	"dojo/_base/lang",
 ], function(
 	compose,
 	when,
 	Map,
-	mixin
+	lang
 ) {
 	/*
 	* Mixin that allow communication with a dataSource based on resource references
@@ -35,7 +35,7 @@ define([
 		return result;
 	};
 
-	proto.resquestDelete = function(rsc){
+	proto.requestDelete = function(rsc){
 		var result = this._dataSource.remove(this.getKey(rsc));
 		this._logStatus(rsc, "delete", result);
 		return result;
@@ -61,7 +61,8 @@ define([
 			response: null,
 			request: result,
 		};
-		mixin(latestStatus, status);
+		lang.mixin(latestStatus, status);
+
 		var activeRequests = this._activeRequests.get(rsc);
 		activeRequests.push(status);
 		when(result, function(response){
