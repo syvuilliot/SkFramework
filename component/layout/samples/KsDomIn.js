@@ -4,7 +4,7 @@ define([
 	ctr
 ) {
 	var areSupported = function(child, parent) {
-		return child.domNode && (parent instanceof HTMLElement);
+		return ('domNode' in child) && (parent instanceof HTMLElement);
 	};
 
 	// domIn placer
