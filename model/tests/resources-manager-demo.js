@@ -7,6 +7,7 @@ define([
 	'../_Connected',
 	'../_Syncable',
 	'frb/bind',
+	'collections/listen/property-changes',
 	"dojo/store/Memory",
 	"compose/compose",
 	"dojo/Deferred",
@@ -20,6 +21,7 @@ define([
 	_Connected,
 	_Syncable,
 	bind,
+	propChange,
 	Memory,
 	compose,
 	Deferred,
@@ -79,7 +81,6 @@ define([
 	var Manager = compose(
 		Registry,
 		_WithFactory,
-		_Versioning,
 		_Connected,
 		_Syncable
 	);
@@ -101,17 +102,35 @@ define([
 			}]
 		});
 
-
-
 		tmp.personsManager = new Manager({
 			factory: {
 				create: function(data){
+					var manager = tmp.personsManager;
 					var rsc = new Person(data && data.fullName);
 					if (data && data.id) rsc.id = data.id;
+					// add methods
+					rsc._commit = function(){
+						return manager.commit(rsc);
+					};
+					rsc.pull = function(){
+						return manager.pull(rsc);
+					};
+					rsc.push = function(){
+						return manager.push(rsc);
+					};
+					rsc.revert = function(){
+						return manager.merge(rsc);
+					};
+					// auto commit : observe properties changes to react to
+					propChange.addOwnPropertyChangeListener(rsc, "firstName", rsc._commit.bind(rsc));
+					propChange.addOwnPropertyChangeListener(rsc, "lastName", rsc._commit.bind(rsc));
+					// bind syncStatus
+					bind(rsc, "syncStatus", {
+						"<-": "_syncStatus.get($)",
+						source: manager,
+						parameters: rsc,
+					});
 					return rsc;
-				},
-				update: function(person, data){
-					person.fullName = data.fullName;
 				},
 				destroy: function(person){}, //nothing to do
 			},
@@ -123,10 +142,13 @@ define([
 				if (person.id) state.id = person.id;
 				return state;
 			},
+			deserialize: function(person, data){
+				person.fullName = data.fullName;
+			},
 			compare: function(appState, sourceState){
 				// in case of difference, we consider that appState should be saved
-				if (appState.fullName !== sourceState.fullName) {
-					return +1;
+				if (appState.fullName === sourceState.fullName) {
+					return 1;
 				} else {
 					return 0;
 				}
@@ -142,11 +164,6 @@ define([
 			},
 		});
 
-		tmp.toto = tmp.personsManager.get("1");
-		tmp.personsManager.factory.update(tmp.toto, {
-			fullName: "Toto Cobaye"
-		});
-
 	}
 
 	var tmp;
@@ -156,40 +173,49 @@ define([
 			setup(tmp);
 		},
 		"creation and registering": function () {
-			assert(tmp.personsManager.has(tmp.toto));
+			var syv = tmp.personsManager.get("1");
+			assert(tmp.personsManager.has(syv));
 		},
 		"serialisation": function(){
-			assert(tmp.personsManager.getState(tmp.toto).fullName === "Toto Cobaye");
-		},
-		"reverting": function () {
-			tmp.personsManager.storeState(tmp.toto);
-			tmp.toto.firstName = "titi";
-			tmp.personsManager.restoreState(tmp.toto, 0);
-			assert(tmp.personsManager.getState(tmp.toto).fullName === "Toto Cobaye");
+			var syv = tmp.personsManager.get("1");
+			assert(tmp.personsManager.serialize(syv).fullName === "prenom nom");
 		},
 		"saving in dataSource": function(){
-			tmp.toto.firstName = "titi";
-			return tmp.personsManager.push(tmp.toto).then(function(){
+			var syv = tmp.personsManager.get("1");
+			syv.firstName = "titi";
+			syv.lastName = "Cobaye";
+			return syv.push().then(function(){
 				assert(tmp.personsDataSource.data[0].fullName === "titi Cobaye");
 				console.log(tmp.personsDataSource.data[0].fullName); // to be sure that async assertion is well executed
 			});
 		},
 		"pulling from dataSource": function(){
-			var pullRequest = tmp.personsManager.pull(tmp.toto);
-			var reqStatus = tmp.personsManager.getRequestStatus(tmp.toto);
+			var syv = tmp.personsManager.get("1");
+			var pullRequest = tmp.personsManager.pull(syv);
+			var reqStatus = tmp.personsManager.getRequestStatus(syv);
 			assert(reqStatus.stage === "inProgress");
 			return pullRequest.then(function(){
 				assert(reqStatus.stage === "success");
-				assert(tmp.toto.firstName === "Sylvain");
-				console.log(tmp.toto);
+				assert(syv.firstName === "Sylvain");
+				console.log(syv);
+			});
+		},
+		"reverting to server state": function () {
+			var syv = tmp.personsManager.get("1");
+			return syv.pull().then(function(){
+				assert.equal(syv.syncStatus, "inSync");
+				syv.firstName = "titi";
+				assert.equal(syv.syncStatus, "toSave");
+				syv.revert();
+				assert.equal(syv.firstName, "Sylvain");
+				assert.equal(syv.syncStatus, "inSync");
 			});
 		},
 		"unregistering": function(){
-			var toto = tmp.toto;
+			var toto = tmp.personsManager.get("1");
 			var personsManager = tmp.personsManager;
 			personsManager.remove(toto);
 			assert(personsManager.has(toto) === false);
-			assert(personsManager.getStoredState(toto) === undefined);
 			assert(personsManager.getRequestStatus(toto) === undefined);
 		},
 		"request status update in concurent requests": function(){

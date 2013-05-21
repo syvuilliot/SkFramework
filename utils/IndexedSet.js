@@ -25,7 +25,6 @@ define([
 
 	proto.add = function(value, key){
 		// prevent adding a value twice
-		// its up to the user to remove it before adding it again if it need to change its key for example
 		if (this.has(value)) {
 			throw "A value can not be added twice";
 		}
@@ -36,15 +35,32 @@ define([
 		// store value
 		this._values.set(value, key);
 		// index value by key
+		this._indexValue(value, key);
+		// emit event
+		this._emit("added", {key: key, value: value});
+
+	};
+
+	proto.setKey = function(value, key){
+		this._unindexValue(value);
+		this._indexValue(value, key);
+	};
+
+	proto._indexValue = function(value, key){
 		var values = this._index.get(key);
 		if(!values){
 			values = new Set();
 			this._index.set(key, values);
 		}
 		values.add(value);
-		// emit event
-		this._emit("added", {key: key, value: value});
-
+	};
+	proto._unindexValue = function(value){
+		var key = this.getKey(value);
+		var values = this._index.get(key);
+		values.delete(value);
+		if (values.length === 0){
+			this._index.delete(key);
+		}
 	};
 
 	proto.addEach = function(values){
