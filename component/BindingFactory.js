@@ -1,11 +1,11 @@
 define([
 	'ksf/utils/constructor',
 	'ksf/utils/ManyMap',
-	'collections/set'
+	'collections/set',	'collections/map'
 ], function(
 	ctr,
 	ManyMap,
-	Set
+	Set,				Map
 ) {
 	return ctr(function(args) {
 		this.components = args.components;
@@ -22,7 +22,7 @@ define([
 		this.binder = args.binder;
 
 		this._activeDeps = new Set();
-		this._activeBindings = new ManyMap();
+		this._activeBindings = new Map();
 		this._factories = new ManyMap();
 	}, {
 		add: function(factory, deps) {
@@ -45,10 +45,10 @@ define([
 
 		bind: function(id) {
 			this._activeDeps.add(id);
-			var factories = this._factories.getValues(id);
 
+			var factories = this._factories.getValues(id);
 			factories && factories.forEach(function(factory) {
-				if (!this._activeBindings.hasValue(factory)) {
+				if (!this._activeBindings.has(factory)) {
 					var deps = this._factories.getKeys(factory);
 					// if every dependencies are active
 					if (deps.every(function(id) { return this._activeDeps.has(id); }.bind(this))) {
@@ -56,18 +56,22 @@ define([
 						var cmps = deps.map(function(id) {
 							return this.components.get(id);
 						}.bind(this));
-						this._activeBindings.add([factory, cmps, this.binder.bind(factory, cmps)], deps);
+						this._activeBindings.add(this.binder.bind(factory, cmps), factory);
 					}
 				}
 			}.bind(this));
 		},
 
 		unbind: function(id) {
+			if (!this._activeDeps.has(id)) { return; }
 			this._activeDeps.remove(id);
-			if (!this._activeBindings.hasKey(id)) { return; }
-			
-			this._activeBindings.getValues(id).forEach(function(args) {
-				this.binder.unbind.apply(this.binder, args);
+
+			var factories = this._factories.getValues(id);
+			factories && factories.forEach(function(factory) {
+				if (!this._activeBindings.has(factory)) { return; }
+
+				this.binder.unbind.call(this.binder, this._activeBindings.get(factory));
+				this._activeBindings.delete(factory);
 			}.bind(this));
 		},
 

@@ -48,7 +48,7 @@ define([
 				bind: function(factory, cmps) {
 					return factory.apply(undefined, cmps);
 				},
-				unbind: function(factory, cmps, bindReturn) {
+				unbind: function(bindReturn) {
 					bindReturn.remove && bindReturn.remove() || bindReturn();
 				}
 			}
