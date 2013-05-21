@@ -13,7 +13,7 @@ function changeValue(event) {
 }
 
 function changeSelectedIndex(event) {
-    console.log("selectedIndex changed to", event.target.selectedIndex);
+    // console.log("selectedIndex changed to", event.target.selectedIndex);
     PropertyChanges.dispatchOwnPropertyChange(event.target, "selectedIndex", event.target.selectedIndex);
 }
 
