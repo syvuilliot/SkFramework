@@ -93,6 +93,7 @@ define([
 				observerCalled = true;
 			});
 
+			// simulate a user change
 			select.domNode.selectedIndex = 1;
 			on.emit(select.domNode, "change", {
 				bubbles: true,
@@ -101,6 +102,7 @@ define([
 
 			assert.equal(select.value, aur);
 			assert.equal(select.domNode.value, aur.name);
+			assert(observerCalled);
 		},
 
 	});

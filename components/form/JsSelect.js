@@ -46,6 +46,9 @@ define([
 			// keep domNode in sync when changing options (by default the browser select the first option)
 			this.domNode.selectedIndex = this._options && this._options.indexOf(this.value);
 		},
+		get options(){
+			return this._options;
+		},
 		destroy: function(){
 			bindings.cancelBindings(this);
 			this._list.destroy();

@@ -15,7 +15,7 @@ define([
 			factory: {
 				create: function (item) {
 					return bindings.defineBindings(document.createElement("option"), {
-						"innerHTML": {"<-": args.labelProp, source: item},
+						"text": {"<-": args.labelProp, source: item},
 						"value": {"<-": args.valueProp, source: item},
 					});
 				},
@@ -28,8 +28,8 @@ define([
 		this.options = args.options;
 		this.value = args.value;
 		bindings.defineBindings(this, {
-			"_list.domNode.value": {"<->": "value", source: this},
-			"_list.value": {"<->": "options", source: this},
+			"_list.value": {"<-": "options", source: this},
+			"domNode.value": {"<->": "value", source: this},
 		});
 	}, {
 		destroy: function(){
