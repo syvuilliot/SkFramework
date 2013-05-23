@@ -81,7 +81,7 @@ define([
 			// add properties
 			Object.keys(this.propertyManagers).forEach(function(propName){
 				var propMng = this.propertyManagers[propName];
-				propMng.add(rsc);
+				propMng.install(rsc);
 				// set the property value if it is defined
 				if (args && args[propName]){
 					propMng.set(rsc, args[propName]);
@@ -95,7 +95,7 @@ define([
 			this.remove(rsc);
 			Object.keys(this.propertyManagers).forEach(function(propName){
 				var propMng = this.propertyManagers[propName];
-				propMng.remove(rsc);
+				propMng.uninstall(rsc);
 			}.bind(this));
 			rsc.destroy && rsc.destroy();
 		},
@@ -235,6 +235,18 @@ define([
 		};
 	};
 
+	var WithSerializeOneProperty = function(args){
+		var propName = args.property;
+		this.serialize = function(rsc){
+			var propMng = this.propertyManagers[propName];
+			return propMng.serialize(this.getPropValue(rsc, propName));
+		};
+		this.deserialize = function(rsc, data){
+			var propMng = this.propertyManagers[propName];
+			this.setPropValue(rsc, propName, propMng.deserialize(data));
+		};
+	};
+
 	var WithValidateEachProperty = function(){
 		this.validate = function(rsc){
 			return Object.keys(this.propertyManagers).every(function(propName){
@@ -245,15 +257,16 @@ define([
 		};
 	};
 
-	var PropertyValueOnResource = function(args){
+	// the value for this property is stored on a property of the resource (which is an object)
+	var PropertyValueOnResourceProperty = function(args){
 		this.propName = args.name;
 	};
-	PropertyValueOnResource.prototype = {
-		// add the property on a resource
-		add: function(rsc){
+	PropertyValueOnResourceProperty.prototype = {
+		install: function(rsc){
+			// in this case, the install is not necessary, it is done at set time
 			// rsc[this.propName] = undefined;
 		},
-		remove: function(rsc){
+		uninstall: function(rsc){
 			delete rsc[this.propName];
 		},
 		has: function(rsc){
@@ -266,16 +279,17 @@ define([
 			rsc[this.propName] = value;
 		},
 	};
+	// the value for this property is stored on a Map on the manager
 	var PropertyValueOnManager = function(args){
-		PropertyValueOnResource.apply(this, arguments);
+		this.propName = args.name;
 		this.manager = args.manager;
 		this.manager[this.propName] = new Map();
 	};
 	PropertyValueOnManager.prototype = {
-		add: function(rsc){
+		install: function(rsc){
 			this.manager[this.propName].set(rsc);
 		},
-		remove: function(rsc){
+		uninstall: function(rsc){
 			this.manager[this.propName].delete(rsc);
 		},
 		get: function(rsc){
@@ -285,6 +299,32 @@ define([
 			return this.manager[this.propName].set(rsc, value);
 		},
 	};
+	// the value for this property is stored on the resource directly which has the Set interface (add and remove)
+	var PropertyValueOnSetResource = function(args){
+	};
+	PropertyValueOnSetResource.prototype = {
+		install: function(rsc){
+		},
+		uninstall: function(rsc){
+		},
+		has: function(rsc){
+			return true;
+		},
+		get: function(rsc){
+			return rsc.toArray();
+		},
+		set: function(rsc, value){
+			rsc.clear();
+			rsc.addEach(value);
+		},
+		addItem: function(rsc, item){
+			rsc.add(item);
+		},
+		removeItem: function(rsc, item){
+			rsc.delete(item);
+		},
+	};
+
 
 	var WithSerialize = function(args){
 		this.serialize = function(value){
@@ -296,14 +336,13 @@ define([
 		this.serializePropName = args.serializePropName;
 	};
 
-	var WithListSerialize = function(args){
+	var WithItemsSerialize = function(args){
 		this.serialize = function(list){
-			return list.map(this.serializeItem);
+			return list.map(args.itemSerializer.serialize);
 		};
 		this.deserialize = function(list){
-			return list.map(this.deserializeItem);
+			return list.map(args.itemSerializer.deserialize);
 		};
-		this.itemSeriliazer = args.itemSeriliazer; // can be a simple serializer or a relation serializer
 		this.serializePropName = args.serializePropName;
 	};
 
@@ -319,6 +358,7 @@ define([
 			return rsc;
 		};
 		this.serializePropName = args.serializePropName;
+		return this;
 	};
 
 	var WithStringValidate = function(){
@@ -329,6 +369,7 @@ define([
 
 	var taskManager;
 	var personManager;
+	var tasksListManager;
 
 	registerSuite({
 		"beforeEach": function(){
@@ -343,7 +384,7 @@ define([
 			WithSerializeEachProperty.call(taskManager);
 			WithValidateEachProperty.call(taskManager);
 
-			taskManager.propertyManagers.label = new PropertyValueOnResource({
+			taskManager.propertyManagers.label = new PropertyValueOnResourceProperty({
 				name: "label",
 			});
 			taskManager.propertyManagers.author = new PropertyValueOnManager({
@@ -356,20 +397,22 @@ define([
 			WithStringValidate.call(taskManager.propertyManagers.label);
 
 			// tasksListManager
-			taskManager = new Manager({
+			tasksListManager = new Manager({
 				factory: {
 					create: function(){
 						return new Set();
 					}
 				},
 			});
-			WithSerializeEachProperty.call(taskManager);
-
-			taskManager.propertyManagers.tasks = new PropertyValueOnResource({
-				name: "label",
+			WithSerializeOneProperty.call(tasksListManager, {
+				property: "tasks",
 			});
-			WithSerialize.call(taskManager.propertyManagers.tasks, {
-				serializePropName: "description",
+
+			tasksListManager.propertyManagers.tasks = new PropertyValueOnSetResource();
+			WithItemsSerialize.call(tasksListManager.propertyManagers.tasks, {
+				itemSerializer: WithRelationSerialize.call({}, {
+					manager: taskManager,
+				}),
 			});
 
 			// personManager
@@ -381,7 +424,7 @@ define([
 				},
 			});
 			WithSerializeEachProperty.call(personManager);
-			personManager.propertyManagers.fullName = new PropertyValueOnResource({
+			personManager.propertyManagers.fullName = new PropertyValueOnResourceProperty({
 				name: "fullName",
 			});
 			WithSerialize.call(personManager.propertyManagers.fullName, {
@@ -432,7 +475,7 @@ define([
 		"serialize relation": function(){
 			Syncable.call(taskManager, {});
 			Syncable.call(personManager, {});
-			taskManager.propertyManagers.assignee = new PropertyValueOnResource({
+			taskManager.propertyManagers.assignee = new PropertyValueOnResourceProperty({
 				name: "assignee",
 			});
 			WithRelationSerialize.call(taskManager.propertyManagers.assignee, {
@@ -456,14 +499,14 @@ define([
 		"deserialize relation": function(){
 			Syncable.call(taskManager, {});
 			Syncable.call(personManager, {});
-			taskManager.propertyManagers.assignee = new PropertyValueOnResource({
+			taskManager.propertyManagers.assignee = new PropertyValueOnResourceProperty({
 				name: "assignee",
 			});
 			WithRelationSerialize.call(taskManager.propertyManagers.assignee, {
 				serializePropName: "personId",
 				manager: personManager,
 			});
-			personManager.propertyManagers.wife = new PropertyValueOnResource({
+			personManager.propertyManagers.wife = new PropertyValueOnResourceProperty({
 				name: "wife",
 			});
 			WithRelationSerialize.call(personManager.propertyManagers.wife, {
@@ -487,10 +530,44 @@ define([
 		"serialize relation with a resource without id": function(){
 			// est-ce que le serializer doit faire une erreur ou bien doit-il lancer lui-même la synchro de la resource ?
 		},
-		"list manager": function(){
-
-		}
-
+		"set and get value stored on a resource of type Set": function(){
+			var maListeDeTaches = tasksListManager.create({
+				tasks: ["Faire les courses", "Faire le ménage"],
+			});
+			assert(maListeDeTaches.has("Faire les courses") && maListeDeTaches.has("Faire le ménage"));
+			tasksListManager.setPropValue(maListeDeTaches, "tasks", ["Faire à manger"]);
+			assert(maListeDeTaches.has("Faire à manger"));
+			assert.deepEqual(tasksListManager.getPropValue(maListeDeTaches, "tasks"), ["Faire à manger"]);
+			maListeDeTaches.add("Réparer la porte");
+			assert.deepEqual(tasksListManager.getPropValue(maListeDeTaches, "tasks"), ["Faire à manger", "Réparer la porte"]);
+		},
+		"serialize a Set of resources": function(){
+			Syncable.call(taskManager, {});
+			Syncable.call(tasksListManager, {});
+			var maTache = taskManager.create({
+				syncId: "1",
+				label: "Faire les courses",
+			});
+			var monAutreTache = taskManager.create({
+				syncId: "2",
+				label: "Faire le ménage",
+			});
+			var maListeDeTaches = tasksListManager.create();
+			maListeDeTaches.addEach([maTache, monAutreTache]);
+			assert.deepEqual(tasksListManager.serialize(maListeDeTaches), ["1", "2"]);
+		},
+		"deserialize a Set of resources": function(){
+			Syncable.call(taskManager, {});
+			Syncable.call(tasksListManager, {});
+			var maListeDeTaches = tasksListManager.create({
+				tasks: ["Faire ci", "Faire ça"],
+			});
+			tasksListManager.deserialize(maListeDeTaches, ["1", "2"]);
+			assert.deepEqual(maListeDeTaches.toArray(), [
+				taskManager.getBySyncId("1"),
+				taskManager.getBySyncId("2"),
+			]);
+		},
 	});
 
 });
