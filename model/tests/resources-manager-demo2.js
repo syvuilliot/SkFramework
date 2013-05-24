@@ -66,7 +66,8 @@ define([
 			var names = value.split(" ");
 			this.firstName = names[0];
 			this.lastName = names[1];
-		}
+		},
+		configurable: true,
 	});
 
 	var Manager = function(args){
@@ -114,45 +115,16 @@ define([
 		setPropValue: function(rsc, propName, value){
 			return this.propertyManagers[propName].set(rsc, value);
 		},
-	};
-
-/*	var SetManager = function(args){
-		this.resources = new Set();
-		this.itemsManager = args.itemsManager;
-		this._factory = args.factory;
-	};
-	SetManager.prototype = {
-		create: function(args){
-			// create instance
-			var rsc = this._factory.create(args);
-			// register resource
-			this.add(rsc);
-			return rsc;
-		},
-		destroy: function(rsc){
-			this.remove(rsc);
-			rsc.destroy && rsc.destroy();
-		},
-		add: function(rsc){
-			return this.resources.add(rsc);
-		},
-		remove: function(rsc){
-			return this.resources.delete(rsc);
-		},
-		has: function(rsc){
-			return this.resources.has(rsc);
+		getBy: function(prop, value){
+			return this.propertyManagers[prop].getBy(value);
 		},
 	};
-*/
 
 
-	// new Syncable that stores the syncId has a simple resource property
+	// new version of Syncable that stores the syncId has a simple resource property
 	var Syncable = function(args){
 		this.dataSource = args.dataSource;
-		this.propertyManagers.syncId = new PropertyValueOnManager({
-			name: "syncId",
-			manager: this,
-		});
+		this.propertyManagers.syncId = new PropertyValueStore();
 		var create = this.create;
 		this.create = function(args){
 			var mng = this;
@@ -163,22 +135,8 @@ define([
 			};
 			return rsc;
 		};
-		// since the values of maps are not indexed we need to iterate over each value
-		this.getBySyncId = function(id){
-			var rsc;
-			this.syncId.some(function(value, key){
-				if (value === id){
-					rsc = key;
-					return true;
-				}
-			});
-			return rsc;
-		};
 
-		this.propertyManagers.lastSourceData = new PropertyValueOnManager({
-			name: "lastSourceData",
-			manager: this,
-		});
+		this.propertyManagers.lastSourceData = new PropertyValueStore();
 		this.fetch = function(rsc){
 			return this.dataSource.get(this.getPropValue(rsc, "syncId")).then(function(response){
 				var data = this.getResponse2Data(response);
@@ -257,6 +215,30 @@ define([
 		};
 	};
 
+	// update a property value of items added and removed from the resources (of type Set) with a property value of the resource
+	var SetResourceWithItemsPropertyUpdate = function(args){
+		var cancelers = new Map();
+		var create = this.create;
+		this.create = function(){
+			var rsc = create.apply(this, arguments);
+			cancelers.set(rsc, rsc.addRangeChangeListener(function(added, removed){
+				added = added[0]; // on a set, there is only one item
+				added && (args.itemManager.setPropValue(added, args.itemProperty, this.getPropValue(rsc, args.thisProperty)));
+				removed = removed[0]; // on a set, there is only one item
+				removed && (args.itemManager.setPropValue(removed, args.itemProperty, undefined));
+			}.bind(this)));
+			return rsc;
+		};
+		var destroy = this.destroy;
+		this.destroy = function(rsc){
+			var canceler = cancelers.get(rsc);
+			canceler();
+			cancelers.delete(rsc);
+			destroy.apply(this, arguments);
+		};
+	};
+
+
 	// the value for this property is stored on a property of the resource (which is an object)
 	var PropertyValueOnResourceProperty = function(args){
 		this.propName = args.name;
@@ -279,25 +261,69 @@ define([
 			rsc[this.propName] = value;
 		},
 	};
-	// the value for this property is stored on a Map on the manager
-	var PropertyValueOnManager = function(args){
-		this.propName = args.name;
-		this.manager = args.manager;
-		this.manager[this.propName] = new Map();
+	var PropertyValueBindedOnResource = function(args){
+		this.resourceProp = args.name;
+		this.store = new Map();
 	};
-	PropertyValueOnManager.prototype = {
+	PropertyValueBindedOnResource.prototype = {
 		install: function(rsc){
-			this.manager[this.propName].set(rsc);
-		},
-		uninstall: function(rsc){
-			this.manager[this.propName].delete(rsc);
+			// store initial value of resource for this property
+			this.set(rsc, rsc[this.resourceProp], true);
+			// start observing value changes for this property on resource
+			propChange.addOwnPropertyChangeListener(rsc, this.resourceProp, function(value){
+				// this.active = true;
+				this.set(rsc, value, true);
+				// this.active = false;
+			}.bind(this));
 		},
 		get: function(rsc){
-			return this.manager[this.propName].get(rsc);
+			return this.store.get(rsc);
+		},
+		set: function(rsc, value, dontSyncOnRsc){
+			this.store.set(rsc, value);
+			if (!dontSyncOnRsc) {
+				rsc[this.resourceProp] = value;
+			}
+		},
+		getBy: function(valueToFind){
+			var findedRsc;
+			this.store.some(function(value, rsc){
+				if (value === valueToFind){
+					findedRsc = rsc;
+					return true;
+				}
+			});
+			return findedRsc;
+		},
+	};
+	// the value for this property is stored on a Map on the manager
+	var PropertyValueStore = function(args){
+		this.store = new Map();
+		// TODO: use an indexedSet for quicker getBy and allow to constraint to unique values
+		// this.unique = args.unique;
+	};
+	PropertyValueStore.prototype = {
+		install: function(rsc){
+		},
+		uninstall: function(rsc){
+		},
+		get: function(rsc){
+			return this.store.get(rsc);
 		},
 		set: function(rsc, value){
-			return this.manager[this.propName].set(rsc, value);
+			this.store.set(rsc, value);
 		},
+		getBy: function(valueToFind){
+			var findedRsc;
+			this.store.some(function(value, rsc){
+				if (value === valueToFind){
+					findedRsc = rsc;
+					return true;
+				}
+			});
+			return findedRsc;
+		},
+
 	};
 	// the value for this property is stored on the resource directly which has the Set interface (add and remove)
 	var PropertyValueOnSetResource = function(args){
@@ -325,6 +351,24 @@ define([
 		},
 	};
 
+	// at property installation, the value is set to a resource (in read only mode)
+	var WithResourceFromManager = function (args) {
+		var install = this.install;
+		this.install = function(rsc){
+			install.apply(this, arguments);
+			// get resource
+			var value = args.manager.getBy(args.property, rsc);
+			// or create it
+			if (!value){
+				var options = {};
+				options[args.property] = rsc;
+				value = args.manager.create(options);
+			}
+			set.call(this, rsc, value);
+		};
+		var set = this.set;
+		this.set = function(){}; // read only
+	};
 
 	var WithSerialize = function(args){
 		this.serialize = function(value){
@@ -352,7 +396,7 @@ define([
 		};
 		this.deserialize = function(id){
 			// ce n'est pas au manager d'être lazy, car le cas dans lequel on souhaite être lazy, c'est celui de la résolution d'id, donc on le fait ici
-			var rsc = args.manager.getBySyncId(id) || args.manager.create({
+			var rsc = args.manager.getBy("syncId", id) || args.manager.create({
 				syncId: id,
 			});
 			return rsc;
@@ -387,10 +431,7 @@ define([
 			taskManager.propertyManagers.label = new PropertyValueOnResourceProperty({
 				name: "label",
 			});
-			taskManager.propertyManagers.author = new PropertyValueOnManager({
-				name: "author",
-				manager: taskManager,
-			});
+			taskManager.propertyManagers.author = new PropertyValueStore();
 			WithSerialize.call(taskManager.propertyManagers.label, {
 				serializePropName: "description",
 			});
@@ -414,6 +455,7 @@ define([
 					manager: taskManager,
 				}),
 			});
+			tasksListManager.propertyManagers.assignee = new PropertyValueStore();
 
 			// personManager
 			personManager = new Manager({
@@ -443,6 +485,19 @@ define([
 			maTache.label = "Faire le ménage";
 			assert.equal(taskManager.getPropValue(maTache, "label"), "Faire le ménage");
 		},
+		"set and get value synced on resource": function(){
+			taskManager.propertyManagers.done = new PropertyValueBindedOnResource({
+				name: "done",
+			});
+			var maTache = taskManager.create();
+			assert.equal(maTache.done, false); // this is the default value for this business object
+			assert.equal(taskManager.getPropValue(maTache, "done"), false);
+			taskManager.setPropValue(maTache, "done", true);
+			assert.equal(maTache.done, true);
+			assert.equal(taskManager.getPropValue(maTache, "done"), true);
+			maTache.done = false;
+			assert.equal(taskManager.getPropValue(maTache, "done"), false);
+		},
 		"set and get value stored on manager": function(){
 			var maTache = taskManager.create();
 			taskManager.setPropValue(maTache, "author", "Sylvain");
@@ -470,7 +525,7 @@ define([
 			Syncable.call(taskManager, {});
 			var maTache = taskManager.create({syncId: "1"});
 			// taskManager.setPropValue(maTache, "syncId", "1");
-			assert.equal(taskManager.getBySyncId("1"), maTache);
+			assert.equal(taskManager.getBy("syncId", "1"), maTache);
 		},
 		"serialize relation": function(){
 			Syncable.call(taskManager, {});
@@ -519,13 +574,13 @@ define([
 				personId: "S",
 			});
 			assert.equal(maTache.label, "Faire les courses");
-			assert.equal(maTache.assignee, personManager.getBySyncId("S"));
+			assert.equal(maTache.assignee, personManager.getBy("syncId", "S"));
 			personManager.deserialize(maTache.assignee, {
 				fullName: "Sylvain Vuilliot",
 				wifeId: "A",
 			});
 			assert.equal(maTache.assignee.firstName, "Sylvain");
-			assert.equal(maTache.assignee.wife, personManager.getBySyncId("A"));
+			assert.equal(maTache.assignee.wife, personManager.getBy("syncId", "A"));
 		},
 		"serialize relation with a resource without id": function(){
 			// est-ce que le serializer doit faire une erreur ou bien doit-il lancer lui-même la synchro de la resource ?
@@ -564,10 +619,133 @@ define([
 			});
 			tasksListManager.deserialize(maListeDeTaches, ["1", "2"]);
 			assert.deepEqual(maListeDeTaches.toArray(), [
-				taskManager.getBySyncId("1"),
-				taskManager.getBySyncId("2"),
+				taskManager.getBy("syncId", "1"),
+				taskManager.getBy("syncId", "2"),
 			]);
 		},
+	});
+
+	registerSuite({
+		beforeEach: function(){
+			// taskManager
+			taskManager = new Manager({
+				factory: {
+					create: function(){
+						return new Task();
+					}
+				},
+			});
+			WithSerializeEachProperty.call(taskManager);
+			WithValidateEachProperty.call(taskManager);
+
+			taskManager.propertyManagers.label = new PropertyValueOnResourceProperty({
+				name: "label",
+			});
+			taskManager.propertyManagers.author = new PropertyValueStore();
+			WithSerialize.call(taskManager.propertyManagers.label, {
+				serializePropName: "description",
+			});
+			WithStringValidate.call(taskManager.propertyManagers.label);
+			taskManager.propertyManagers.assignee = new PropertyValueOnResourceProperty({
+				name: "assignee",
+			});
+
+			// tasksListManager
+			tasksListManager = new Manager({
+				factory: {
+					create: function(){
+						return new Set();
+					}
+				},
+			});
+			WithSerializeOneProperty.call(tasksListManager, {
+				property: "tasks",
+			});
+
+			tasksListManager.propertyManagers.tasks = new PropertyValueOnSetResource();
+			WithItemsSerialize.call(tasksListManager.propertyManagers.tasks, {
+				itemSerializer: WithRelationSerialize.call({}, {
+					manager: taskManager,
+				}),
+			});
+			tasksListManager.propertyManagers.assignee = new PropertyValueStore();
+			SetResourceWithItemsPropertyUpdate.call(tasksListManager, {
+				itemManager: taskManager,
+				itemProperty: "assignee",
+				thisProperty: "assignee",
+			});
+
+			// personManager
+			personManager = new Manager({
+				factory: {
+					create: function(){
+						return new Person();
+					},
+				},
+			});
+			WithSerializeEachProperty.call(personManager);
+			personManager.propertyManagers.fullName = new PropertyValueOnResourceProperty({
+				name: "fullName",
+			});
+			WithSerialize.call(personManager.propertyManagers.fullName, {
+				serializePropName: "fullName",
+			});
+			personManager.propertyManagers.tasks = new PropertyValueOnResourceProperty({
+				name: "tasks",
+			});
+			WithResourceFromManager.call(personManager.propertyManagers.tasks, {
+				manager: tasksListManager,
+				property: "assignee",
+			});
+
+		},
+		"person with tasks": function(){
+			var syv = personManager.create({
+				fullName: "Sylvain Vuilliot",
+			});
+			assert(tasksListManager.getPropValue(syv.tasks, "assignee"), syv);
+			var courses = taskManager.create({
+				label: "Faire les courses",
+			});
+			syv.tasks.add(courses);
+			assert(syv.tasks.has(courses));
+			assert.equal(courses.assignee, syv);
+			syv.tasks.delete(courses);
+			assert.equal(courses.assignee, undefined);
+
+		},
+		"person with tasks with serilisation": function(){
+			personManager.propertyManagers.tasks = new PropertyValueOnResourceProperty({
+				name: "tasks",
+			});
+			WithResourceFromManager.call(personManager.propertyManagers.tasks, {
+				manager: tasksListManager,
+				property: "assignee",
+			});
+			SetResourceWithItemsPropertyUpdate.call(tasksListManager, {
+				itemManager: taskManager,
+				itemProperty: "assignee",
+				thisProperty: "assignee",
+			});
+			taskManager.propertyManagers.assignee = new PropertyValueOnResourceProperty({
+				name: "assignee",
+			});
+			var syv = personManager.create({
+				fullName: "Sylvain Vuilliot",
+			});
+			assert(tasksListManager.getPropValue(syv.tasks, "assignee"), syv);
+			var courses = taskManager.create({
+				label: "Faire les courses",
+			});
+			syv.tasks.add(courses);
+			assert(syv.tasks.has(courses));
+			assert.equal(courses.assignee, syv);
+			syv.tasks.delete(courses);
+			assert.equal(courses.assignee, undefined);
+
+		},
+
+
 	});
 
 });
