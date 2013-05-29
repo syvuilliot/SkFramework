@@ -405,9 +405,9 @@ define([
 		return this;
 	};
 
-	var WithStringValidate = function(){
+	var WithStringValidate = function(args){
 		this.validate = function(value){
-			return (typeof value === "string");
+			return (typeof value === "string") && ((args && args.length) ? value.length === args.length : true);
 		};
 	};
 
@@ -418,7 +418,15 @@ define([
 	registerSuite({
 		"beforeEach": function(){
 			// taskManager
-			taskManager = new Manager({
+			var SerializableManager = compose(Manager, WithSerializeEachProperty, WithValidateEachProperty);
+			taskManager = new SerializableManager({factory: {
+				create: function(){
+					return new Task();
+				};
+			});
+
+			// old taskManager declaration
+/*			taskManager = new Manager({
 				factory: {
 					create: function(){
 						return new Task();
@@ -427,7 +435,7 @@ define([
 			});
 			WithSerializeEachProperty.call(taskManager);
 			WithValidateEachProperty.call(taskManager);
-
+*/
 			taskManager.propertyManagers.label = new PropertyValueOnResourceProperty({
 				name: "label",
 			});
@@ -436,6 +444,12 @@ define([
 				serializePropName: "description",
 			});
 			WithStringValidate.call(taskManager.propertyManagers.label);
+
+			var SerializableValidablePropertyManager = compose(PropertyValueStore, WithSerialize, WithStringValidate, {stringValidateArgs: {mode: "strict"}});
+			taskManager.propertyManagers.author = new SerializableValidablePropertyManager({
+				serializePropName: "description",
+				stringValidateLength: 3,
+			});
 
 			// tasksListManager
 			tasksListManager = new Manager({
