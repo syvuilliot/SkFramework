@@ -20,6 +20,43 @@ define([
 		this.putResponse2Data = function(response){
 		};
 
+		this.getSourceData = function(rsc) {
+			return this.logRequest(rsc, "get", this.dataSource.get(this.getSyncId(rsc)));
+		};
+		this.putSourceData = function(rsc, data) {
+			var options = {};
+			var id = this.getSyncId(rsc);
+			if (id) {options.id = id;}
+			return this.logRequest(rsc, "put", this.dataSource.put(data, options));
+		};
+		this.deleteSourceData = function(rsc){
+			return this.logRequest(rsc, "delete", this.dataSource.remove(this.getSyncId(rsc)));
+		};
+		this.logRequest = function(rsc, type, result) {
+			var status = {
+				type: type,
+				started: new Date(),
+				stage: "inProgress",
+				finished: null,
+				response: null,
+				// request: result,
+			};
+			this.setPropValue(rsc, "lastRequestStatus", status);
+
+			return result.then(function(response){
+				status.stage = "success";
+				status.response = response;
+				status.finished = new Date();
+				return response;
+			}, function(response){
+				status.stage = "error";
+				status.response = response;
+				status.finished = new Date();
+				return response;
+			});
+		};
+
+
 		var setPropValue = this.setPropValue;
 		this.setPropValue = function(rsc, propName, value){
 			setPropValue.apply(this, arguments);
@@ -57,7 +94,7 @@ define([
 		};
 
 		this.fetch = function(rsc){
-			return this.dataSource.get(this.getSyncId(rsc)).then(function(response){
+			return this.getSourceData(rsc).then(function(response){
 				var data = this.getResponse2Data(response);
 				this.setPropValue(rsc, this.lastSourceDataProperty, {
 					time: new Date(),
@@ -68,12 +105,9 @@ define([
 		this.merge = function(rsc, options){
 			this.deserialize(rsc, this.getPropValue(rsc, this.lastSourceDataProperty).data, options);
 		};
-		this.push = function(rsc, options){
-			options = options || {};
+		this.push = function(rsc){
 			var data = this.serialize(rsc);
-			var id = this.getSyncId(rsc);
-			if (id) options.id = id;
-			return this.dataSource.put(data, options).then(function(response){
+			return this.putSourceData(rsc, data).then(function(response){
 				var id = this.putResponse2Id(response);
 				var data = this.putResponse2Data(response);
 				id && this.setPropValue(rsc, this.syncIdProperty, id);
@@ -81,7 +115,7 @@ define([
 			});
 		};
 		this.pull = function(rsc){
-			return when(this.fetch(rsc), function(){
+			return this.fetch(rsc).then(function(){
 				this.merge(rsc);
 			}.bind(this));
 		};

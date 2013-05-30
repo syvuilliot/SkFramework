@@ -9,6 +9,7 @@ define([
 	"../SerializeEachProperty",
 	'frb/bind',
 	'collections/listen/property-changes',
+	'frb/observe',
 	"dojo/store/Memory",
 	"compose/compose",
 	"dojo/Deferred",
@@ -24,6 +25,7 @@ define([
 	WithSerializeEachProperty,
 	bind,
 	propChange,
+	observe,
 	Memory,
 	compose,
 	Deferred,
@@ -356,7 +358,7 @@ define([
 			return args.manager.getPropValue(rsc, "syncId");
 		};
 		this.deserialize = function(id){
-			// ce n'est pas au manager d'être lazy, car le cas dans lequel on souhaite être lazy, c'est celui de la résolution d'id, donc on le fait ici
+			// ce n'est pas au resource manager d'être lazy, car le cas dans lequel on souhaite être lazy, c'est celui de la résolution d'id, donc on le fait ici
 			var rsc = args.manager.getBy("syncId", id) || args.manager.create({
 				syncId: id,
 			});
@@ -479,21 +481,55 @@ define([
 		Syncable.call(personManager);
 		personManager.syncIdProperty = "syncId";
 		personManager.propertyManagers.lastSourceData = new PropertyValueStore();
+		WithPropertyValueBindedOnResource.call(personManager.propertyManagers.lastSourceData, {
+			name: "lastSourceData",
+		});
+		personManager.propertyManagers.lastRequestStatus = new PropertyValueStore();
+		WithPropertyValueBindedOnResource.call(personManager.propertyManagers.lastRequestStatus, {
+			name: "lastRequestStatus",
+		});
 		personManager.propertyManagers.inSync = new PropertyValueStore();
 		WithPropertyValueBindedOnResource.call(personManager.propertyManagers.inSync, {
 			name: "inSync",
 		});
+		personManager.dataSource = new AsyncMemory({data: [
+			{
+				id: "syv",
+				fullName: "Sylvain Vuilliot",
+			}
+		]});
 		// taskManager
 		Syncable.call(taskManager);
 		taskManager.syncIdProperty = "syncId";
 		taskManager.propertyManagers.lastSourceData = new PropertyValueStore();
 		taskManager.propertyManagers.inSync = new PropertyValueStore();
+		taskManager.propertyManagers.lastRequestStatus = new PropertyValueStore();
 		// tasksListManager
 		Syncable.call(tasksListManager);
 		tasksListManager.propertyManagers.lastSourceData = new PropertyValueStore();
 		tasksListManager.propertyManagers.inSync = new PropertyValueStore();
+		tasksListManager.propertyManagers.lastRequestStatus = new PropertyValueStore();
 		tasksListManager.getSyncId = function(rsc){
 			return personManager.getPropValue(this.getPropValue(rsc, "assignee"), "syncId");
+		};
+		tasksListManager.dataSource = new AsyncMemory({data: [
+			{
+				id: "syv",
+				tasks: [
+					{id: "1", label: "Faire les courses"},
+					{id: "2", label: "Faire le ménage"},
+				],
+			}
+		]});
+		tasksListManager.getResponse2Data = function(response){
+			return response.tasks.map(function(task){
+				return task.id;
+			});
+		};
+		tasksListManager.putResponse2Id = function(response){
+			return response.id;
+		};
+		tasksListManager.putResponse2Data = function(response){
 		};
 	};
 
@@ -645,9 +681,41 @@ define([
 		},
 	});
 
+	function assertEqualNow(date){
+		assert(Date.now() - date.getTime() < 1000);
+	}
+
 	registerSuite({
 		name: "syncable",
 		beforeEach: setupModelWithSyncable,
+		"lastSourceData": function(){
+			var syv = personManager.create({
+				syncId: "syv",
+			});
+			assert.equal(personManager.getPropValue(syv, "lastSourceData"), undefined);
+			return syv.pull().then(function(){
+				assert.deepEqual(personManager.getPropValue(syv, "lastSourceData").data, {
+					id: "syv",
+					fullName: "Sylvain Vuilliot",
+				});
+				var lastSourceDataTime = personManager.getPropValue(syv, "lastSourceData").time;
+				assertEqualNow(lastSourceDataTime);
+			});
+		},
+		"observable lastSourceDataTime": function(args){
+			var observedValue;
+			var syv = personManager.create({
+				syncId: "syv",
+			});
+			assert.equal(syv.lastSourceData, undefined);
+			observe(syv, "lastSourceData.time", function(value){
+				observedValue = value;
+			});
+			return syv.fetch().then(function(){
+				assertEqualNow(syv.lastSourceData.time);
+				assertEqualNow(observedValue);
+			});
+		},
 		"syncStatus": function(){
 			var syv = personManager.create({
 				fullName: "Sylvain Vuilliot",
@@ -675,12 +743,63 @@ define([
 			assert.equal(syv.inSync, false);
 			assert.equal(inSyncObservedValue, false);
 		},
+		"lastRequestStatus": function(){
+			var syv = personManager.create({
+				syncId: "syv",
+			});
+			assert.equal(personManager.getPropValue(syv, "lastRequestStatus"), undefined);
+			var pullReturn = syv.pull();
+			var status = personManager.getPropValue(syv, "lastRequestStatus");
+			assert.equal(status.type, "get");
+			assert.equal(status.stage, "inProgress");
+			assertEqualNow(status.started);
+			return pullReturn.then(function(){
+				assert.equal(status.stage, "success");
+				assertEqualNow(status.finished);
+			});
+		},
+		"observable requestStatus": function(){
+			var observedValue;
+			var syv = personManager.create({
+				syncId: "syv",
+			});
+			observe(syv, "lastRequestStatus.stage", function(value){
+				observedValue = value;
+			});
+			assert.equal(syv.lastRequestStatus, undefined);
+
+			var fetchReturn = syv.fetch();
+			assert.equal(syv.lastRequestStatus.stage, "inProgress");
+			assert.equal(observedValue, "inProgress");
+			observedValue = undefined;
+
+			return fetchReturn.then(function(){
+				assert.equal(syv.lastRequestStatus.stage, "success");
+				assert.equal(observedValue, "success");
+			});
+		},
+		"pull remote data": function(){
+			var syv = personManager.create({syncId: "syv"});
+			return syv.tasks.pull().then(function(){
+				assert.equal(syv.tasks.length, 2);
+				assert.deepEqual(syv.tasks.map(function(task){
+					return taskManager.getPropValue(task, "syncId");
+				}), ["1", "2"]);
+			});
+		},
+		"push resource to dataSource": function(){
+
+		},
+		"update syncId of created resource": function(){
+
+		},
+
 	});
 
 	registerSuite({
 		name: "one to many relation for acuicité",
 		beforeEach: function(){
-			setupModelWithSerialisation();
+			setupModelWithSyncable();
 
 			// tasksListManager
 			WithItemsFromResourceManager.call(tasksListManager, {
@@ -691,30 +810,6 @@ define([
 				itemProperty: "assignee",
 				thisProperty: "assignee",
 			});
-			Syncable.call(tasksListManager);
-			tasksListManager.dataSource = new AsyncMemory({data: [
-				{
-					id: "syv",
-					tasks: [
-						{label: "Faire les courses"},
-						{label: "Faire le ménage"},
-					],
-				}
-			]});
-			tasksListManager.propertyManagers.lastSourceData = new PropertyValueStore();
-			tasksListManager.getSyncId = function(rsc){
-				return personManager.getPropValue(this.getPropValue(rsc, "assignee"), "syncId");
-			};
-			this.getResponse2Data = function(response){
-				return response.tasks;
-			};
-			this.putResponse2Id = function(response){
-				return response.id;
-			};
-			this.putResponse2Data = function(response){
-			};
-			tasksListManager.push = function(rsc){
-			};
 		},
 		"person with tasks": function(){
 			var syv = personManager.create({
@@ -746,10 +841,21 @@ define([
 			var syv = personManager.create({syncId: "syv"});
 			return syv.tasks.pull().then(function(){
 				assert.equal(syv.tasks.length, 2);
+				assert.deepEqual(syv.tasks.map(function(task){
+					return taskManager.getPropValue(task, "syncId");
+				}), ["1", "2"]);
 				syv.tasks.forEach(function(task){
-					assert(task.label === "Faire les courses" || task.label === "Faire le ménage");
+					assert(taskManager.has(task));
 					assert.equal(task.assignee, syv);
 				});
+			});
+		},
+		"update tasks data by updating tasksList data": function(){
+			var syv = personManager.create({syncId: "syv"});
+			return syv.tasks.pull().then(function(){
+				assert.deepEqual(syv.tasks.map(function(task){
+					return task.label;
+				}), ["Faire les courses", "Faire le ménage"]);
 			});
 		},
 	});
