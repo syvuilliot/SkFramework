@@ -11,9 +11,10 @@ define([
 	'ksf/component/layout/samples/KsDomIn',
 	'ksf/component/layout/samples/InKsDom',
 	'ksf/component/layout/samples/DomInDom',
-	'ksf/component/managers/Name',	'ksf/component/managers/Style',
+	'ksf/component/managers/Name',	'ksf/component/managers/DomClass',
 	'ksf/component/managers/TryEach',
-	'dojo/dom-class'
+	'dojo/dom-class',
+	'ksf/utils/string'
 ], function(
 	ctr,
 	IndexedSet,
@@ -27,9 +28,10 @@ define([
 	KsDomIn,
 	InKsDom,
 	DomInDom,
-	NameManager,		StyleManager,
+	NameManager,					DomClassManager,
 	TryEach,
-	domClass
+	domClass,
+	str
 ) {
 	return ctr(function DomComponent() {
 		this._components = new IndexedSet();
@@ -56,6 +58,9 @@ define([
 
 		this._namer = new NameManager({
 			registry: this._components,
+			convert: function(id) {
+				return str.hyphenate(id);
+			},
 			actionner: new TryEach(
 				// HtmlElement
 				{execute: function(cmp, name){
@@ -80,8 +85,15 @@ define([
 				}}
 			),
 		});
-		this._style = new StyleManager({
-			component: 'domNode',
+		this.style = new DomClassManager({
+			componentId: 'domNode',
+			registry: this._components,
+			styler: domClass
+		});
+		this.style.set([this._componentName || this.constructor.name]);
+
+		this._state = new DomClassManager({
+			componentId: 'domNode',
 			registry: this._components,
 			styler: domClass
 		});
@@ -102,11 +114,6 @@ define([
 		}.bind(this), 'domNode');
 
 		this._bindingsFactory.add(function(domNode) {
-			domClass.add(domNode, this.constructor.name);
-			this.name && domClass.add(domNode, this.name);
-		}.bind(this), ['domNode']);
-
-		this._bindingsFactory.add(function(domNode) {
 			this._init();
 		}.bind(this), ['domNode']);
 	}, {
@@ -119,10 +126,9 @@ define([
 			return this._name;
 		},
 		set name(val) {
-			if (this._components.hasKey('domNode')) {
-				this._name && domClass.remove(this.domNode, this._name);
-				domClass.add(this.domNode, val);
-			}
+			this.style.remove(this._name);
+			this.style.add(val);
+
 			this._name = val;
 		},
 
