@@ -1,35 +1,53 @@
 define([
 	'intern!object',
 	'intern/chai!assert',
-	'collections/map',
-	'collections/set',
-	'ksf/utils/IndexedSet',
 	'../ResourcesManager',
 	'../Syncable',
 	"../SerializeEachProperty",
+	"../SerializeOneProperty",
+	"../WithResourceItems",
+	"../propertyManagers/PropertyValueStore",
+	"../propertyManagers/PropertyValueIsResource",
+	"../propertyManagers/WithValueIsSet",
+	"../propertyManagers/WithPropertyOnResource",
+	"../propertyManagers/WithValueFromManager",
+	"../propertyManagers/WithSerialize",
+	"../propertyManagers/WithItemsSerialize",
+	"../propertyManagers/WithRelationSerialize",
+	"../propertyManagers/WithUpdateSyncStatus",
+	"collections/set",
+	"collections/map",
 	'frb/bind',
 	'collections/listen/property-changes',
 	'frb/observe',
 	"dojo/store/Memory",
 	"compose/compose",
 	"dojo/Deferred",
-	"dojo/promise/all",
 ], function(
 	registerSuite,
 	assert,
-	Map,
-	Set,
-	IndexedSet,
 	Manager,
 	Syncable,
 	WithSerializeEachProperty,
+	WithSerializeOneProperty,
+	WithItemsFromResourceManager,
+	PropertyValueStore,
+	PropertyValueIsResource,
+	WithValueIsSet,
+	WithPropertyValueBindedOnResource,
+	WithValueFromManager,
+	WithSerialize,
+	WithItemsSerialize,
+	WithRelationSerialize,
+	WithUpdateSyncStatus,
+	Set,
+	Map,
 	bind,
 	propChange,
 	observe,
 	Memory,
 	compose,
-	Deferred,
-	waitAll
+	Deferred
 ) {
 	// asyncMemory
 	var AsyncMemory = compose(Memory, {
@@ -107,21 +125,6 @@ define([
 		configurable: true,
 	});
 
-
-
-
-	var WithSerializeOneProperty = function(args){
-		var propName = args.property;
-		this.serialize = function(rsc){
-			var propMng = this.propertyManagers[propName];
-			return propMng.serialize(this.getPropValue(rsc, propName));
-		};
-		this.deserialize = function(rsc, data){
-			var propMng = this.propertyManagers[propName];
-			this.setPropValue(rsc, propName, propMng.deserialize(data));
-		};
-	};
-
 	var WithValidateEachProperty = function(){
 		this.validate = function(rsc){
 			return Object.keys(this.propertyManagers).every(function(propName){
@@ -156,133 +159,6 @@ define([
 		};
 	};
 
-	// mixin for manager of resources of type Set
-	// add a create method on a resource of type Set that is a shortcut to the create method of a manager
-	// that cannot be done directly by the resource factory since she would have to know the specified manager (which is not recommanded)
-	// TODO: prevent adding items that are not know by the specified manager ?
-	var WithItemsFromResourceManager = function(args){
-		var create = this.create;
-		this.create = function(){
-			var rsc = create.apply(this, arguments);
-			rsc.create = function(createArgs){
-				var item = args.manager.create(createArgs);
-				rsc.add(item);
-				return item;
-			};
-			return rsc;
-		};
-	};
-
-	// Property manager that stores the values of resources
-	var PropertyValueStore = function(args){
-		this.store = new Map();
-		// TODO: use an indexedSet for quicker getBy and allow to constraint to unique values
-		// this.unique = args.unique;
-	};
-	PropertyValueStore.prototype = {
-		install: function(rsc, arg){
-			if (arguments.length === 2){
-				this.set(rsc, arg);
-			}
-		},
-		uninstall: function(rsc){
-			this.store.delete(rsc);
-		},
-		get: function(rsc){
-			return this.store.get(rsc);
-		},
-		set: function(rsc, value){
-			this.store.set(rsc, value);
-		},
-		getBy: function(valueToFind){
-			var findedRsc;
-			this.store.some(function(value, rsc){
-				if (value === valueToFind){
-					findedRsc = rsc;
-					return true;
-				}
-			});
-			return findedRsc;
-		},
-	};
-
-	// the value for this property is the resource directly
-	// so, it is a read only property
-	var PropertyValueIsResource = function(args){
-	};
-	PropertyValueIsResource.prototype = {
-		install: function(rsc, arg){
-			if (arguments.length === 2){
-				this.set(rsc, arg);
-			}
-		},
-		uninstall: function(rsc){
-		},
-		has: function(rsc){
-			return true;
-		},
-		get: function(rsc){
-			return rsc;
-		},
-		set: function(rsc, value){
-		},
-	};
-
-	// The value for this property is a Set collection created at installation time
-	// The property is read only : another value cannot be set after installation (but the content of the value can be changed)
-	var WithValueIsSet = function(args){
-		var set = this.set;
-		var install = this.install;
-		this.install = function(rsc, arg){
-			install.apply(this, arguments);
-			set.call(this, rsc, new Set());
-			if (arguments.length === 2){
-				this.set(rsc, arg);
-			}
-		};
-		// the value is read only, so the set method does not change the value of the property
-		// it only changes the content of the value (as an helper method)
-		this.set = function(rsc, value){
-			var collection = this.get(rsc);
-			// TODO: remove only items that are not on rsc and add only new items
-			collection.clear();
-			collection.addEach(value);
-		};
-/*		this.add = function(rsc, item){
-			var value = this.get(rsc);
-			return value.add(item);
-		};
-		this.remove = function(rsc, item){
-			var value = this.get(rsc);
-			return value.delete(item);
-		};
-*/	};
-
-	/**
-	 * The value for this property is a ressource stored on another resources manager
-	 * The value is retrieved and set at installation time and cannot be changed (but its content can still be changed)
-	 * @param {object} manager The resourcesManager on which the value is retrieved
-	 * @param {string} getByProperty The property name to retrieve by
-	 */
-	var WithValueFromManager = function (args) {
-		var install = this.install;
-		var set = this.set;
-		this.install = function(rsc){
-			install.apply(this, arguments);
-			// get resource
-			var value = args.manager.getBy(args.getByProperty, rsc);
-			// or create it
-			if (!value){
-				var options = {};
-				options[args.getByProperty] = rsc;
-				value = args.manager.create(options);
-			}
-			set.call(this, rsc, value);
-			// call this.set at install time to notify "observers" (WithPropertyValueBindedOnResource) of the initial value
-			this.set(rsc, this.get(rsc));
-		};
-		this.set = function(){}; // read only
-	};
 
 	// mixin for propertyManager that does the same thing as the resourcesManager mixin "WithResourcesFromManager" but does it on every value that is set for the property, instead of doing it directly on the resource
 	// is that necessary ?
@@ -310,65 +186,6 @@ define([
 	};
 
 
-	// mixin for mirroring the value setted here on a property of the resource
-	// and for setting a new value here when it is changed on the resource directly
-	var WithPropertyValueBindedOnResource = function(args){
-		var install = this.install;
-		var uninstall = this.uninstall;
-		var set = this.set;
-
-		this.install = function(rsc, arg){
-			install.call(this, rsc, arg);
-			// store initial value of resource for this property
-			this.set(rsc, rsc[args.name], true);
-			// start observing value changes for this property on resource
-			propChange.addOwnPropertyChangeListener(rsc, args.name, function(value){
-				this.set(rsc, value, true);
-			}.bind(this));
-		};
-		this.set = function(rsc, value, dontSyncOnRsc){
-			set.call(this, rsc, value);
-			value = this.get(rsc); // use getter
-			if (!dontSyncOnRsc) {
-				rsc[args.name] = value;
-			}
-		};
-	};
-
-	var WithSerialize = function(args){
-		this.serialize = function(value){
-			return value;
-		};
-		this.deserialize = function(value){
-			return value;
-		};
-		this.serializePropName = args.serializePropName;
-	};
-
-	var WithItemsSerialize = function(args){
-		this.serialize = function(list){
-			return list.map(args.itemSerializer.serialize);
-		};
-		this.deserialize = function(list){
-			return list.map(args.itemSerializer.deserialize);
-		};
-		this.serializePropName = args.serializePropName;
-	};
-
-	var WithRelationSerialize = function(args){
-		this.serialize = function(rsc){
-			return args.manager.getPropValue(rsc, "syncId");
-		};
-		this.deserialize = function(id){
-			// ce n'est pas au resource manager d'être lazy, car le cas dans lequel on souhaite être lazy, c'est celui de la résolution d'id, donc on le fait ici
-			var rsc = args.manager.getBy("syncId", id) || args.manager.create({
-				syncId: id,
-			});
-			return rsc;
-		};
-		this.serializePropName = args.serializePropName;
-		return this;
-	};
 
 	var WithStringValidate = function(args){
 		this.validate = function(value){
@@ -376,13 +193,6 @@ define([
 		};
 	};
 
-	var WithUpdateSyncStatus = function(){
-		var set = this.set;
-		this.set = function(rsc){
-			set.apply(this, arguments);
-			this.owner.setPropValue(rsc, "inSync", this.owner.isInSync(rsc));
-		};
-	};
 
 
 
