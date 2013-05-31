@@ -59,7 +59,12 @@ define([
 		removeFromPropValue: function(rsc, propName, item){
 			return this.propertyManagers[propName].remove(rsc, item);
 		},
-*/	};
+*/
+		addProperty: function(propMng, name){
+			this.propertyManagers[name] = propMng;
+			propMng.owner = this;
+		},
+	};
 
 	return Manager;
 });

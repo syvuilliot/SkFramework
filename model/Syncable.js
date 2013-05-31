@@ -56,13 +56,13 @@ define([
 			});
 		};
 
-
-		var setPropValue = this.setPropValue;
+		// replaced by an explicit "updateSyncStatus" on each propertyManager
+/*		var setPropValue = this.setPropValue;
 		this.setPropValue = function(rsc, propName, value){
 			setPropValue.apply(this, arguments);
 			setPropValue.call(this, rsc, "inSync", this.isInSync(rsc));
 		};
-		this.isInSync = function(rsc){
+*/		this.isInSync = function(rsc){
 			var localState = this.serialize(rsc);
 			var remoteState = this.getPropValue(rsc, this.lastSourceDataProperty);
 			remoteState = remoteState && remoteState.data;
@@ -88,7 +88,7 @@ define([
 				return mng.merge(rsc);
 			};
 			// update inSync
-			setPropValue.call(this, rsc, "inSync", this.isInSync(rsc));
+			this.setPropValue(rsc, "inSync", this.isInSync(rsc));
 
 			return rsc;
 		};
@@ -105,14 +105,20 @@ define([
 		this.merge = function(rsc, options){
 			this.deserialize(rsc, this.getPropValue(rsc, this.lastSourceDataProperty).data, options);
 		};
-		this.push = function(rsc){
+		this.push = function(rsc, options){
 			var data = this.serialize(rsc);
 			return this.putSourceData(rsc, data).then(function(response){
 				var id = this.putResponse2Id(response);
-				var data = this.putResponse2Data(response);
+				var responseData = this.putResponse2Data(response);
 				id && this.setPropValue(rsc, this.syncIdProperty, id);
-				data && this.setPropValue(rsc, this.lastSourceDataProperty, data);
-			});
+				// the default behavior is to update lastSourceData after a successfull put either with the response data or with the local data. This way, we don't need a fetch request.
+				if (!options || !options.preventLastSourceDataUpdate) {
+					this.setPropValue(rsc, this.lastSourceDataProperty, {
+						time: new Date(),
+						data: responseData ? responseData : data,
+					});
+				}
+			}.bind(this));
 		};
 		this.pull = function(rsc){
 			return this.fetch(rsc).then(function(){

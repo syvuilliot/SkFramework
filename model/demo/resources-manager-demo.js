@@ -45,6 +45,8 @@ define([
 		}),
 		put: compose.around(function(basePut){
 			return function(item, options){
+				// clone item to have the same behavior as a regular dataSource
+				item = Object.clone(item);
 				var results = basePut.call(this, item, options);
 				var dfd = new Deferred();
 				setTimeout(function(){
@@ -374,6 +376,14 @@ define([
 		};
 	};
 
+	var WithUpdateSyncStatus = function(){
+		var set = this.set;
+		this.set = function(rsc){
+			set.apply(this, arguments);
+			this.owner.setPropValue(rsc, "inSync", this.owner.isInSync(rsc));
+		};
+	};
+
 
 
 // demo data
@@ -480,7 +490,11 @@ define([
 		// personManager
 		Syncable.call(personManager);
 		personManager.syncIdProperty = "syncId";
+		personManager.propertyManagers.fullName.owner = personManager;
+		WithUpdateSyncStatus.call(personManager.propertyManagers.fullName);
 		personManager.propertyManagers.lastSourceData = new PropertyValueStore();
+		personManager.propertyManagers.lastSourceData.owner = personManager;
+		WithUpdateSyncStatus.call(personManager.propertyManagers.lastSourceData);
 		WithPropertyValueBindedOnResource.call(personManager.propertyManagers.lastSourceData, {
 			name: "lastSourceData",
 		});
@@ -498,15 +512,26 @@ define([
 				fullName: "Sylvain Vuilliot",
 			}
 		]});
+		personManager.getResponse2Data = function(response){
+			response = Object.clone(response);
+			delete response.id;
+			return response;
+		};
 		// taskManager
 		Syncable.call(taskManager);
 		taskManager.syncIdProperty = "syncId";
+		taskManager.propertyManagers.label.owner = taskManager;
+		WithUpdateSyncStatus.call(taskManager.propertyManagers.label);
 		taskManager.propertyManagers.lastSourceData = new PropertyValueStore();
+		taskManager.propertyManagers.lastSourceData.owner = taskManager;
+		WithUpdateSyncStatus.call(taskManager.propertyManagers.lastSourceData);
 		taskManager.propertyManagers.inSync = new PropertyValueStore();
 		taskManager.propertyManagers.lastRequestStatus = new PropertyValueStore();
 		// tasksListManager
 		Syncable.call(tasksListManager);
 		tasksListManager.propertyManagers.lastSourceData = new PropertyValueStore();
+		tasksListManager.propertyManagers.lastSourceData.owner = tasksListManager;
+		WithUpdateSyncStatus.call(tasksListManager.propertyManagers.lastSourceData);
 		tasksListManager.propertyManagers.inSync = new PropertyValueStore();
 		tasksListManager.propertyManagers.lastRequestStatus = new PropertyValueStore();
 		tasksListManager.getSyncId = function(rsc){
@@ -695,7 +720,7 @@ define([
 			assert.equal(personManager.getPropValue(syv, "lastSourceData"), undefined);
 			return syv.pull().then(function(){
 				assert.deepEqual(personManager.getPropValue(syv, "lastSourceData").data, {
-					id: "syv",
+					// id: "syv",
 					fullName: "Sylvain Vuilliot",
 				});
 				var lastSourceDataTime = personManager.getPropValue(syv, "lastSourceData").time;
@@ -778,6 +803,29 @@ define([
 				assert.equal(observedValue, "success");
 			});
 		},
+		"lastRequestStatus update with concurent requests": function(){
+			var syv = personManager.create({
+				syncId: "syv",
+			});
+			assert.equal(personManager.getPropValue(syv, "lastRequestStatus"), undefined);
+			var pullReturn = syv.pull();
+			var pullStatus = personManager.getPropValue(syv, "lastRequestStatus");
+			assert.equal(pullStatus.type, "get");
+			assert.equal(pullStatus.stage, "inProgress");
+			var pushReturn = syv.push();
+			var pushStatus = personManager.getPropValue(syv, "lastRequestStatus"); // the lastResquestStatus is the pushStatus
+			assert(pullStatus !== pushStatus);
+			assert.equal(pushStatus.type, "put");
+			assert.equal(pushStatus.stage, "inProgress");
+			return pullReturn.then(function(){
+				assert.equal(personManager.getPropValue(syv, "lastRequestStatus"), pushStatus); // the lastResquestStatus is the pushStatus
+				assert.equal(pullStatus.stage, "success");
+				return pushReturn.then(function(){
+					assert.equal(personManager.getPropValue(syv, "lastRequestStatus"), pushStatus); // the lastResquestStatus is the pushStatus
+					assert.equal(pushStatus.stage, "success");
+				});
+			});
+		},
 		"pull remote data": function(){
 			var syv = personManager.create({syncId: "syv"});
 			return syv.tasks.pull().then(function(){
@@ -788,10 +836,46 @@ define([
 			});
 		},
 		"push resource to dataSource": function(){
-
+			var syv = personManager.create({
+				syncId: "syv",
+			});
+			syv.fullName = "Syv Vuil";
+			assert.equal(syv.inSync, false);
+			return syv.push().then(function(){
+				assert.deepEqual(personManager.dataSource.data[0], {
+					id: "syv",
+					fullName: "Syv Vuil",
+				});
+				return syv.fetch().then(function(){
+					assert.equal(syv.inSync, true);
+				});
+			});
 		},
 		"update syncId of created resource": function(){
-
+			var syv = personManager.create({
+				fullName: "Syv Vuil",
+			});
+			assert.equal(syv.inSync, false);
+			return syv.push().then(function(){
+				assert.equal(personManager.dataSource.data[1].fullName, "Syv Vuil");
+				var syncId = personManager.dataSource.data[1].id;
+				assert(syncId !== undefined); // be sure that an id has been assigned by the dataSource
+				assert.equal(syv.inSync, true);
+				assert.equal(personManager.getPropValue(syv, "syncId"), syncId);
+			});
+		},
+		"reverting to server state": function () {
+			var syv = personManager.create({
+				syncId: "syv",
+			});
+			return syv.pull().then(function(){
+				assert.equal(syv.inSync, true);
+				syv.fullName = "Titi Parisien";
+				assert.equal(syv.inSync, false);
+				syv.merge();
+				assert.equal(syv.firstName, "Sylvain");
+				assert.equal(syv.inSync, true);
+			});
 		},
 
 	});
@@ -850,7 +934,7 @@ define([
 				});
 			});
 		},
-		"update tasks data by updating tasksList data": function(){
+/*		"update tasks data by updating tasksList data": function(){
 			var syv = personManager.create({syncId: "syv"});
 			return syv.tasks.pull().then(function(){
 				assert.deepEqual(syv.tasks.map(function(task){
@@ -858,6 +942,6 @@ define([
 				}), ["Faire les courses", "Faire le ménage"]);
 			});
 		},
-	});
+*/	});
 
 });
