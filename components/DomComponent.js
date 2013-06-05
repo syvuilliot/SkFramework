@@ -51,7 +51,16 @@ define([
 					return factory.apply(undefined, cmps);
 				},
 				unbind: function(bindReturn) {
-					bindReturn.remove && bindReturn.remove() || bindReturn();
+					if (!bindReturn.forEach) {
+						bindReturn = [bindReturn];
+					}
+					bindReturn.forEach(function(ret) {
+						if (ret.remove) {
+							ret.remove();
+						} else {
+							ret();
+						}
+					});
 				}
 			}
 		});
