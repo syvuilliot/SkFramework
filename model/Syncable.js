@@ -44,7 +44,7 @@ define([
 			};
 			this.setPropValue(rsc, "lastRequestStatus", status);
 
-			return result.then(function(response){
+			result.then(function(response){
 				status.stage = "success";
 				status.response = response;
 				status.finished = new Date();
@@ -55,6 +55,7 @@ define([
 				status.finished = new Date();
 				return response;
 			});
+			return result;
 		};
 
 		this.isInSync = function(rsc){
@@ -89,7 +90,8 @@ define([
 		};
 
 		this.fetch = function(rsc){
-			return this.getSourceData(rsc).then(function(response){
+			var result = this.getSourceData(rsc);
+			result.then(function(response){
 				var data = this.getResponse2Data(response);
 				this.setPropValue(rsc, this.lastSourceDataProperty, {
 					time: new Date(),
@@ -97,6 +99,7 @@ define([
 				});
 				return response;
 			}.bind(this));
+			return result;
 		};
 		this.merge = function(rsc, options){
 			this.deserialize(rsc, this.getPropValue(rsc, this.lastSourceDataProperty).data, options);
@@ -118,9 +121,11 @@ define([
 			}.bind(this));
 		};
 		this.pull = function(rsc){
-			return this.fetch(rsc).then(function(){
+			var fetchResult = this.fetch(rsc);
+			fetchResult.then(function(){
 				this.merge(rsc);
 			}.bind(this));
+			return fetchResult;
 		};
 
 
