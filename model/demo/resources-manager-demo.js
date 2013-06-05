@@ -5,6 +5,7 @@ define([
 	'../Syncable',
 	"../SerializeEachProperty",
 	"../SerializeOneProperty",
+	"../WithItemsSync",
 	"../WithResourceItems",
 	"../propertyManagers/PropertyValueStore",
 	"../propertyManagers/PropertyValueIsResource",
@@ -30,6 +31,7 @@ define([
 	Syncable,
 	WithSerializeEachProperty,
 	WithSerializeOneProperty,
+	WithItemsSync,
 	WithItemsFromResourceManager,
 	PropertyValueStore,
 	PropertyValueIsResource,
@@ -282,6 +284,7 @@ define([
 		WithRelationSerialize.call(taskManager.propertyManagers.assignee, {
 			serializePropName: "personId",
 			manager: personManager,
+			syncIdProperty: "syncId",
 		});
 
 		// tasksListManager
@@ -291,6 +294,7 @@ define([
 		WithItemsSerialize.call(tasksListManager.propertyManagers.tasks, {
 			itemSerializer: WithRelationSerialize.call({}, {
 				manager: taskManager,
+				syncIdProperty: "syncId",
 			}),
 		});
 	};
@@ -300,6 +304,7 @@ define([
 		// personManager
 		Syncable.call(personManager);
 		personManager.syncIdProperty = "syncId";
+		personManager.getProperty = "syncId";
 		personManager.propertyManagers.fullName.owner = personManager;
 		WithUpdateSyncStatus.call(personManager.propertyManagers.fullName);
 		personManager.propertyManagers.lastSourceData = new PropertyValueStore();
@@ -351,8 +356,8 @@ define([
 			{
 				id: "syv",
 				tasks: [
-					{id: "1", label: "Faire les courses"},
-					{id: "2", label: "Faire le ménage"},
+					{id: "1", description: "Faire les courses"},
+					{id: "2", description: "Faire le ménage"},
 				],
 			}
 		]});
@@ -461,6 +466,7 @@ define([
 			WithRelationSerialize.call(personManager.propertyManagers.wife, {
 				serializePropName: "wifeId",
 				manager: personManager,
+				syncIdProperty: "syncId",
 			});
 			var maTache = taskManager.create();
 			taskManager.deserialize(maTache, {
@@ -520,7 +526,7 @@ define([
 		assert(Date.now() - date.getTime() < 1000);
 	}
 
-	registerSuite({
+/*	registerSuite({
 		name: "syncable",
 		beforeEach: setupModelWithSyncable,
 		"lastSourceData": function(){
@@ -563,20 +569,28 @@ define([
 		},
 		"observable syncStatus": function(){
 			var inSyncObservedValue;
+			var binded = {};
 			var syv = personManager.create({
 				fullName: "Sylvain Vuilliot",
 			});
 			assert.equal(syv.inSync, false);
+			bind(binded, "inSync", {
+				"<-": "inSync",
+				source: syv,
+			});
+			assert.equal(binded.inSync, false);
 			propChange.addOwnPropertyChangeListener(syv, "inSync", function(value){
 				inSyncObservedValue = value;
 			});
 			personManager.setPropValue(syv, "lastSourceData", {data:{fullName: "Sylvain Vuilliot"}});
 			assert.equal(syv.inSync, true);
+			assert.equal(binded.inSync, true);
 			assert.equal(inSyncObservedValue, true);
 			inSyncObservedValue = undefined;
 			personManager.setPropValue(syv, "fullName", "syv");
 			assert.equal(syv.inSync, false);
 			assert.equal(inSyncObservedValue, false);
+			assert.equal(binded.inSync, false);
 		},
 		"lastRequestStatus": function(){
 			var syv = personManager.create({
@@ -689,6 +703,7 @@ define([
 		},
 
 	});
+*/
 
 	registerSuite({
 		name: "one to many relation for acuicité",
@@ -703,6 +718,21 @@ define([
 				itemManager: taskManager,
 				itemProperty: "assignee",
 				thisProperty: "assignee",
+			});
+			WithItemsSync.call(tasksListManager, {
+				propName: "tasks",
+				itemManager: taskManager,
+				getResponse2Items: function(response){
+					return response.tasks;
+				},
+				item2id: function(item){
+					return item.id;
+				},
+				item2data: function(item){
+					var data = Object.clone(item);
+					delete data.id;
+					return data;
+				},
 			});
 		},
 		"person with tasks": function(){
@@ -744,7 +774,7 @@ define([
 				});
 			});
 		},
-/*		"update tasks data by updating tasksList data": function(){
+		"update tasks data by updating tasksList data": function(){
 			var syv = personManager.create({syncId: "syv"});
 			return syv.tasks.pull().then(function(){
 				assert.deepEqual(syv.tasks.map(function(task){
@@ -752,6 +782,6 @@ define([
 				}), ["Faire les courses", "Faire le ménage"]);
 			});
 		},
-*/	});
+	});
 
 });
