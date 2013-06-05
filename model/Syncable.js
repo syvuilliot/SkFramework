@@ -56,13 +56,7 @@ define([
 			});
 		};
 
-		// replaced by an explicit "updateSyncStatus" on each propertyManager
-/*		var setPropValue = this.setPropValue;
-		this.setPropValue = function(rsc, propName, value){
-			setPropValue.apply(this, arguments);
-			setPropValue.call(this, rsc, "inSync", this.isInSync(rsc));
-		};
-*/		this.isInSync = function(rsc){
+		this.isInSync = function(rsc){
 			var localState = this.serialize(rsc);
 			var remoteState = this.getPropValue(rsc, this.lastSourceDataProperty);
 			remoteState = remoteState && remoteState.data;
@@ -100,6 +94,7 @@ define([
 					time: new Date(),
 					data: data,
 				});
+				return response;
 			}.bind(this));
 		};
 		this.merge = function(rsc, options){
@@ -118,6 +113,7 @@ define([
 						data: responseData ? responseData : data,
 					});
 				}
+				return response;
 			}.bind(this));
 		};
 		this.pull = function(rsc){

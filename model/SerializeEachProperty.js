@@ -24,10 +24,10 @@ define([
 		};
 		this.deserialize = function(rsc, data, options){
 			// TODO: on pourrait prévoir dans les options (comme dans backbone) de permettre de supprimer les propriétés qui ne sont pas dans data, ou au contraire d'ajouter celles qui sont en plus, ou d'empêcher la mise à jour de certaines
-			// ici, on ne fait qu'écraser les valeurs de toutes les propriétés qui ont une méthode "deserialize"
+			// ici, on ne fait qu'écraser les valeurs de toutes les propriétés qui ont une méthode "deserialize" et pour lesquelles une valeur est fournie dans data
 			Object.keys(this.propertyManagers).forEach(function(propName){
 				var propMng = this.propertyManagers[propName];
-				if (propMng.deserialize){
+				if (data.hasOwnProperty(propMng.serializePropName) && propMng.deserialize){
 					this.setPropValue(rsc, propName, propMng.deserialize(data[propMng.serializePropName]));
 				}
 			}.bind(this));

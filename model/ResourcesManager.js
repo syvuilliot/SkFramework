@@ -33,23 +33,11 @@ define([
 			}.bind(this));
 			rsc.destroy && rsc.destroy();
 		},
-		add: function(rsc){
-			return this.resources.add(rsc);
-		},
-		remove: function(rsc){
-			return this.resources.delete(rsc);
-		},
-		has: function(rsc){
-			return this.resources.has(rsc);
-		},
 		getPropValue: function(rsc, propName){
 			return this.propertyManagers[propName].get(rsc);
 		},
 		setPropValue: function(rsc, propName, value){
 			return this.propertyManagers[propName].set(rsc, value);
-		},
-		getBy: function(prop, value){
-			return this.propertyManagers[prop].getBy(value);
 		},
 /*		// variant of setPropValue that do not set a new value but only change content of the current value
 		addToPropValue: function(rsc, propName, item){
@@ -63,6 +51,32 @@ define([
 		addProperty: function(propMng, name){
 			this.propertyManagers[name] = propMng;
 			propMng.owner = this;
+		},
+		// TODO: mettre ces méthodes dans un mixin "WithCache" en disant que ce sont des méthodes à usage interne
+		add: function(rsc){
+			return this.resources.add(rsc);
+		},
+		remove: function(rsc){
+			return this.resources.delete(rsc);
+		},
+		has: function(rsc){
+			return this.resources.has(rsc);
+		},
+		getBy: function(prop, value){
+			return this.propertyManagers[prop].getBy(value);
+		},
+		get: function(value){
+			return this.getBy(this.getProperty, value);
+		},
+		getOrCreate: function(args){
+			var rsc;
+			if (args && args[this.getProperty]){
+				rsc = this.get(args[this.getProperty]);
+			}
+			if (!rsc){
+				rsc = this.create(args);
+			}
+			return rsc;
 		},
 	};
 
