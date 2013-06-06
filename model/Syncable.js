@@ -15,9 +15,10 @@ define([
 			return response;
 		};
 		this.putResponse2Id = function(response){
-			return response;
+			return response[this.syncIdProperty];
 		};
 		this.putResponse2Data = function(response){
+			return response;
 		};
 
 		this.getSourceData = function(rsc) {
