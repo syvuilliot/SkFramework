@@ -332,6 +332,12 @@ define([
 			delete response.id;
 			return response;
 		};
+		personManager.putResponse2Id = function(response){
+			return response; // dojo memory store only responds with id
+		};
+		personManager.putResponse2Data = function(response){
+			return; // dojo memory store only responds with id
+		};
 		// taskManager
 		Syncable.call(taskManager);
 		taskManager.syncIdProperty = "syncId";
@@ -526,7 +532,7 @@ define([
 		assert(Date.now() - date.getTime() < 1000);
 	}
 
-/*	registerSuite({
+	registerSuite({
 		name: "syncable",
 		beforeEach: setupModelWithSyncable,
 		"lastSourceData": function(){
@@ -703,7 +709,7 @@ define([
 		},
 
 	});
-*/
+
 
 	registerSuite({
 		name: "one to many relation for acuicité",
