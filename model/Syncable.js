@@ -106,7 +106,8 @@ define([
 		};
 		this.push = function(rsc, options){
 			var data = this.serialize(rsc);
-			return this.putSourceData(rsc, data).then(function(response){
+			var dfd = this.putSourceData(rsc, data);
+			dfd.then(function(response){
 				var id = this.putResponse2Id(response);
 				var responseData = this.putResponse2Data(response);
 				id && this.setPropValue(rsc, this.syncIdProperty, id);
@@ -119,6 +120,7 @@ define([
 				}
 				return response;
 			}.bind(this));
+			return dfd;
 		};
 		this.pull = function(rsc){
 			var fetchResult = this.fetch(rsc);
