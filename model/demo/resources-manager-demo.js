@@ -408,7 +408,7 @@ define([
 		"set and get value synced on resource": function(){
 			var maTache = taskManager.create();
 			assert.equal(maTache.done, false); // this is the default value for this business object
-			// assert.equal(taskManager.getPropValue(maTache, "done"), false);
+			assert.equal(taskManager.getPropValue(maTache, "done"), false);
 			taskManager.setPropValue(maTache, "done", true);
 			assert.equal(maTache.done, true);
 			assert.equal(taskManager.getPropValue(maTache, "done"), true);
