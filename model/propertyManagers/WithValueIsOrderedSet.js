@@ -9,7 +9,7 @@ define([
 		var set = this.set;
 		var install = this.install;
 		this.install = function(rsc, arg){
-			install.apply(this, arguments);
+			install.call(this);
 			set.call(this, rsc, []);
 			if (arguments.length === 2){
 				this.set(rsc, arg);
@@ -18,6 +18,7 @@ define([
 		// the value is read only, so the set method does not change the value of the property
 		// it only changes the content of the value (it is an helper method)
 		this.set = function(rsc, items){
+			if (!items || !items.forEach){return;}
 			var collection = this.get(rsc);
 			// remove items
 			collection.slice().forEach(function(item){
