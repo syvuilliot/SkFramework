@@ -39,6 +39,11 @@ define([
 		setPropValue: function(rsc, propName, value){
 			return this.propertyManagers[propName].set(rsc, value);
 		},
+		setEachPropValue: function(rsc, values){
+			Object.forEach(values, function(value, propName){
+				this.setPropValue(rsc, propName, value);
+			}.bind(this));
+		},
 /*		// variant of setPropValue that do not set a new value but only change content of the current value
 		addToPropValue: function(rsc, propName, item){
 			return this.propertyManagers[propName].add(rsc, item);

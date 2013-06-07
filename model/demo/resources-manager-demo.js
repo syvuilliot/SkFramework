@@ -10,6 +10,7 @@ define([
 	"../propertyManagers/PropertyValueStore",
 	"../propertyManagers/PropertyValueIsResource",
 	"../propertyManagers/WithValueIsSet",
+	"../propertyManagers/WithValueIsOrderedSet",
 	"../propertyManagers/WithPropertyOnResource",
 	"../propertyManagers/WithValueFromManager",
 	"../propertyManagers/WithSerialize",
@@ -36,6 +37,7 @@ define([
 	PropertyValueStore,
 	PropertyValueIsResource,
 	WithValueIsSet,
+	WithValueIsOrderedSet,
 	WithPropertyValueBindedOnResource,
 	WithValueFromManager,
 	WithSerialize,
@@ -59,7 +61,7 @@ define([
 				var dfd = new Deferred();
 				setTimeout(function(){
 					dfd.resolve(results);
-				}, 2000);
+				}, 20);
 				return dfd;
 			};
 		}),
@@ -71,7 +73,7 @@ define([
 				var dfd = new Deferred();
 				setTimeout(function(){
 					dfd.resolve(results);
-				}, 2000);
+				}, 20);
 				return dfd;
 			};
 		}),
@@ -263,6 +265,12 @@ define([
 		WithPropertyValueBindedOnResource.call(personManager.propertyManagers.tasks, {
 			name: "tasks",
 		});
+		personManager.propertyManagers.phones = new PropertyValueStore();
+		WithPropertyValueBindedOnResource.call(personManager.propertyManagers.phones, {
+			name: "phones",
+		});
+		WithValueIsOrderedSet.call(personManager.propertyManagers.phones);
+
 
 	};
 	var setupModelWithSerialisation = function(){
@@ -273,6 +281,9 @@ define([
 		personManager.propertyManagers.syncId = new PropertyValueStore();
 		WithSerialize.call(personManager.propertyManagers.fullName, {
 			serializePropName: "fullName",
+		});
+		WithSerialize.call(personManager.propertyManagers.phones, {
+			serializePropName: "phones",
 		});
 
 		// taskManager
@@ -307,6 +318,8 @@ define([
 		personManager.getProperty = "syncId";
 		personManager.propertyManagers.fullName.owner = personManager;
 		WithUpdateSyncStatus.call(personManager.propertyManagers.fullName);
+		personManager.propertyManagers.phones.owner = personManager;
+		WithUpdateSyncStatus.call(personManager.propertyManagers.phones);
 		personManager.propertyManagers.lastSourceData = new PropertyValueStore();
 		personManager.propertyManagers.lastSourceData.owner = personManager;
 		WithUpdateSyncStatus.call(personManager.propertyManagers.lastSourceData);
@@ -325,6 +338,7 @@ define([
 			{
 				id: "syv",
 				fullName: "Sylvain Vuilliot",
+				phones: ["06", "09"],
 			}
 		]});
 		personManager.getResponse2Data = function(response){
@@ -394,12 +408,20 @@ define([
 		"set and get value synced on resource": function(){
 			var maTache = taskManager.create();
 			assert.equal(maTache.done, false); // this is the default value for this business object
-			assert.equal(taskManager.getPropValue(maTache, "done"), false);
+			// assert.equal(taskManager.getPropValue(maTache, "done"), false);
 			taskManager.setPropValue(maTache, "done", true);
 			assert.equal(maTache.done, true);
 			assert.equal(taskManager.getPropValue(maTache, "done"), true);
 			maTache.done = false;
 			assert.equal(taskManager.getPropValue(maTache, "done"), false);
+		},
+		"set and get orderedSet value": function(){
+			var syv = personManager.create({
+				fullName : "Sylvain Vuilliot",
+				phones: ["06", "09"],
+			});
+			assert.deepEqual(personManager.getPropValue(syv, "phones"), ["06", "09"]);
+			assert.deepEqual(syv.phones, ["06", "09"]);
 		},
 		"set and get value of a 'fromManager' property (auto populated and read-only)": function(){
 			var syv = personManager.create({fullName : "Sylvain Vuilliot"});
@@ -447,7 +469,12 @@ define([
 		"serialize person": function(){
 			var syv = personManager.create();
 			syv.fullName = "Sylvain Vuilliot";
-			assert.deepEqual(personManager.serialize(syv), {fullName: "Sylvain Vuilliot"});
+			syv.phones.push("09");
+			syv.phones.unshift("06");
+			assert.deepEqual(personManager.serialize(syv), {
+				fullName: "Sylvain Vuilliot",
+				phones: ["06", "09"],
+			});
 		},
 		"serialize task": function(){
 			var syv = personManager.create({
@@ -542,8 +569,8 @@ define([
 			assert.equal(personManager.getPropValue(syv, "lastSourceData"), undefined);
 			return syv.pull().then(function(){
 				assert.deepEqual(personManager.getPropValue(syv, "lastSourceData").data, {
-					// id: "syv",
 					fullName: "Sylvain Vuilliot",
+					phones: ["06", "09"],
 				});
 				var lastSourceDataTime = personManager.getPropValue(syv, "lastSourceData").time;
 				assertEqualNow(lastSourceDataTime);
@@ -566,9 +593,13 @@ define([
 		"syncStatus": function(){
 			var syv = personManager.create({
 				fullName: "Sylvain Vuilliot",
+				phones: ["06", "09"],
 			});
 			assert.equal(personManager.getPropValue(syv, "inSync"), false);
-			personManager.setPropValue(syv, "lastSourceData", {data:{fullName: "Sylvain Vuilliot"}});
+			personManager.setPropValue(syv, "lastSourceData", {data:{
+				fullName: "Sylvain Vuilliot",
+				phones: ["06", "09"],
+			}});
 			assert.equal(personManager.getPropValue(syv, "inSync"), true);
 			personManager.setPropValue(syv, "fullName", "syv");
 			assert.equal(personManager.getPropValue(syv, "inSync"), false);
@@ -588,7 +619,10 @@ define([
 			propChange.addOwnPropertyChangeListener(syv, "inSync", function(value){
 				inSyncObservedValue = value;
 			});
-			personManager.setPropValue(syv, "lastSourceData", {data:{fullName: "Sylvain Vuilliot"}});
+			personManager.setPropValue(syv, "lastSourceData", {data:{
+				fullName: "Sylvain Vuilliot",
+				phones: [],
+			}});
 			assert.equal(syv.inSync, true);
 			assert.equal(binded.inSync, true);
 			assert.equal(inSyncObservedValue, true);
@@ -597,6 +631,23 @@ define([
 			assert.equal(syv.inSync, false);
 			assert.equal(inSyncObservedValue, false);
 			assert.equal(binded.inSync, false);
+		},
+		"syncStatus refreshed only once on merge": function(){
+			var syv = personManager.create();
+			personManager.setPropValue(syv, "lastSourceData", {data:{
+				fullName: "Sylvain Vuilliot",
+				phones: ["06", "09"],
+			}});
+			var isInSync = personManager.isInSync;
+			personManager.isInSync = function(){
+				isInSyncCallCount++;
+				return isInSync.apply(this, arguments);
+			};
+			var isInSyncCallCount = 0;
+			assert.equal(syv.inSync, false);
+			personManager.merge(syv);
+			assert.equal(personManager.getPropValue(syv, "inSync"), true);
+			assert.equal(isInSyncCallCount, 1);
 		},
 		"lastRequestStatus": function(){
 			var syv = personManager.create({
@@ -675,6 +726,7 @@ define([
 				assert.deepEqual(personManager.dataSource.data[0], {
 					id: "syv",
 					fullName: "Syv Vuil",
+					phones: [],
 				});
 				return syv.fetch().then(function(){
 					assert.equal(syv.inSync, true);

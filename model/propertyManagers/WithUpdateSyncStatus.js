@@ -7,7 +7,7 @@ define([
 		var set = this.set;
 		this.set = function(rsc){
 			set.apply(this, arguments);
-			this.owner.setPropValue(rsc, "inSync", this.owner.isInSync(rsc));
+			this.owner.refreshSyncStatus(rsc);
 		};
 	};
 	return WithUpdateSyncStatus;

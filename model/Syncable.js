@@ -11,6 +11,7 @@ define([
 			return this.getPropValue(rsc, this.syncIdProperty);
 		};
 		this.lastSourceDataProperty = "lastSourceData";
+		this.inSyncProperty = "inSync";
 		this.getResponse2Data = function(response){
 			return response;
 		};
@@ -63,6 +64,19 @@ define([
 			var remoteState = this.getPropValue(rsc, this.lastSourceDataProperty);
 			remoteState = remoteState && remoteState.data;
 			return Object.equals(localState, remoteState);
+		};
+		this.refreshSyncStatus = function(rsc){
+			if (!this.disableRefreshSyncStatus){
+				this.setPropValue(rsc, this.inSyncProperty, this.isInSync(rsc));
+			}
+		};
+		var setEachPropValue = this.setEachPropValue;
+		this.setEachPropValue = function(rsc, values){
+			// don't refresh sync status for each prop but do it only once
+			this.disableRefreshSyncStatus = true;
+			setEachPropValue.apply(this, arguments);
+			this.disableRefreshSyncStatus = false;
+			this.refreshSyncStatus(rsc);
 		};
 
 		var create = this.create;
