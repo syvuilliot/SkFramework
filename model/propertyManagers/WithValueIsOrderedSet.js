@@ -8,17 +8,16 @@ define([
 	return function(args){
 		var set = this.set;
 		var install = this.install;
-		this.install = function(rsc, arg){
-			install.call(this);
+		this.install = function(rsc){
+			install.apply(this, arguments);
 			set.call(this, rsc, []);
-			if (arguments.length === 2){
-				this.set(rsc, arg);
-			}
+			// call this.set at install time to notify "observers" (WithPropertyValueBindedOnResource) of the initial value
+			this.set(rsc, this.get(rsc));
 		};
 		// the value is read only, so the set method does not change the value of the property
 		// it only changes the content of the value (it is an helper method)
 		this.set = function(rsc, items){
-			if (!items || !items.forEach){return;}
+			if (!items || !items.forEach || items.length === 0){return;}
 			var collection = this.get(rsc);
 			// remove items
 			collection.slice().forEach(function(item){

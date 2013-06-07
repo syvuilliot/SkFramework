@@ -12,17 +12,14 @@ define([
 		create: function(args){
 			// create instance
 			var rsc = this._factory.create(args);
-			// add properties
-			Object.keys(this.propertyManagers).forEach(function(propName){
-				var propMng = this.propertyManagers[propName];
-				if (args && args.hasOwnProperty(propName)){
-					propMng.install(rsc, args[propName]);
-				} else {
-					propMng.install(rsc);
-				}
-			}.bind(this));
 			// register resource
 			this.add(rsc);
+			// install properties
+			Object.keys(this.propertyManagers).forEach(function(propName){
+				this.propertyManagers[propName].install(rsc);
+			}.bind(this));
+			// set initial values
+			args && this.setEachPropValue(rsc, args);
 			return rsc;
 		},
 		destroy: function(rsc){
@@ -40,8 +37,8 @@ define([
 			return this.propertyManagers[propName].set(rsc, value);
 		},
 		setEachPropValue: function(rsc, values){
-			Object.forEach(values, function(value, propName){
-				this.setPropValue(rsc, propName, value);
+			Object.keys(values).forEach(function(propName){
+				this.setPropValue(rsc, propName, values[propName]);
 			}.bind(this));
 		},
 /*		// variant of setPropValue that do not set a new value but only change content of the current value

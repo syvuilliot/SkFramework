@@ -9,11 +9,10 @@ define([
 		var set = this.set;
 		var install = this.install;
 		this.install = function(rsc, arg){
-			install.call(this);
+			install.apply(this, arguments);
 			set.call(this, rsc, new Set());
-			if (arguments.length === 2){
-				this.set(rsc, arg);
-			}
+			// call this.set at install time to notify "observers" (WithPropertyValueBindedOnResource) of the initial value
+			this.set(rsc, this.get(rsc));
 		};
 		// the value is read only, so the set method does not change the value of the property
 		// it only changes the content of the value (as an helper method)
@@ -25,15 +24,6 @@ define([
 			collection.deleteEach(removed);
 			collection.addEach(added);
 		};
-		// do we have to expose add and remove methods on the propertyManager ?
-/*		this.add = function(rsc, item){
-			var value = this.get(rsc);
-			return value.add(item);
-		};
-		this.remove = function(rsc, item){
-			var value = this.get(rsc);
-			return value.delete(item);
-		};
-*/	};
+	};
 	return WithValueIsSet;
 });

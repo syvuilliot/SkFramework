@@ -8,10 +8,7 @@ define([
 	var PropertyValueIsResource = function(args){
 	};
 	PropertyValueIsResource.prototype = {
-		install: function(rsc, arg){
-			if (arguments.length === 2){
-				this.set(rsc, arg);
-			}
+		install: function(rsc){
 		},
 		uninstall: function(rsc){
 		},

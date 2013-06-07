@@ -266,10 +266,10 @@ define([
 			name: "tasks",
 		});
 		personManager.propertyManagers.phones = new PropertyValueStore();
+		WithValueIsOrderedSet.call(personManager.propertyManagers.phones);
 		WithPropertyValueBindedOnResource.call(personManager.propertyManagers.phones, {
 			name: "phones",
 		});
-		WithValueIsOrderedSet.call(personManager.propertyManagers.phones);
 
 
 	};

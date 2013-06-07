@@ -11,9 +11,6 @@ define([
 	};
 	PropertyValueStore.prototype = {
 		install: function(rsc, arg){
-			if (arguments.length === 2){
-				this.set(rsc, arg);
-			}
 		},
 		uninstall: function(rsc){
 			this.store.delete(rsc);
