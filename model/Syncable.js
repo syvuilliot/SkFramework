@@ -97,9 +97,6 @@ define([
 			rsc.merge = function(){
 				return mng.merge(rsc);
 			};
-			// update inSync
-			this.setPropValue(rsc, "inSync", this.isInSync(rsc));
-
 			return rsc;
 		};
 
