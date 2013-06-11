@@ -9,7 +9,7 @@ define([
 	bindings,
 	on
 ){
-
+	// widget for selecting an item (js object) that allow to have a value that is not in the options list
 	return ctr(function(args){
 		this._list = new List({
 			domTag: "select",
@@ -35,7 +35,7 @@ define([
 		this.value = args.value;
 		this.options = args.options;
 
-		on(this.domNode, "change", function(ev){
+		this._observeSelectChange = on(this.domNode, "change", function(ev){
 			this._preventUpdateSelectedIndex = true;
 			this.value = this._list.value[ev.target.selectedIndex];
 			this._preventUpdateSelectedIndex = false;
@@ -68,8 +68,8 @@ define([
 			// reset _selectOptions
 			this._updateSelectOptions(0, this._list.value.length, options);
 			// start observing
-			this.cancelOptionsObserving && this.cancelOptionsObserving();
-			this.cancelOptionsObserving = options && options.addRangeChangeListener(function(added, removed, position){
+			this._cancelOptionsObserving && this._cancelOptionsObserving();
+			this._cancelOptionsObserving = options && options.addRangeChangeListener(function(added, removed, position){
 				this._updateSelectOptions(position, removed.length, added);
 			}.bind(this));
 		},
@@ -88,8 +88,8 @@ define([
 			this.domNode.selectedIndex = selectOptions.indexOf(this.value);
 		},
 		destroy: function(){
-			bindings.cancelBindings(this);
-			this.cancelOptionsObserving && this.cancelOptionsObserving();
+			this._observeSelectChange.remove();
+			this._cancelOptionsObserving && this._cancelOptionsObserving();
 			this._list.destroy();
 		}
 	});
