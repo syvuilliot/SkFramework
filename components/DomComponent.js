@@ -11,6 +11,7 @@ define([
 	'ksf/component/layout/samples/KsDomIn',
 	'ksf/component/layout/samples/InKsDom',
 	'ksf/component/layout/samples/DomInDom',
+	'ksf/component/layout/samples/KsDomInContainer',
 	'ksf/component/managers/Name',	'ksf/component/managers/DomClass',
 	'ksf/component/managers/TryEach',
 	'dojo/dom-class',
@@ -28,6 +29,7 @@ define([
 	KsDomIn,
 	InKsDom,
 	DomInDom,
+	KsDomInContainer,
 	NameManager,					DomClassManager,
 	TryEach,
 	domClass,
@@ -51,6 +53,7 @@ define([
 					return factory.apply(undefined, cmps);
 				},
 				unbind: function(bindReturn) {
+					if (!bindReturn) { return; }
 					if (!bindReturn.forEach) {
 						bindReturn = [bindReturn];
 					}
@@ -107,24 +110,29 @@ define([
 			styler: domClass
 		});
 
+		var layoutRegistry = Object.create(this._components);
+		var origGet = this._components.get;
+		layoutRegistry.get = function(cmp) {
+			if (typeof(cmp) != 'string') {
+				return cmp;
+			} else {
+				return origGet.apply(this, arguments);
+			}
+		};
 		this._layout = new TreeByIdPlacer({
-			registry: this._components,
-			root: 'domNode',
+			registry: layoutRegistry,
 			placementManager: new TreePlacer({
 				placer: new MultiPlacer([
 					new DomInDom(),
 					new KsDomIn(new DomInDom()),
 					new InKsDom(new DomInDom()),
+					new KsDomInContainer()
 				]),
 			}),
 		});
 		this._componentsFactory.add(function(){
 			return document.createElement(this._domTag);
 		}.bind(this), 'domNode');
-
-		this._bindingsFactory.add(function(domNode) {
-			this._init();
-		}.bind(this), ['domNode']);
 	}, {
 		_domTag: 'div',
 
@@ -141,6 +149,20 @@ define([
 			this._name = val;
 		},
 
-		_init: function() {}
+		_doLayout: function() {},
+
+		render: function() {
+			this._doLayout();
+			this.domNode.style.width = this.bounds && this.bounds.width && (this.bounds.width + 'px'),
+			this.domNode.style.height = this.bounds && this.bounds.height && (this.bounds.height + 'px');
+		},
+
+		get bounds () {
+			return this._bounds;
+		},
+
+		set bounds (bounds) {
+			this._bounds = bounds;
+		}
 	});
 });

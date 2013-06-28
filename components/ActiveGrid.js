@@ -155,11 +155,11 @@ define([
 		]);
 
 		//place components views
-		this._layout.set([
+		this._layout.set(['domNode', [
 			"head",
 			"body",
 			// "footer"
-		]);
+		]]);
 
 	}, {
 		_domTag: "table",

@@ -9,12 +9,11 @@ define([
 	return ctr(function(args){
 		this._registry = args.registry;
 		this._placementManager = args.placementManager;
-		this.root = args.root;
 		this._placement = null;
 	}, {
-		set: function(placement) {
+		set: function(layoutTree) {
 			var oldTree = this._placement;
-			var idTree = this._placement = new Tree([this.root, placement]);
+			var idTree = this._placement = new Tree(layoutTree);
 
 			// map tree of ids to tree of components
 			var cmpTree = idTree.map(function(id){
@@ -32,6 +31,6 @@ define([
 					}
 				}.bind(this));
 			}
-		},
+		}
 	});
 });

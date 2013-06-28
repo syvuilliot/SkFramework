@@ -12,7 +12,7 @@ define([
 	// widget for selecting an item (js object) that allow to have a value that is not in the options list
 	return ctr(function(args){
 		this._list = new List({
-			domTag: "select",
+			domNode: "select",
 			factory: {
 				create: function (item) {
 					return bindings.defineBindings(document.createElement("option"), {

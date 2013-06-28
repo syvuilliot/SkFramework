@@ -1,5 +1,6 @@
 define([
 	"ksf/utils/constructor",
+	'./DomNode',
 	"collections/map",
 	"ksf/component/layout/Tree",
 	'ksf/component/layout/samples/DomInDom',
@@ -8,6 +9,7 @@ define([
 	"ksf/component/_RegistryWithFactory",
 ], function(
 	ctr,
+	DomNode,
 	Map,
 	PlacementManager,
 	DomInDom,
@@ -16,8 +18,8 @@ define([
 	_RegistryWithFactory
 ){
 
-	return ctr(function(args){
-		this.domNode = args.domNode || document.createElement(args.domTag || "ul");
+	return ctr(DomNode, function(args){
+		DomNode.call(this, args && args.domNode || 'ul');
 		this.value = args.value;
 		// rows registry
 		this._rows = new IndexedSet();
