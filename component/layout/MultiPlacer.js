@@ -52,6 +52,14 @@ define([
 			}
 		},
 
+		addEach: function(children, parent) {
+			if (array.some(this._placers, function(placer) {
+				return placer.addEach && placer.addEach(children, parent);
+			})) {
+				return true;
+			}
+		},
+
 		addPlacer: function(placer){
 			this._placers.push(placer);
 		}

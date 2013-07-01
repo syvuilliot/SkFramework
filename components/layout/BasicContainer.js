@@ -8,18 +8,25 @@ define([
 ) {
 	return ctr(DomNode, function(args) {
 		DomNode.call(this, args && args.domNode);
-		this._children = [];
+		this.setContent([]);
 	}, {
-		addChild: function(child) {
-			this.domNode.appendChild(child.domNode);
-			this._children.add(child);
+		setContent: function(children) {
+			this._children = [];
+			this.domNode.innerHTML = '';
+			children.forEach(function(childAndOptions) {
+				this.addChild(childAndOptions[0], childAndOptions[1]);
+			}.bind(this));
 			this.render();
 		},
 
+		addChild: function(child) {
+			this.domNode.appendChild(child.domNode || child);
+			this._children.add(child);
+		},
+
 		removeChild: function(child) {
-			this.domNode.removeChild(child.domNode);
+			this.domNode.removeChild(child.domNode || child);
 			this._children.delete(child);
-			this.render();
 		},
 
 		render: function() {

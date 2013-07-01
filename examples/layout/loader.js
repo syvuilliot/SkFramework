@@ -19,7 +19,6 @@ define([
 		app.render();
 	};
 
-	app.render();
 	document.body.appendChild(app.domNode);
 	sizeApp();
 

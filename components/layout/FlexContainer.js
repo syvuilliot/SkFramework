@@ -13,10 +13,18 @@ define([
 		this._vertical = !args || args.orientation != 'horizontal';
 		this.bounds = args && args.bounds || {};
 	}, {
+		setContent: function(children) {
+			this._config = [];
+			this.domNode.innerHTML = "";
+			children.forEach(function(childAndOptions) {
+				this.addChild(childAndOptions[0], childAndOptions[1]);
+			}.bind(this));
+			this.render();
+		},
+
 		addChild: function(child, options) {
 			this.domNode.appendChild(child.domNode);
 			this._config.add([child, options]);
-			this.render();
 		},
 
 		removeChild: function(child, options) {
@@ -27,7 +35,6 @@ define([
 				return childAndOptions[0] == child;
 			})) {
 				this._config.delete(found);
-				this.render();
 			}
 		},
 

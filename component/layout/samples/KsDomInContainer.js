@@ -8,6 +8,12 @@ define([
 	}
 
 	return ctr({
+		addEach: function(children, parent) {
+			if (parent.setContent) {
+				parent.setContent(children);
+				return true;
+			}
+		},
 		put: function(child, parent, options) {
 			if (supported(parent, child)) {
 				parent.addChild(child, options);

@@ -2,12 +2,14 @@ define([
 	'ksf/utils/constructor',
 	'ksf/components/DomComponent',
 	'ksf/components/DomNode',
-	'ksf/components/layout/FlexContainer'
+	'ksf/components/layout/FlexContainer',
+	'put-selector/put'
 ], function (
 	ctr,
 	DomComponent,
 	DomNode,
-	FlexContainer
+	FlexContainer,
+	put
 ) {
 	var WorkArea = ctr(DomComponent, function() {
 		DomComponent.apply(this, arguments);
@@ -39,20 +41,25 @@ define([
 				elmt.domNode.innerHTML = "<h1>Title</h1><h2>Title</h2><h3>Title</h3><h4>Title</h4><p>Lorem ipsum ...</p>";
 			}]
 		]);
+
+		this._root = new FlexContainer({
+			domNode: this._components.get('domNode')
+		});
 	}, {
 		_doLayout: function() {
-			this._layout.set([
-				new FlexContainer({
-					domNode: this._components.get('domNode'),
-					bounds: this.bounds
-				}), [
+			this._layoutConfig = [
+				this._root, [
 					'toolbar',
 					[[new FlexContainer({ orientation: 'horizontal' }), { flex: true }], [
 						['content', { flex: true }],
-						['content2', { flex: true }]
+						[['content2', { flex: true }], [
+							put('h1', "Titre 1")
+						]]
 					]]
 				]
-			]);
+			];
+			this._root.bounds = this.bounds;
+			this._layout.set(this._layoutConfig);
 		}
 	});
 
@@ -90,21 +97,24 @@ define([
 				menu.domNode.style.background = "lightpink";
 			}]
 		]);
+
+		this._root = new FlexContainer({
+			domNode: this._components.get('domNode')
+		});
+		this._layoutConfig = [
+			this._root, [
+				'header',
+				[[new FlexContainer({ orientation: 'horizontal' }), { flex: true }], [
+					'menu',
+					['workArea', { flex: true }]
+				]],
+				'footer'
+			]
+		];
 	}, {
 		_doLayout: function() {
-			this._layout.set([
-				new FlexContainer({
-					domNode: this._components.get('domNode'),
-					bounds: this.bounds
-				}), [
-					'header',
-					[[new FlexContainer({ orientation: 'horizontal' }), { flex: true }], [
-						'menu',
-						['workArea', { flex: true }]
-					]],
-					'footer'
-				]
-			]);
+			this._root.bounds = this.bounds;
+			this._layout.set(this._layoutConfig);
 		}
 	});
 });

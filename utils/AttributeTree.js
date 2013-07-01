@@ -100,9 +100,11 @@ define([
 		remove: function(child, parent) {
 			if (parent) {
 				var children = this._topDown.get(parent);
-				children && children.delete(child);
-				if (!children.length) {
-					this._topDown.delete(parent);
+				if (children) {
+					children.delete(child);
+					if (!children.length) {
+						this._topDown.delete(parent);
+					}
 				}
 
 				var parents = this._bottomUp.get(child);
@@ -143,6 +145,24 @@ define([
 			if (this._root) {
 				processNode(this._root, callback);
 			}
+		},
+
+		/**
+		 * Execute a callback for each parent and their children, bottom-up
+		 * @param  {Function} cb    Callback
+		 * @param  {Object}   scope Scope of callback
+		 */
+		forEachParent: function(cb, scope) {
+			var bottomUp = function(tree, root, cb) {
+				var children = tree.getChildren(root);
+				children.forEach(function(child) {
+					if (!tree.isLeaf(child)) {
+						bottomUp(tree, child, cb);
+					}
+				});
+				cb.call(scope, root, children);
+			};
+			bottomUp(this, this.root, cb);
 		},
 
 		getAttribute: function(child, parent) {
