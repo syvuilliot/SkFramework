@@ -55,10 +55,9 @@ define([
 				if (options && options.flex) {
 					flexChildren.add(childAndOptions);
 				} else {
-					child.bounds = { height: null, width: null };
-					child.render && child.render();
-					var childHeight = child.domNode.offsetHeight;
-					var childWidth = child.domNode.offsetWidth;
+					var preferredSize = child.preferredSize();
+					var childHeight = preferredSize.height;
+					var childWidth = preferredSize.width;
 					fixedDim += this._vertical ? childHeight : childWidth;
 					if (this._vertical) {
 						child.bounds = {
