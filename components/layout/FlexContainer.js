@@ -19,7 +19,6 @@ define([
 			children.forEach(function(childAndOptions) {
 				this.addChild(childAndOptions[0], childAndOptions[1]);
 			}.bind(this));
-			this.render();
 		},
 
 		addChild: function(child, options) {
