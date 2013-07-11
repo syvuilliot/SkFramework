@@ -25,7 +25,9 @@ define([
 		},
 
 		removeChild: function(child) {
-			this.domNode.removeChild(child.domNode || child);
+			if (this.domNode.contains(child.domNode || child)) {
+				this.domNode.removeChild(child.domNode || child);
+			}
 			this._children.delete(child);
 		},
 

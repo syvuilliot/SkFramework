@@ -31,7 +31,9 @@ define([
 		},
 		remove: function(child, parent, options) {
 			if (areDom(child, parent)) {
-				parent.removeChild(child);
+				if (parent.contains(child)) {
+					parent.removeChild(child);
+				}
 				return true;
 			}
 		}

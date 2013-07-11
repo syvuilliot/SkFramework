@@ -33,6 +33,14 @@ define([
 					return [child, placementTree.getAttribute(child, parent)];
 				}), parent);
 			}.bind(this));
+
+			this._placement.forEachParent(function(parent, children) {
+				if (!placementTree.has(parent)) {
+					this._placement.getChildren(parent).forEach(function(child) {
+						this.remove(child, parent, true);
+					}.bind(this));
+				}
+			}.bind(this));
 		},
 
 		addEach: function(children, parent) {
