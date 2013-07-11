@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Todo demo app</title>
+</head>
+<body>
+    <script data-dojo-config="async: true, isDebug: true", src="../deps/dojo/dojo.js"></script>
+    <script>
+
+		require({
+			baseUrl: "../",
+			packages: [
+				{ name: 'compose', location: 'deps/compose', main: 'compose' },
+				{ name: 'chai', location: 'intern/chai', main: 'chai' }
+			],
+			paths: {
+				"collections": "deps/collections-amd",
+				"dojo": "deps/dojo",
+				"ksf": ".",
+				"bacon.js": "deps/bacon.js",
+
+			},
+		}, [
+			"TodosManager.js",
+		], function(TodosManager){
+			todosManager = new TodosManager();
+			document.body.appendChild(todosManager.domNode);
+
+			// todosManager2 = new TodosManager();
+			// document.body.appendChild(todosManager2.domNode);
+
+		});
+	</script>
+</body>
+</html>

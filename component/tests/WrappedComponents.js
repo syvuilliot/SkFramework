@@ -186,32 +186,38 @@ define([
 		};
 	};
 	var WithVFlexLayout = function(args){
-		this.children = [
-			[],
-			[]
-		];
-		this.layout = function() {
-			var fixedHeight = 0;
-			var flexChildren = [];
-
-			this.children.forEach(function(childAndOptions) {
+		this._childrenSetter = function(children){
+			this.flexChildren = [];
+			this.fixedHeight = 0;
+			this.children = children;
+			children.forEach(function(childAndOptions) {
 				var child = childAndOptions[0],
 					options = childAndOptions[1];
 				this.domNode.appendChild(child.domNode);
 				child.domNode.style.display = 'block';
 
 				if (options.flex) {
-					flexChildren.add(child);
+					this.flexChildren.add(child);
 				} else {
-					fixedHeight += child.get('size').h;
+					this.fixedHeight += child.get('size').h;
 				}
 			}.bind(this));
+		};
+		this.layout = function() {
+			this.children.forEach(function(childAndOptions) {
+				var child = childAndOptions[0],
+					options = childAndOptions[1];
+				if (!options.flex) {
+					this.fixedHeight += child.get('size').h;
+				}
+			});
 
-			var flexHeight = this.get('size').h - fixedHeight;
+			var flexHeight = this.get('size').h - this.fixedHeight;
 
-			flexChildren.forEach(function(child) {
-				child.size({h: flexHeight});
+			this.flexChildren.forEach(function(child) {
+				child.size({h: flexHeight/this.flexChildren.length});
 			}.bind(this));
+			this.layouting = false;
 		};
 	};
 
@@ -324,18 +330,40 @@ define([
 	var flexSpan = new Span('');
 	flexSpan.domNode.appendChild(table.domNode);
 	flexSpan.domNode.style.background = '#EEE';
-	flex.children = [
+	var flexSpan2 = new Span('');
+	flexSpan2.domNode.innerHTML = "tets";
+	flexSpan2.domNode.style.background = 'red';
+	flex.set("children", [
 		[flexSpan, { flex: true }],
+		[flexSpan2, { flex: true }],
 		[new Span("Pied de page"), {}]
-	];
-	document.body.appendChild(flex.domNode);
-	flex.layout();
+	]);
+
+	var app = window.app = {
+		container: new HtmlElement({tag: "div"}),
+		title: new HtmlElement({tag: "div"}),
+		content: flex,
+	};
+	app.domNode = app.container.domNode;
+	app.domNode.appendChild(app.title.domNode);
+	app.domNode.appendChild(app.content.domNode);
+	app.title.set("innerHTML", "Titre de l'application");
+
+	document.body.appendChild(app.domNode);
+
+
+
+/*	flex.layout();
 
 	table.layout();
 
+	var eventsCount = 0;
 	on(window, 'resize', function() {
+		var start = performance.now();
 		flex.layout();
+		console.log(eventsCount, performance.now()-start);
+		eventsCount++;
 	});
-
+*/
 
 });

@@ -2,7 +2,7 @@ define([
 	'collections/set',
 	'collections/map',
 	'./proxyFunctions',
-	"dojo/Evented",
+	"./Evented",
 ], function(
 	Set,
 	Map,
@@ -10,17 +10,21 @@ define([
 	Evented
 ) {
 	/*
-	* Registry is designed to store unique values (like a Set) but to allow an access by key if it is provided
-	* The key can be a property of stored values or an independant value
+	* IndexedSet is designed to store unique values (like a Set) but to allow an access by key if it is provided (mutiple values can have the same key)
+	* The key can be a property of stored values or any value
 	*/
 
-	function Registry(args){
+	function IndexedSet(args){
 		this._keyProperty = args && args.keyProperty || undefined;
 		this._values = new Map();
 		this._index = new Map();
+		this._changing = 0;
+		if (args && args.values) {
+			this.addEach(args.values);
+		}
 	}
 
-	var proto = Registry.prototype;
+	var proto = IndexedSet.prototype;
 
 
 	proto.add = function(value, key){
@@ -38,12 +42,14 @@ define([
 		this._indexValue(value, key);
 		// emit event
 		this._emit("added", {key: key, value: value});
-
+		if (! this._changing) this._emit("changed");
 	};
 
 	proto.setKey = function(value, key){
 		this._unindexValue(value);
 		this._indexValue(value, key);
+		// this._emit("changed"); // this is not really a change since all the items are still the same but only the index has changed
+
 	};
 
 	proto._indexValue = function(value, key){
@@ -64,16 +70,25 @@ define([
 	};
 
 	proto.addEach = function(values){
+		this._changing++;
+		var added = [];
 		if (typeof values.forEach === "function") {
 			values.forEach(function (value, key) {
-				this.add(value, key);
+				var done = this.add(value, key);
+				if (done) { added.push(value); }
 			}, this);
 		} else {
 			// copy other objects as map-alikes
 			Object.keys(values).forEach(function (key) {
-				this.add(values[key], key);
+				var done = this.add(values[key], key);
+				if (done) { added.push({value: values[key], key: key}); }
 			}, this);
 		}
+		this._changing--;
+		this._emit("addedMany", {
+			values: added,
+		});
+		if (! this._changing) this._emit("changed");
 	};
 
 	proto.remove = function(value){
@@ -88,22 +103,44 @@ define([
 		}
 		// emit event
 		this._emit("removed", {key: key, value: value});
+		if (! this._changing) this._emit("changed");
+
 
 	};
 	proto.removeEach = function(values){
+		this._changing++;
+		var removed = [];
 		if (typeof values.forEach === "function") {
-			values.forEach(function (value, key) {
-				this.remove(value);
+			values.forEach(function (value) {
+				var done = this.remove(value);
+				if (done) removed.push({value: value});
 			}, this);
 		} else {
-			// copy other objects as map-alikes
 			Object.keys(values).forEach(function (key) {
-				this.remove(values[key]);
+				var done = this.remove(values[key]);
+				if (done) { removed.push({value: values[key]}); }
 			}, this);
 		}
+		this._emit("removedEach", {
+			values: removed,
+		});
+		this._changing--;
+		if (! this._changing) this._emit("changed");
 	};
-	proto.removeAll = function(){
+	proto.removeAll = proto.clear = function(){
 		this.removeEach(this._values.keys());
+	};
+
+	proto.swap = function(itemsToRemove, itemsToAdd){
+		this._changing++;
+		this.removeEach(itemsToRemove);
+		this.addEach(itemsToAdd);
+		this._changing--;
+		this.emit("swapped", {
+			added: [],
+			removed: [],
+		});
+		if (! this._changing) this._emit("changed");
 	};
 
 	proto.getValues = function(key){
@@ -135,8 +172,8 @@ define([
 	proto.release = function(){};
 
 	// Evented API
-	proto.on = Evented.prototype.on;
-	proto._emit = Evented.prototype.emit;
+	proto.on = Evented.on;
+	proto._emit = Evented._emit;
 
-	return Registry;
+	return IndexedSet;
 });
