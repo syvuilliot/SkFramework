@@ -41,7 +41,7 @@ define([
 					o.destroy && o.destroy();
 				}
 				this.unown(o);
-			});
+			}.bind(this));
 		},
 	};
 
@@ -145,7 +145,7 @@ define([
 		},
 		// return a bacon reactive with the value of the property
 		getR: function(prop){
-			var reactive = this.asStream("changed").map(this, "get", prop).toProperty(this.get(prop)).skipDuplicates();
+			var reactive = this.asReactive().map(".get", prop).skipDuplicates();
 			var args = Array.prototype.slice.call(arguments, 1);
 			args.forEach(function(prop){
 				reactive = reactive.flatMapLatest(function(value){
@@ -183,6 +183,33 @@ define([
 		// call set(prop) with value from observable at each notification
 		setR: function(prop, observable){
 			return observable.onValue(this, "set", prop);
+		},
+		// create a bidi value binding from this to target
+		bind: function(targetProp, mode, source, sourceProp){
+			var init = true;
+			var target = this;
+			var sourceValueR = source.getR(sourceProp);
+			var targetValueR = target.getR(targetProp);
+			var changing = false;
+			var sourceHandler = sourceValueR.onValue(function(value){
+				if (! changing){
+					changing = true;
+					target.set(targetProp, value);
+					changing = false;
+				}
+			});
+			var targetHandler = targetValueR.onValue(function(value){
+				if (! changing && ! init){ // prevent calling source.set at init time
+					changing = true;
+					source.set(sourceProp, value);
+					changing = false;
+				}
+			});
+			init = false;
+			return this.own(function(){
+				targetHandler();
+				sourceHandler();
+			});
 		},
 
 		// permet d'éxécuter une fonction lorsque la valeur de chaque propriété est définie (!== undefined) et à chaque fois que la valeur de l'une ou plusieurs d'entre elles change
@@ -222,24 +249,29 @@ define([
 		},
 		syncValue: function(source, sourceProp, target, targetProp){
 			return this.when(source, target, function(source, target){
+				var init = true;
 				var sourceValueR = source.getR(sourceProp);
 				var targetValueR = target.getR(targetProp);
 				var changing = false;
-				sourceValueR.onValue(function(value){
+				var sourceHandler = sourceValueR.onValue(function(value){
 					if (! changing){
 						changing = true;
 						target.set(targetProp, value);
 						changing = false;
 					}
 				});
-				targetValueR.onValue(function(value){
-					if (! changing){
+				var targetHandler = targetValueR.onValue(function(value){
+					if (! changing && ! init){
 						changing = true;
 						source.set(sourceProp, value);
 						changing = false;
 					}
 				});
-				return ;
+				init = false;
+				return function(){
+					targetHandler();
+					sourceHandler();
+				};
 			});
 		},
 		bindEvent: function(source, eventType, target, targetMethod){
@@ -445,28 +477,36 @@ define([
 		var remainingTodo = function(todo){
 			return !todo.get("done");
 		};
-		var plus = function (a,b) { return a + b; };
-/*		this.getR("todos").flatMapLatest(function(todos){
-			return todos && todos.watchDiff ? todos.watchDiff().map(function(diff){
-				return diff.added.filter(remainingTodo).length - diff.removed.filter(remainingTodo).length;
-			}).scan(0, plus) : Bacon.constant(undefined);
-		}).log("remainingCount");
-*/		this.getR("todos").flatMapLatest(function(todos){
-			return todos && todos.watchDiff ? todos.watchDiff().flatMap(function(diff){
-				return diff.added.filter(remainingTodo).length - diff.removed.filter(remainingTodo).length;
-			}).scan(0, plus) : Bacon.constant(undefined);
-		}).log("remainingCount");
-		// this.get("todos").watchDiff().log("diff");
 
-		// demo data
-		this.set("todos", new ReactiveSet([
-			new Todo({text:'learn angular', done:true}),
-			new Todo({text:'build an angular app', done:false}),
-		]));
+		this.setR("remainingCount", this.getR("todos")
+			.flatMapLatest(function(todos){
+				return todos && todos.asReactive() || Bacon.constant(undefined);
+			})
+			// on each change of "todos" create a new stream that observes all current todos
+			.flatMapLatest(function(todos){
+				return todos && Bacon.combineAsArray(todos.map(function(todo){
+					return todo.asReactive();
+				})) || Bacon.never();
+			})
+			.map(".filter", remainingTodo)
+			.map(".length")
+			.skipDuplicates()
+			.log("remainingCount")
+		);
+
+		this.setR("stats", this.getR("remainingCount").combine(this.getR("todos")
+				.flatMapLatest(function(todos){
+					return todos && todos.asReactive().map(".length") || Bacon.constant(undefined);
+				})
+				.skipDuplicates(),
+			function(remaining, total){
+				return remaining + " remaining todos out of " + total;
+			}
+		));
+
 		var assignee = window.assignee = new ObservableObject({name: "Sylvain"});
 		var todo = window.todo = new Todo({text:'faire les courses', done:false, assignee: assignee});
-
-		this.getEachR("todoText", "price", ["todo", "assignee", "name"]).log("getEach");
+		// this.getEachR("todoText", "price", ["todo", "assignee", "name"]).log("getEach");
 
 		this.setEach({
 			"todoText": "",
@@ -475,13 +515,11 @@ define([
 			"todo": todo,
 		});
 
-		this.setR("remaining", this.getR("todos").flatMapLatest(function(todos){
-			return todos && todos.asReactive ? todos.asReactive() : Bacon.constant(undefined);
-		}).map(".filter", function(todo){
-			return !todo.done;
-		}).map(function(activeTodos){
-			return activeTodos.length + " todo(s) remaining";
-		}));
+		// demo data
+		this.set("todos", new ReactiveSet([
+			new Todo({text:'learn angular', done:true}),
+			new Todo({text:'build an angular app', done:false}),
+		]));
 
 		// this.getR("todo", "assignee", "name").log("todo.assignee.name:");
 
@@ -529,17 +567,46 @@ define([
 		},
 	};
 
-	var List = compose(
-		HtmlElement,
-		function(){
-			this._item2cmp = new Map();
-			this.when("value", function(value){
-				this.removeAllItems();
+	// mixin qui permet d'observer une valeur de type Set de façon unitaire (item par item)
+	// pour le cas où l'on voudrait modifier les noms de méthodes
+	var WithSetObservingGenerator = function(args){
+		var PROP = "value";
+		var ADD_ITEM = "addItem";
+		var REMOVE_ITEM = "removeItem";
+		var REMOVE_ALL_ITEMS = "removeAllItems";
+
+		return function(){
+			this.when(PROP, function(value){
+				this[REMOVE_ALL_ITEMS]();
 				return value.watchDiff().onValue(function(diff){
-					diff.removed.forEach(this.removeItem, this);
-					diff.added.forEach(this.addItem, this);
+					diff.removed.forEach(this[REMOVE_ITEM], this);
+					diff.added.forEach(this[ADD_ITEM], this);
 				}.bind(this));
 			});
+		};
+	};
+
+	// on pourrait imaginer un autre mixin qui lui fait de l'observation en masse
+	var WithSetBulkObservingGenerator = function(args){
+		var PROP = "value";
+		var SWAP = "swap";
+		var REMOVE_ALL_ITEMS = "removeAllItems";
+
+		return function(){
+			this.when(PROP, function(value){
+				this[REMOVE_ALL_ITEMS]();
+				return value.watchDiff().onValue(function(diff){
+					this[SWAP](diff.removed, diff.added);
+				}.bind(this));
+			});
+		};
+	};
+
+	var List = compose(
+		HtmlElement,
+		WithSetObservingGenerator(),
+		function(){
+			this._item2cmp = new Map();
 		},
 		{
 			// remplace le setter par défaut qui enregsitre sur le domNode
@@ -561,7 +628,7 @@ define([
 				var cmp = this._item2cmp.get(item);
 				this.removeChild(cmp);
 				this._item2cmp.delete(item);
-				item.destroy && item.destroy();
+				cmp.destroy && cmp.destroy();
 			},
 			removeAllItems: function(){
 				this._item2cmp.forEach(this.removeItem, this);
@@ -622,16 +689,16 @@ define([
 							// ici on ne crée volontairement pas un composant composite qui encapsule ces sous-composants car on veut, par simplicité, que ces sous-composants appartiennent au todoManager (et pas à list).
 							// cela permet de binder directement les propriétés des composants au presenter de todoManager (comme dans l'exemple angularJS)
 							var container = new HtmlElement({tag: "li"});
-							var textDisplayer = new HtmlElement({tag: "span"});
-							var doneEditor = new HtmlElement({tag: "input", type: "checkbox"});
+							var textDisplayer = new compose(HtmlElement, WithEmittingChangedForHtmlElement)({tag: "input"});
+							var doneEditor = new compose(HtmlElement, WithEmittingChangedForHtmlElement)({tag: "input", type: "checkbox"});
 							var deleteButton = new compose(HtmlElement, WithEmittingSubmitForHtmlButton)({tag: "button", innerHTML: "X"});
 							// la question est de savoir comment les enregistrer dans le registre du todoManager... ou faut-il le déléguer à "list" ?
 							cmps.addEach([container, textDisplayer, doneEditor, deleteButton]);
 							container.set("children", [doneEditor, textDisplayer, deleteButton]);
 
-							// on enregistre les cancelers sur le container car on s'est que c'est un destroyable et qu'il sera détruit lorsque la todo sortira de la liste
-							container.own(textDisplayer.setR("innerHTML", todo.getR("text")));
-							container.own(doneEditor.setR("value", todo.getR("done")));
+							// on enregistre les cancelers sur le container car on sait que c'est un destroyable et qu'il sera détruit lorsque la todo sortira de la liste
+							container.own(textDisplayer.bind("value", "<<->", todo, "text"));
+							container.own(doneEditor.bind("checked", "<<->", todo, "done"));
 							container.own(deleteButton.on("submit", function(){
 								presenter.removeTodo(todo);
 							}));
@@ -652,7 +719,7 @@ define([
 
 			// bindings
 			this._components.when("presenter", "subTitle", function(presenter, subTitle){
-				return subTitle.setR("innerHTML", presenter.getR("remaining"));
+				return subTitle.setR("innerHTML", presenter.getR("stats"));
 			});
 			this._components.bindValue("presenter", "todos", "todoList", "value");
 			this._components.syncValue("presenter", "todoText", "newTodoText", "value");
