@@ -488,7 +488,7 @@ define([
 		.flatMapLatest(function(iterable){
 			return iterable && Bacon.combineAsArray(iterable.map(function(todo){
 				return todo.asReactive();
-			})).map(iterable) || Bacon.never();
+			})).map(iterable) || Bacon.constant(undefined);
 		});
 	};
 
@@ -509,15 +509,16 @@ define([
 				// })
 				.skipDuplicates(),
 			function(remaining, total){
-				return remaining + " remaining todos out of " + total;
+				return total ? remaining + " remaining todos out of " + total : "no todos";
 			}
 		));
 
+		this.todos = new ReactiveSet();
 		// demo data
-		this.set("todos", new ReactiveSet([
+		this.set("todos", [
 			new Todo({text:'learn angular', done:true}),
 			new Todo({text:'build an angular app', done:false}),
-		]));
+		]);
 
 
 		// plusieurs options possibles pour écrire des 'computed properties'
@@ -541,7 +542,6 @@ define([
 		todoText: "",
 		addTodo: function() {
 			var todo = new Todo({text:this.get("todoText")});
-			console.log("todo created", todo);
 			this.get("todos").add(todo);
 			this.set("todoText", '');
 		},
@@ -563,6 +563,11 @@ define([
 			});
 			todos.deleteEach(doneTodos);
 		},
+		_todosSetter: function(todos){
+			var reactiveSet = this.get("todos");
+			reactiveSet.clear();
+			reactiveSet.addEach(todos);
+		},
 	};
 
 	// mixin qui permet d'observer une valeur de type Set de façon unitaire (item par item)
@@ -574,13 +579,13 @@ define([
 		var REMOVE_ALL_ITEMS = "removeAllItems";
 
 		return function(){
-			this.when(PROP, function(value){
+			this.getR(PROP).onValue(function(value){
 				this[REMOVE_ALL_ITEMS]();
-				return value.watchDiff().onValue(function(diff){
+				return value && value.watchDiff && value.watchDiff().onValue(function(diff){
 					diff.removed.forEach(this[REMOVE_ITEM], this);
 					diff.added.forEach(this[ADD_ITEM], this);
 				}.bind(this));
-			});
+			}.bind(this));
 		};
 	};
 
@@ -602,7 +607,6 @@ define([
 
 	var List = compose(
 		HtmlElement,
-		WithSetObservingGenerator(),
 		function(){
 			this._item2cmp = new Map();
 		},
@@ -629,14 +633,15 @@ define([
 				cmp.destroy && cmp.destroy();
 			},
 			removeAllItems: function(){
-				this._item2cmp.forEach(this.removeItem, this);
+				this._item2cmp.keys().forEach(this.removeItem, this);
 			},
 		}, {
 			destroy: function(){
 				this.removeAllItems();
 				HtmlElement.prototype.destroy.call();
 			},
-		}
+		},
+		WithSetObservingGenerator()
 	);
 
 	var TodosManager = compose(
@@ -747,6 +752,14 @@ define([
 			this._components.get("newTodoForm").addChild(this._components.get("addTodoButton"));
 
 
+		},
+		{
+			_todosSetter: function(todos){
+				this._components.get("presenter").set("todos", todos);
+			},
+			_todosGetter: function(todos){
+				return this._components.get("presenter").get("todos");
+			},
 		}
 	);
 

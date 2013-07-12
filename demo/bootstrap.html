@@ -27,8 +27,12 @@
 			todosManager = new TodosManager();
 			document.body.appendChild(todosManager.domNode);
 
-			// todosManager2 = new TodosManager();
-			// document.body.appendChild(todosManager2.domNode);
+			todosManager2 = new TodosManager();
+			document.body.appendChild(todosManager2.domNode);
+
+			var todos = todosManager.get("todos");
+			todosManager2.set("todos", todos);
+
 
 		});
 	</script>
