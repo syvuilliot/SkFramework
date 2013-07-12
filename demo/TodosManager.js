@@ -144,8 +144,15 @@ define([
 			return this.asReactive().map(expression).skipDuplicates(equals);
 		},
 		// return a bacon reactive with the value of the property
+		// if the prop start with a ".", use it directly instead of using the get method
 		getR: function(prop){
-			var reactive = this.asReactive().map(".get", prop).skipDuplicates();
+			var reactive;
+			if(prop[0] === "."){
+				reactive = this.asReactive().map(prop).skipDuplicates();
+			} else {
+				reactive = this.asReactive().map(".get", prop).skipDuplicates();
+			}
+
 			var args = Array.prototype.slice.call(arguments, 1);
 			args.forEach(function(prop){
 				reactive = reactive.flatMapLatest(function(value){
@@ -182,7 +189,7 @@ define([
 */		},
 		// call set(prop) with value from observable at each notification
 		setR: function(prop, observable){
-			return observable.onValue(this, "set", prop);
+			return this.own(observable.onValue(this, "set", prop));
 		},
 		// create a bidi value binding from this to target
 		bind: function(targetProp, mode, source, sourceProp){
@@ -473,47 +480,38 @@ define([
 		}
 	);
 
+	Bacon.Property.prototype.onEach = function(){
+		return this.flatMapLatest(function(iterable){
+			return iterable && iterable.asReactive() || Bacon.constant(undefined);
+		})
+		// on each change of "iterable" create a new stream that observes all current iterable
+		.flatMapLatest(function(iterable){
+			return iterable && Bacon.combineAsArray(iterable.map(function(todo){
+				return todo.asReactive();
+			})).map(iterable) || Bacon.never();
+		});
+	};
+
 	var WithTodosForPresenter = function(args){
 		var remainingTodo = function(todo){
 			return !todo.get("done");
 		};
-
 		this.setR("remainingCount", this.getR("todos")
-			.flatMapLatest(function(todos){
-				return todos && todos.asReactive() || Bacon.constant(undefined);
-			})
-			// on each change of "todos" create a new stream that observes all current todos
-			.flatMapLatest(function(todos){
-				return todos && Bacon.combineAsArray(todos.map(function(todo){
-					return todo.asReactive();
-				})) || Bacon.never();
-			})
+			.onEach()
 			.map(".filter", remainingTodo)
 			.map(".length")
 			.skipDuplicates()
-			.log("remainingCount")
 		);
 
-		this.setR("stats", this.getR("remainingCount").combine(this.getR("todos")
-				.flatMapLatest(function(todos){
-					return todos && todos.asReactive().map(".length") || Bacon.constant(undefined);
-				})
+		this.setR("stats", this.getR("remainingCount").combine(this.getR("todos", ".length")
+				// .flatMapLatest(function(todos){
+				// 	return todos && todos.asReactive().map(".length") || Bacon.constant(undefined);
+				// })
 				.skipDuplicates(),
 			function(remaining, total){
 				return remaining + " remaining todos out of " + total;
 			}
 		));
-
-		var assignee = window.assignee = new ObservableObject({name: "Sylvain"});
-		var todo = window.todo = new Todo({text:'faire les courses', done:false, assignee: assignee});
-		// this.getEachR("todoText", "price", ["todo", "assignee", "name"]).log("getEach");
-
-		this.setEach({
-			"todoText": "",
-			"qty": 2,
-			"price": 10,
-			"todo": todo,
-		});
 
 		// demo data
 		this.set("todos", new ReactiveSet([
@@ -521,7 +519,6 @@ define([
 			new Todo({text:'build an angular app', done:false}),
 		]));
 
-		// this.getR("todo", "assignee", "name").log("todo.assignee.name:");
 
 		// plusieurs options possibles pour écrire des 'computed properties'
 /*		this.setR("total", this.getR("qty").combine(this.getR("price"), function(qty, price){
@@ -541,6 +538,7 @@ define([
 		// this.bindProp("total").to(this, ["qty", "price"], multiply);
 	};
 	WithTodosForPresenter.prototype = {
+		todoText: "",
 		addTodo: function() {
 			var todo = new Todo({text:this.get("todoText")});
 			console.log("todo created", todo);
@@ -710,7 +708,7 @@ define([
 					return new compose(HtmlElement, WithEmittingSubmitForHtmlForm)({tag: "form"}); // new Form(); // TODO: create a Form component
 				},
 				newTodoText: function(){
-					return new compose(HtmlElement, WithEmittingChangedForHtmlElement)({tag: "input", placeHolder: "add new todo"});
+					return new compose(HtmlElement, WithEmittingChangedForHtmlElement)({tag: "input", placeholder: "add new todo"});
 				},
 				addTodoButton: function(){
 					return new HtmlElement({tag: "button", type: "submit", innerHTML: "add"});
@@ -726,7 +724,7 @@ define([
 			this._components.bindEvent("newTodoForm", "submit", "presenter", "addTodo");
 
 			// layout
-/*			this._layout.addConfig("default", {
+/*			this._layout.configs.addEach({
 				default:
 					[["root"], [
 						["title"],
@@ -738,7 +736,7 @@ define([
 						],
 					]],
 			});
-			this._layout.applyConfig("default");
+			this._layout.set("default");
 */			// manual layout to be removed
 			this.domNode = this._components.get("root").domNode;
 			this._components.get("root").addChild(this._components.get("title"));
