@@ -20,7 +20,7 @@ define([
 
 	return ctr(DomNode, function(args){
 		DomNode.call(this, args && args.domNode || 'ul');
-		this.value = args.value;
+		this.value = args.value || [];
 		// rows registry
 		this._rows = new IndexedSet();
 		// make it lazy
@@ -46,7 +46,7 @@ define([
 		},
 		_remove: function(item, index){
 			this._placement.splice(index, 1);
-			this._rows.release(item); // we don't need this row any more
+			this._rows.remove(this._rows.get(item)); // we don't need this row any more
 			this._placementManager.set([this.domNode, this._placement]);
 		},
 

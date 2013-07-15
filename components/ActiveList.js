@@ -39,9 +39,8 @@ define([
 			this.activeRow && this._setter.unset(this.activeRow, this._activeRowReturn);
 			this._activeRowReturn = null;
 			// activate new active row if it exists
-			var activeRow = activeItem && this._rows.get(activeItem);
-			if (activeRow){
-				this.activeRow = activeRow;
+			if (activeItem && this._rows.hasKey(activeItem)) {
+				this.activeRow = this._rows.get(activeItem);
 				this._activeRowReturn = this._setter.set(this.activeRow);
 			}
 		},

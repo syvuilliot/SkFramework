@@ -163,6 +163,19 @@ define([
 
 		set bounds (bounds) {
 			this._bounds = bounds;
+		},
+
+		preferredSize: function() {
+			var size,
+				oldBounds = this.bounds;
+			this.bounds = { height: null, width: null };
+			this.render();
+			size = {
+				height: this.domNode.offsetHeight,
+				width: this.domNode.offsetWidth
+			};
+			this.bounds = oldBounds;
+			return size;
 		}
 	});
 });
