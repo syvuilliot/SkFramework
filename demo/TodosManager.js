@@ -1,356 +1,39 @@
 define([
 	"compose/compose",
-	"SkFramework/utils/IndexedSet",
-	"SkFramework/component/_RegistryWithFactory",
-	"SkFramework/component/MultiFactories",
-	'SkFramework/component/BindingFactory',
 	'collections/map',
 	'collections/set',
-	'SkFramework/utils/Evented',
+	'collections/sorted-array',
+	'ksf/utils/Evented',
 	'bacon.js/Bacon',
+	'ksf/utils/Destroyable',
+	'ksf/utils/WithGetSet',
+	'ksf/utils/Observable',
+	'ksf/utils/Bindable',
+	'ksf/utils/ObservableObject',
+	'ksf/components/HtmlElement',
+	'ksf/component/CompositeDomComponent',
+
 
 	"collections/shim-array",
 	"collections/listen/array-changes",
 ], function(
 	compose,
-	IndexedSet,
-	_RegistryWithFactory,
-	MultiFactories,
-	BindingFactory,
 	Map,
 	Set,
+	SortedArray,
 	Evented,
-	Bacon
+	Bacon,
+	Destroyable,
+	WithGetSet,
+	Observable,
+	Bindable,
+	ObservableObject,
+	HtmlElement,
+	CompositeDomComponent
 ){
-	var Destroyable = function(){
-		this._owned = [];
-	};
-	Destroyable.prototype = {
-		own: function(o){
-			this._owned.push(o);
-			return o;
-		},
-		unown: function(o){
-			this._owned.delete(o);
-		},
-		destroy: function(){
-			this._owned.forEach(function(o){
-				if (typeof o === "function"){
-					o();
-				} else {
-					o.destroy && o.destroy();
-				}
-				this.unown(o);
-			}.bind(this));
-		},
-	};
-
-	var WithGetSet = function(){
-		this._changing = 0;
-	};
-	WithGetSet.prototype = {
-		remove: function(prop){
-			this._startChanging();
-			if (this["_"+prop+"Remover"]){
-				this["_"+prop+"Remover"](prop);
-			} else {
-				this["_Remover"](prop); // default
-			}
-			this._stopChanging();
-		},
-		get: function(prop){
-			if (this["_"+prop+"Getter"]){
-				return this["_"+prop+"Getter"](prop);
-			} else {
-				return this["_Getter"](prop); // default getter
-			}
-		},
-		getEach: function(){
-			return Array.prototype.map.call(arguments, function(prop){
-				return this.get(prop);
-			}, this);
-		},
-		set: function(prop, settedValue){
-			this._startChanging();
-			if (this["_"+prop+"Setter"]){
-				this["_"+prop+"Setter"](settedValue);
-			} else {
-				this["_Setter"](prop, settedValue); // default setter
-			}
-			this._stopChanging();
-		},
-		has: function(prop){
-			if (this["_"+prop+"Detector"]){
-				return this["_"+prop+"Detector"](prop);
-			} else {
-				return this["_Detector"](prop); // default detector
-			}
-		},
-		setEach: function(values){
-			this._startChanging();
-			Object.keys(values).forEach(function(key){
-				this.set(key, values[key]);
-			}, this);
-			this._stopChanging();
-		},
-		_startChanging: function(){
-			this._changing ++;
-		},
-		_stopChanging: function(){
-			this._changing --;
-			if (this._changing === 0){
-				this._emit("changed");
-			}
-		},
-
-	};
-	var WithDefaultGetterSetter = {
-		_Getter: function(prop){
-			return this[prop];
-		},
-		_Setter: function(prop, value){
-			this[prop] = value;
-		},
-		_Detector: function(prop){
-			return this.hasOwnProperty(prop);
-		},
-		_Remover: function(prop){
-			delete this[prop];
-		},
-	};
-	var WithGetRSetRBacon = function(){
-	};
-	WithGetRSetRBacon.prototype = {
-		// create an eventStream from an eventType
-		asStream: function(eventType){
-			var emitter = this;
-			var streams = this._streams || (this._streams = {});
-			return streams[eventType] || (streams[eventType] = new Bacon.EventStream(function(subscriber) {
-				var handler = emitter.on(eventType, function(event){
-					subscriber(new Bacon.Next(function() {
-						return event;
-					}));
-				});
-				return function() {
-					handler.destroy();
-				};
-			}));
-		},
-		asReactive: function(){
-			return this._reactive || (this._reactive = this.asStream("changed").map(this).toProperty(this));
-		},
-		// return a bacon reactive from expression applied to this
-		watch: function(expression, equals){
-			return this.asReactive().map(expression).skipDuplicates(equals);
-		},
-		// return a bacon reactive with the value of the property
-		// if the prop start with a ".", use it directly instead of using the get method
-		getR: function(prop){
-			var reactive;
-			if(prop[0] === "."){
-				reactive = this.asReactive().map(prop).skipDuplicates();
-			} else {
-				reactive = this.asReactive().map(".get", prop).skipDuplicates();
-			}
-
-			var args = Array.prototype.slice.call(arguments, 1);
-			args.forEach(function(prop){
-				reactive = reactive.flatMapLatest(function(value){
-					return value && value.getR && value.getR(prop) || Bacon.constant(undefined);
-				});
-			});
-
-			return reactive;
-			// faut-il ne mettre une valeur initiale que lorsque la propriété est installée ou mimer le résultat d'un get normal qui renvoi undefined même si la propriété n'est pas installée ? Dans le cas du indexedSet, c'est pratique de ne pas utiliser la méthode "has" car elle sert à tester la présence d'une valeur et pas d'une propriété...
-/*			if (this.has(prop)){
-				return stream.toProperty(this.get(prop));
-			} else {
-				return stream.toProperty();
-			}
-*/
-		},
-		getEachR: function(){
-			// implementation qui utilise getR
-			var streams = Array.prototype.map.call(arguments, function(prop){
-				if (Array.isArray(prop)){
-					return this.getR.apply(this, prop);
-				}
-				return this.getR(prop);
-			}, this);
-			return Bacon.combineAsArray(streams)/*.sampledBy(this.asStream("changed")).skipDuplicates()*/;
-			// sampledBy permet de n'émettre la valeur que sur l'événement "changed" de l'objet et pas sur chaque output des getR
-			// mais par contre, cela revient à émettre aussi lorsqu'aucun getR n'a émit, d'où le skipDuplicates qui permet de détecter que la valeur n'a pas changé (un nouveau array n'a pas été créé)
-
-			// implementation qui n'utilise pas getR
-/*			var props = arguments;
-			return this.asStream("changed").map(function(){
-				return this.getEach.apply(this, props);
-			}.bind(this)).toProperty(this.getEach.apply(this, arguments));
-*/		},
-		// call set(prop) with value from observable at each notification
-		setR: function(prop, observable){
-			return this.own(observable.onValue(this, "set", prop));
-		},
-		// create a bidi value binding from this to target
-		bind: function(targetProp, mode, source, sourceProp){
-			var init = true;
-			var target = this;
-			var sourceValueR = source.getR(sourceProp);
-			var targetValueR = target.getR(targetProp);
-			var changing = false;
-			var sourceHandler = sourceValueR.onValue(function(value){
-				if (! changing){
-					changing = true;
-					target.set(targetProp, value);
-					changing = false;
-				}
-			});
-			var targetHandler = targetValueR.onValue(function(value){
-				if (! changing && ! init){ // prevent calling source.set at init time
-					changing = true;
-					source.set(sourceProp, value);
-					changing = false;
-				}
-			});
-			init = false;
-			return this.own(function(){
-				targetHandler();
-				sourceHandler();
-			});
-		},
-
-		// permet d'éxécuter une fonction lorsque la valeur de chaque propriété est définie (!== undefined) et à chaque fois que la valeur de l'une ou plusieurs d'entre elles change
-		// afin de faciliter les choses, si la fonction retourne un canceler ou destroyable, celui-ci est exécutée/détruit à la prochaine itération (changement de l'une ou plusieurs des propriétés et même si une des valeurs est undefined)
-		//
-		when: function(){
-			var canceler;
-			var args = Array.prototype.slice.call(arguments, 0, arguments.length-1).map(function(cmp){
-				return this.getR(cmp);
-			}.bind(this));
-			var binder = arguments[arguments.length-1];
-
-			args.push(function(){
-				// console.log("cb called");
-				if (canceler){
-					if (canceler.destroy) {
-						canceler.destroy();
-					} else {
-						canceler();
-					}
-					this.unown && this.unown(canceler);
-					canceler = undefined;
-				}
-				if (Array.prototype.every.call(arguments, function(val){
-					return val !== undefined;
-				})) {
-					canceler = binder.apply(this, arguments);
-					this.own && this.own(canceler);
-				}
-			}.bind(this));
-			return this.own(Bacon.onValues.apply(Bacon, args));
-		},
-		bindValue: function(source, sourceProp, target, targetProp){
-			return this.when(source, target, function(source, target){
-				return target.setR(targetProp, source.getR(sourceProp));
-			});
-		},
-		syncValue: function(source, sourceProp, target, targetProp){
-			return this.when(source, target, function(source, target){
-				var init = true;
-				var sourceValueR = source.getR(sourceProp);
-				var targetValueR = target.getR(targetProp);
-				var changing = false;
-				var sourceHandler = sourceValueR.onValue(function(value){
-					if (! changing){
-						changing = true;
-						target.set(targetProp, value);
-						changing = false;
-					}
-				});
-				var targetHandler = targetValueR.onValue(function(value){
-					if (! changing && ! init){
-						changing = true;
-						source.set(sourceProp, value);
-						changing = false;
-					}
-				});
-				init = false;
-				return function(){
-					targetHandler();
-					sourceHandler();
-				};
-			});
-		},
-		bindEvent: function(source, eventType, target, targetMethod){
-			return this.when(source, target, function(source, target){
-				return source.on(eventType, function(ev){
-					target[targetMethod](ev);
-				});
-			});
-		},
-	};
-
-	var ObservableObject = compose(
-		compose,
-		WithGetSet,
-		Evented,
-		WithDefaultGetterSetter,
-		WithGetRSetRBacon
-	);
 
 
-	var WithDefaultGetterSetterForHtmlElement = function(){
-		this._Getter = function(prop){
-			return this.domNode[prop];
-		};
-		this._Setter = function(prop, value){
-			this.domNode[prop] = value;
-		};
-		this._Detector = function(prop){
-			return this.domNode.hasOwnProperty(prop);
-		};
-		this._Remover = function(prop){
-			// delete this[prop]; // we can't do this on an HtmlElement, that breaks it
-		};
-		this._domNodeGetter = function(){
-			return this.domNode;
-		};
-	};
 
-	var WithChildrenForHtmlElement = function(args){
-		this.children = [];
-	};
-	WithChildrenForHtmlElement.prototype = {
-		addChild: function(child){
-			this.children.add(child);
-			this.domNode.appendChild(child.get("domNode"));
-		},
-		removeChild: function(child){
-			this.domNode.removeChild(child.get("domNode"));
-			this.children.delete(child);
-		},
-		// TODO: appeler addChild et removeChild en minimsant les modif
-		_childrenSetter: function(children){
-			this.children.forEach(this.removeChild, this);
-			children.forEach(this.addChild, this);
-		},
-		_childrenGetter: function(){
-			return this.children;
-		},
-	};
-
-	var HtmlElement = compose(
-		ObservableObject,
-		Destroyable,
-		WithDefaultGetterSetterForHtmlElement,
-		WithChildrenForHtmlElement,
-		function(args){
-			this.domNode = document.createElement(args.tag);
-			if (args) {
-				this.setEach(args);
-			}
-		}
-	);
 
 	var WithEmittingChangedForHtmlElement = function(){
 		// listen to dom "change" event to emit ks standardised "changed" event
@@ -371,77 +54,6 @@ define([
 	};
 
 
-	// je considère que le fait d'ajouter un "fallback" qui appelle une factory quand un composant n'est pas trouvé par "get" n'est pas une fonctionnalité en soit, c'est juste une logique de surcharge. Donc, suivant ce que l'on s'est dit, je le met directement dans la "composition" et je n'en fait pas un mixin à part (comme c'était le cas).
-	var LazyRegistry = compose(
-		IndexedSet,
-		WithGetRSetRBacon,
-		Destroyable,
-
-		function(args){
-			this._usersCount = new Map();
-			this.factories = new Map();
-		},
-		{
-			get: function(id){
-				var cmp = IndexedSet.prototype.get.call(this, id);
-				if (!cmp) {
-					var factory = this.factories.get(id);
-					cmp = factory && factory();
-					cmp && this.add(cmp, id);
-				}
-				if (cmp) {
-					this._usersCount.set(cmp, (this._usersCount.get(cmp) || 0) + 1);
-				}
-				return cmp;
-			},
-			release: function(cmp) {
-				var count = (this._usersCount.get(cmp) || 0) - 1;
-				if (count <= 0){
-					this._usersCount.delete(cmp);
-					this.remove(cmp);
-					cmp.destroy && cmp.destroy();
-				} else {
-					this._usersCount.set(cmp, count);
-				}
-			},
-		}
-	);
-
-	var WithComponentsRegistryGenerator = function(args){
-		var REGISTRY_NAME = args && args.registryName || "_components";
-
-		var WithComponentsRegistry = function(args){
-			this[REGISTRY_NAME] = new LazyRegistry();
-		};
-		WithComponentsRegistry.prototype = {
-			destroy: function(){
-				this[REGISTRY_NAME].forEach(function(cmp){
-					cmp.destroy();
-				});
-			},
-		};
-		return WithComponentsRegistry;
-
-	};
-	var WithComponentsRegistry = WithComponentsRegistryGenerator();
-	WithComponentsRegistry.create = WithComponentsRegistryGenerator;
-
-
-	// c'est un domComponent dont la création du domNode est délégué à d'autres domComponents
-	// on peut ainsi se contenter de manipuler les composants selon l'API KSF au lieu de manipuler directement des domNodes
-	// c'est pourquoi il a l'outillage pour manipuler des composants : componentsRegsitry et layoutManager
-	var CompositeDomComponent = compose(
-		ObservableObject,
-		Destroyable, // WithBindingsRegistry
-		WithComponentsRegistry, // no need for customization
-		// WithTreeLayoutManager
-		{
-			destroy: function(){
-				Destroyable.prototype.destroy.call(this);
-				WithComponentsRegistry.prototype.destroy.call(this);
-			},
-		}
-	);
 
 // ------------ APP ----------------
 
@@ -457,18 +69,30 @@ define([
 			},
 		}
 	);
+	var not = function(fun){
+		return function(item){
+			return !fun(item);
+		};
+	};
+	var itemIn = function(collection){
+		return function(item){
+			return collection.has(item);
+		};
+	};
 
 	var ReactiveSet = compose(
 		Set,
 		Evented,
-		WithGetRSetRBacon,
+		Observable,
+		Bindable,
 		function(){
 			this.addRangeChangeListener(function(){
 				this._emit("changed");
 			});
 		}, {
-			watchDiff: function(args){
-				return this.asReactive().map(".clone", 1).diff(new Set(), function(oldSet, newSet){
+			watchDiff: function(startSet){
+				startSet = startSet || new Set();
+				return this.asReactive().map(".clone", 1).diff(startSet, function(oldSet, newSet){
 					// console.log("oldSet", oldSet.toArray());
 					// console.log("newSet", newSet.toArray());
 					return {
@@ -570,43 +194,103 @@ define([
 		},
 	};
 
-	// mixin qui permet d'observer une valeur de type Set de façon unitaire (item par item)
-	// pour le cas où l'on voudrait modifier les noms de méthodes
+	// mixin qui permet de réagir à la modification d'un Set de façon unitaire (ajout ou suppression d'un item à la fois)
 	var WithSetObservingGenerator = function(args){
 		var PROP = "value";
 		var ADD_ITEM = "addItem";
 		var REMOVE_ITEM = "removeItem";
-		var REMOVE_ALL_ITEMS = "removeAllItems";
 
 		return function(){
-			this.getR(PROP).onValue(function(value){
-				this[REMOVE_ALL_ITEMS]();
-				return value && value.watchDiff && value.watchDiff().onValue(function(diff){
-					diff.removed.forEach(this[REMOVE_ITEM], this);
-					diff.added.forEach(this[ADD_ITEM], this);
-				}.bind(this));
+			var oldValue;
+			this.getR(PROP).flatMapLatest(function(value){
+				var stream = value && value.watchDiff && value.watchDiff(oldValue) || Bacon.constant({
+					removed: oldValue && oldValue.toArray && oldValue.toArray() || [],
+					added: [],
+				});
+				oldValue = value;
+				return stream;
+			}).onValue(function(diff){
+				diff.removed.forEach(this[REMOVE_ITEM], this);
+				diff.added.forEach(this[ADD_ITEM], this);
 			}.bind(this));
 		};
 	};
 
-	// on pourrait imaginer un autre mixin qui lui fait de l'observation en masse
+
+	// mixin qui permet de réagir à la modification d'un Set en une fois (ajout et suppression de plusieurs items)
 	var WithSetBulkObservingGenerator = function(args){
 		var PROP = "value";
-		var SWAP = "swap";
-		var REMOVE_ALL_ITEMS = "removeAllItems";
+		var SWAP_ITEMS = "swapItems";
 
 		return function(){
-			this.when(PROP, function(value){
-				this[REMOVE_ALL_ITEMS]();
-				return value.watchDiff().onValue(function(diff){
-					this[SWAP](diff.removed, diff.added);
-				}.bind(this));
-			});
+			var oldValue;
+			this.getR(PROP).flatMapLatest(function(value){
+				var stream = value && value.watchDiff && value.watchDiff(oldValue) || Bacon.constant({
+					removed: oldValue && oldValue.toArray && oldValue.toArray() || [],
+					added: [],
+				});
+				oldValue = value;
+				return stream;
+			}).onValue(function(diff){
+				this[SWAP_ITEMS](diff.added, diff.removed);
+			}.bind(this));
 		};
+	};
+
+
+	var sortedItems = window.sortedItems = new SortedArray([
+			new Todo({text:'learn angular', done:true}),
+			new Todo({text:'build an angular app', done:false}),
+	], null, function(a, b){
+		return Object.compare(a.text, b.text);
+	});
+
+	// mixin qui implemnte l'API orderedContent pour un HtmlElement
+	// l'API "orderedContent" expose une méthode 'set("content", orderedListOfComponents)'
+	// 'orderedListOfComponents' est une collection ordonnée de composants uniques
+	// on ne s'occupe pas de l'objet 'orderedListOfComponents' lui-même mais de son contenu : les composants et leur ordre
+	// si l'objet 'orderedListOfComponents' est modifiée, cela n'est pas observé par le container
+	// par contre, le container peut optimiser les insertions/suppressions dans le dom entre 2 appels successifs de set("content")
+	var WithOrderedContentForHtmlElement = function(){
+		this._content = [];
+	};
+	WithOrderedContentForHtmlElement.prototype = {
+		_contentSetter: function(cmps){
+			var content = [];
+			cmps.forEach(function(cmp){
+				content.push(cmp);
+			});
+			this._content = content;
+		},
+		_contentGetter: function(){
+			return this._content;
+		},
+		updateRendering: function(){
+			var domNode = this.get("domNode");
+			// store old content for comparison purpose
+			var oldContent = this._oldContent;
+			var newContent = this._oldContent = this.get("content");
+
+			// remove domNode of components that are no longer in content
+			var removed = oldContent && oldContent.filter(not(itemIn(newContent))) || [];
+			removed.forEach(function(cmp){
+				domNode.removeChild(cmp.get("domNode"));
+			});
+			// insert new components and move current components
+			newContent.forEach(function(cmp, index){
+				var currentNode = domNode.children[index];
+				var cmpNode = cmp.get("domNode");
+				if (currentNode !== cmpNode){
+					domNode.insertBefore(cmpNode, currentNode);
+				}
+			});
+
+		},
 	};
 
 	var List = compose(
 		HtmlElement,
+		WithOrderedContentForHtmlElement,
 		function(){
 			this._item2cmp = new Map();
 		},
@@ -621,27 +305,48 @@ define([
 			_valueGetter: function(){
 				return this.value;
 			},
-			addItem: function(item){
+			_addItem: function(item){
 				var cmp = this.factory(item);
 				this._item2cmp.set(item, cmp);
-				this.addChild(cmp);
+				// this.addChild(cmp);
+				// this.set("content", this._item2cmp.toArray());
 			},
-			removeItem: function(item){
+			_removeItem: function(item){
 				var cmp = this._item2cmp.get(item);
-				this.removeChild(cmp);
+				// this.removeChild(cmp);
 				this._item2cmp.delete(item);
 				cmp.destroy && cmp.destroy();
+				// this.set("content", this._item2cmp.toArray());
 			},
-			removeAllItems: function(){
+			swapItems: function(added, removed){
+				// TODO: don't process items that could be in removed and in added
+				removed.forEach(this._removeItem, this);
+				added.forEach(this._addItem, this);
+				this.set("content", this._item2cmp.toArray());
+				this.updateRendering();
+			},
+/*			removeAllItems: function(){
 				this._item2cmp.keys().forEach(this.removeItem, this);
 			},
-		}, {
+*/		}, {
 			destroy: function(){
 				this.removeAllItems();
 				HtmlElement.prototype.destroy.call();
 			},
 		},
-		WithSetObservingGenerator()
+		WithSetBulkObservingGenerator()
+	);
+
+	var SimpleContainer = compose(
+		HtmlElement,
+		WithOrderedContentForHtmlElement,
+		{
+			_contentSetter: function(cmps){
+				WithOrderedContentForHtmlElement.prototype._contentSetter.call(this, cmps);
+				this.updateRendering();
+			},
+
+		}
 	);
 
 	var TodosManager = compose(
@@ -674,7 +379,7 @@ define([
 
 			this._components.factories.addEach({
 				root: function(){
-					return new HtmlElement({tag: "div"});
+					return new SimpleContainer({tag: "div"});
 				},
 				title: function(){
 					return new HtmlElement({
@@ -691,13 +396,13 @@ define([
 						factory: function(todo){
 							// ici on ne crée volontairement pas un composant composite qui encapsule ces sous-composants car on veut, par simplicité, que ces sous-composants appartiennent au todoManager (et pas à list).
 							// cela permet de binder directement les propriétés des composants au presenter de todoManager (comme dans l'exemple angularJS)
-							var container = new HtmlElement({tag: "li"});
+							var container = new SimpleContainer({tag: "li"});
 							var textDisplayer = new compose(HtmlElement, WithEmittingChangedForHtmlElement)({tag: "input"});
 							var doneEditor = new compose(HtmlElement, WithEmittingChangedForHtmlElement)({tag: "input", type: "checkbox"});
 							var deleteButton = new compose(HtmlElement, WithEmittingSubmitForHtmlButton)({tag: "button", innerHTML: "X"});
 							// la question est de savoir comment les enregistrer dans le registre du todoManager... ou faut-il le déléguer à "list" ?
 							cmps.addEach([container, textDisplayer, doneEditor, deleteButton]);
-							container.set("children", [doneEditor, textDisplayer, deleteButton]);
+							container.set("content", [doneEditor, textDisplayer, deleteButton]);
 
 							// on enregistre les cancelers sur le container car on sait que c'est un destroyable et qu'il sera détruit lorsque la todo sortira de la liste
 							container.own(textDisplayer.bind("value", "<<->", todo, "text"));
@@ -710,7 +415,7 @@ define([
 					});
 				},
 				newTodoForm: function(){
-					return new compose(HtmlElement, WithEmittingSubmitForHtmlForm)({tag: "form"}); // new Form(); // TODO: create a Form component
+					return new compose(SimpleContainer, WithEmittingSubmitForHtmlForm)({tag: "form"}); // new Form(); // TODO: create a Form component
 				},
 				newTodoText: function(){
 					return new compose(HtmlElement, WithEmittingChangedForHtmlElement)({tag: "input", placeholder: "add new todo"});
@@ -744,13 +449,18 @@ define([
 			this._layout.set("default");
 */			// manual layout to be removed
 			this.domNode = this._components.get("root").domNode;
-			this._components.get("root").addChild(this._components.get("title"));
-			this._components.get("root").addChild(this._components.get("subTitle"));
-			this._components.get("root").addChild(this._components.get("todoList"));
-			this._components.get("root").addChild(this._components.get("newTodoForm"));
-			this._components.get("newTodoForm").addChild(this._components.get("newTodoText"));
-			this._components.get("newTodoForm").addChild(this._components.get("addTodoButton"));
-
+			cmps.get("root").set("content", [
+				cmps.get("title"),
+				cmps.get("subTitle"),
+				cmps.get("todoList"),
+				cmps.get("newTodoForm"),
+			]);
+			cmps.get("root").updateRendering();
+			cmps.get("newTodoForm").set("content", [
+				cmps.get("newTodoText"),
+				cmps.get("addTodoButton"),
+			]);
+			cmps.get("newTodoForm").updateRendering();
 
 		},
 		{

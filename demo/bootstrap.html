@@ -9,26 +9,23 @@
     <script>
 
 		require({
-			baseUrl: "../",
-			packages: [
+			// baseUrl: "../",
+/*			packages: [
 				{ name: 'compose', location: 'deps/compose', main: 'compose' },
 				{ name: 'chai', location: 'intern/chai', main: 'chai' }
 			],
-			paths: {
-				"collections": "deps/collections-amd",
-				"dojo": "deps/dojo",
-				"ksf": ".",
-				"bacon.js": "deps/bacon.js",
-
+*/			paths: {
+				ksf: "../..",
+				collections: "../collections-amd",
 			},
 		}, [
-			"TodosManager.js",
+			"ksf/demo/TodosManager",
 		], function(TodosManager){
 			todosManager = new TodosManager();
-			document.body.appendChild(todosManager.domNode);
+			document.body.appendChild(todosManager.get("domNode"));
 
 			todosManager2 = new TodosManager();
-			document.body.appendChild(todosManager2.domNode);
+			document.body.appendChild(todosManager2.get("domNode"));
 
 			var todos = todosManager.get("todos");
 			todosManager2.set("todos", todos);
