@@ -2,6 +2,7 @@ define([
 	"compose/compose",
 	'collections/map',
 	'collections/set',
+	'collections/list',
 	'collections/sorted-array',
 	'ksf/utils/Evented',
 	'bacon.js/Bacon',
@@ -21,6 +22,7 @@ define([
 	compose,
 	Map,
 	Set,
+	List,
 	SortedArray,
 	Evented,
 	Bacon,
@@ -88,8 +90,26 @@ define([
 		Observable,
 		Bindable,
 		function(){
-			this.addRangeChangeListener(function(){
-				this._emit("changed");
+			this.addRangeChangeListener(function(added, removed){
+				var addChanges = added.map(function(item){
+					return {
+						type: "add",
+						value: item,
+					};
+				});
+				var removeChanges = removed.map(function(item){
+					return {
+						type: "remove",
+						value: item,
+					};
+				});
+				var changes = removeChanges.concat(addChanges);
+				this._changesQueue = this._changesQueue ? this._changesQueue.concat(changes) : changes;
+				if (! this._changing){
+					this._emit("changes", this._changesQueue);
+					delete this._changesQueue;
+					this._emit("changed");
+				}
 			});
 		}, {
 			watchDiff: function(startSet){
@@ -103,9 +123,92 @@ define([
 					};
 				});
 			},
+		}, {
+			addEach: function(values){
+				this._startChanges();
+				Set.prototype.addEach.call(this, values);
+				this._stopChanges();
+			},
+			_startChanges: function(){
+				this._changing = true;
+			},
+			_stopChanges: function(){
+				this._changing = false;
+				this._emit("changes", this._changesQueue);
+				delete this._changesQueue;
+				this._emit("changed");
+			},
 		}
 	);
 
+	var ReactiveList = window.ReactiveList = compose(
+		List,
+		Evented,
+		Observable,
+		Bindable,
+		function(){
+			this.addRangeChangeListener(function(added, removed){
+				var addChanges = added.map(function(item){
+					return {
+						type: "add",
+						value: item,
+					};
+				});
+				var removeChanges = removed.map(function(item){
+					return {
+						type: "remove",
+						value: item,
+					};
+				});
+				var changes = removeChanges.concat(addChanges);
+				this._changesQueue = this._changesQueue ? this._changesQueue.concat(changes) : changes;
+				if (! this._changing){
+					this._emit("changes", this._changesQueue);
+					delete this._changesQueue;
+					this._emit("changed");
+				}
+			});
+		}, {
+			watchDiff: function(startSet){
+				startSet = startSet || new Set();
+				return this.asReactive().map(".clone", 1).diff(startSet, function(oldSet, newSet){
+					// console.log("oldSet", oldSet.toArray());
+					// console.log("newSet", newSet.toArray());
+					return {
+						added: newSet.difference(oldSet),
+						removed: oldSet.difference(newSet),
+					};
+				});
+			},
+		}, {
+/*			clear: function(){
+				var values = this.toArray();
+				Set.prototype.clear.call(this);
+				this.dispatchRangeChange([], values);
+			},
+*/			addEach: function(values){
+				this._startChanges();
+				Set.prototype.addEach.call(this, values);
+				this._stopChanges();
+			},
+			_startChanges: function(){
+				this._changing = true;
+			},
+			_stopChanges: function(){
+				this._changing = false;
+				this._emit("changes", this._changesQueue);
+				delete this._changesQueue;
+				this._emit("changed");
+			},
+		}
+	);
+
+
+	Bacon.Property.prototype.onChanged = function(){
+		return this.flatMapLatest(function(iterable){
+			return iterable && iterable.asReactive() || Bacon.constant(undefined);
+		});
+	};
 	Bacon.Property.prototype.onEach = function(){
 		return this.flatMapLatest(function(iterable){
 			return iterable && iterable.asReactive() || Bacon.constant(undefined);
@@ -119,6 +222,8 @@ define([
 	};
 
 	var WithTodosForPresenter = function(args){
+		this.toggleLive();
+
 		var remainingTodo = function(todo){
 			return !todo.get("done");
 		};
@@ -170,15 +275,7 @@ define([
 		removeTodo: function(todo){
 			this.get("todos").delete(todo);
 		},
-		// en reactif, il faut remplacer ce getter par une observation de this.get("todos")
-/*		_remainingGetter: function() {
-			var count = 0;
-			this.get("todos").forEach(function(todo) {
-				count += todo.get("done") ? 0 : 1;
-			});
-			return count;
-		},
-*/		archive: function() {
+		archive: function() {
 			var todos = this.get("todos");
 			var doneTodos = todos.filter(function(todo){
 				return todo.get("done");
@@ -189,6 +286,13 @@ define([
 			var reactiveSet = this.get("todos");
 			reactiveSet.clear();
 			reactiveSet.addEach(todos);
+		},
+		toggleLive: function(){
+			var newState = !this.get("reactive");
+			this.setEach({
+				"reactive": newState,
+				"liveButtonText": newState ? "Stop live" : "Start live",
+			});
 		},
 	};
 
@@ -235,63 +339,29 @@ define([
 		};
 	};
 
+	// mixin qui permet d'appeler une méthode avec une liste de changements issue des événements "changes" de la succession des objets observés sur une propriété de this
+	var WithValueChangesObservingGenerator = function(args){
+		var PROP = args && args.prop || "value";
+		var PROCESS_CHANGES = args && args.method || "processChanges";
 
-	var sortedItems = window.sortedItems = new SortedArray([
-			new Todo({text:'learn angular', done:true}),
-			new Todo({text:'build an angular app', done:false}),
-	], null, function(a, b){
-		return Object.compare(a.text, b.text);
-	});
+		return function(){
+			var oldValue;
+			this.getR(PROP).flatMapLatest(function(value){
+				var oldItemsRemoves = oldValue && oldValue.map && oldValue.map(function(item){
+					return {value: item, type: "remove"};
+				}) || [];
+				var newItemsAdds = value && value.map && value.map(function(item){
+					return {value: item, type: "add"};
+				}) || [];
+				var stream = value && value.asStream && value.asStream("changes").toProperty(oldItemsRemoves.concat(newItemsAdds)) || Bacon.constant(oldItemsRemoves);
+				oldValue = value;
+				return stream;
+			}).onValue(function(changes){
+				this[PROCESS_CHANGES](changes);
+			}.bind(this));
+		};
+	};
 
-
-	var List = compose(
-		HtmlElement,
-		WithOrderedContentForHtmlElement,
-		function(){
-			this._item2cmp = new Map();
-		},
-		{
-			// remplace le setter par défaut qui enregsitre sur le domNode
-			_factorySetter: function(factory){
-				this._factory = factory;
-			},
-			_valueSetter: function(value){
-				this.value = value;
-			},
-			_valueGetter: function(){
-				return this.value;
-			},
-			_addItem: function(item){
-				var cmp = this.factory(item);
-				this._item2cmp.set(item, cmp);
-				// this.addChild(cmp);
-				// this.set("content", this._item2cmp.toArray());
-			},
-			_removeItem: function(item){
-				var cmp = this._item2cmp.get(item);
-				// this.removeChild(cmp);
-				this._item2cmp.delete(item);
-				cmp.destroy && cmp.destroy();
-				// this.set("content", this._item2cmp.toArray());
-			},
-			swapItems: function(added, removed){
-				// TODO: don't process items that could be in removed and in added
-				removed.forEach(this._removeItem, this);
-				added.forEach(this._addItem, this);
-				this.set("content", this._item2cmp.toArray());
-				this.updateRendering();
-			},
-/*			removeAllItems: function(){
-				this._item2cmp.keys().forEach(this.removeItem, this);
-			},
-*/		}, {
-			destroy: function(){
-				this.removeAllItems();
-				HtmlElement.prototype.destroy.call();
-			},
-		},
-		WithSetBulkObservingGenerator()
-	);
 
 	var SimpleContainer = compose(
 		HtmlElement,
@@ -304,6 +374,74 @@ define([
 
 		}
 	);
+
+
+	var ListContainer = compose(
+		SimpleContainer,
+		function(args){
+			this._factory = args.factory;
+			this._item2cmp = new Map();
+		},
+		{
+			_valueSetter: function(value){
+				this.value = value;
+				// value.asStream("changes").log("changes for todos");
+				// this._createComponentsFromValue(value);
+				// this.set("content", this._item2cmp.values());
+			},
+			_valueGetter: function(){
+				return this.value;
+			},
+			_createComponentForItem: function(item){
+				var cmp = this._factory(item);
+				this._item2cmp.set(item, cmp);
+			},
+			_destroyComponentForItem: function(item){
+				var cmp = this._item2cmp.get(item);
+				this._item2cmp.delete(item);
+				cmp.destroy && cmp.destroy();
+			},
+			_createComponentsFromValue: function(items){
+				var oldItems = this._item2cmp.keys();
+				// remove oldItems that are no longer necessary
+				oldItems.forEach(function(item){
+					if (! items.has(item)){
+						this._destroyComponentForItem(item);
+					}
+				}, this);
+				// create components for new items
+				items.forEach(function(item){
+					if (! oldItems.has(item)){
+						this._createComponentForItem(item);
+					}
+				}, this);
+			},
+			removeAllItems: function(){
+				this._item2cmp.keys().forEach(this._destroyComponentForItem, this);
+			},
+			_processValueChanges: function(changes){
+				changes.forEach(function(change){
+					if (change.type === "add"){
+						this._createComponentForItem(change.value);
+
+					} else if (change.type === "remove"){
+						this._destroyComponentForItem(change.value);
+					}
+				}, this);
+				this.set("content", this._item2cmp.values());
+			},
+		}, {
+			destroy: function(){
+				this.removeAllItems();
+				HtmlElement.prototype.destroy.call();
+			},
+		},
+		// WithSetBulkObservingGenerator()
+		WithValueChangesObservingGenerator({
+			method: "_processValueChanges",
+		})
+	);
+
 
 	var TodosManager = compose(
 		CompositeDomComponent,
@@ -329,11 +467,11 @@ define([
 			var cmps = this._components;
 
 			var presenter = window.presenter = compose.create(ObservableObject, Destroyable, WithTodosForPresenter);
-			this._components.addEach({
+			cmps.addEach({
 				presenter: presenter,
 			});
 
-			this._components.factories.addEach({
+			cmps.factories.addEach({
 				root: function(){
 					return new SimpleContainer({tag: "div"});
 				},
@@ -347,7 +485,7 @@ define([
 					return new HtmlElement({tag: "span"});
 				},
 				todoList: function(){
-					return new List({
+					return new ListContainer({
 						tag: "ul",
 						factory: function(todo){
 							// ici on ne crée volontairement pas un composant composite qui encapsule ces sous-composants car on veut, par simplicité, que ces sous-composants appartiennent au todoManager (et pas à list).
@@ -379,15 +517,25 @@ define([
 				addTodoButton: function(){
 					return new HtmlElement({tag: "button", type: "submit", innerHTML: "add"});
 				},
+				liveButton: function(){
+					return new compose(HtmlElement, WithEmittingSubmitForHtmlButton)({tag: "button"});
+				},
 			});
 
 			// bindings
-			this._components.when("presenter", "subTitle", function(presenter, subTitle){
-				return subTitle.setR("innerHTML", presenter.getR("stats"));
+			cmps.when("presenter", "todoList", function(presenter, list){
+				return list.setR("value", presenter.getR("todos").onChanged());
 			});
-			this._components.bindValue("presenter", "todos", "todoList", "value");
-			this._components.syncValue("presenter", "todoText", "newTodoText", "value");
-			this._components.bindEvent("newTodoForm", "submit", "presenter", "addTodo");
+			// cmps.bindValue("presenter", "stats", "subTitle", "innerHTML");
+			cmps.when("presenter", "subTitle", function(presenter, subTitle){
+				return subTitle.setR("innerHTML", presenter.getR("reactive").flatMapLatest(function(reactive){
+					return reactive ? presenter.getR("stats") : Bacon.never();
+				}).skipDuplicates());
+			});
+			cmps.syncValue("presenter", "todoText", "newTodoText", "value");
+			cmps.bindEvent("newTodoForm", "submit", "presenter", "addTodo");
+			cmps.bindEvent("liveButton", "submit", "presenter", "toggleLive");
+			cmps.bindValue("presenter", "liveButtonText", "liveButton", "innerHTML");
 
 			// layout
 /*			this._layout.configs.addEach({
@@ -408,6 +556,7 @@ define([
 			cmps.get("root").set("content", [
 				cmps.get("title"),
 				cmps.get("subTitle"),
+				cmps.get("liveButton"),
 				cmps.get("todoList"),
 				cmps.get("newTodoForm"),
 			]);
