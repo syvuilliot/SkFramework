@@ -1,6 +1,6 @@
 define([
 	"compose/compose",
-	'collections/fast-map',
+	'collections/map',
 	'collections/set',
 	'collections/list',
 	'collections/sorted-array',
@@ -195,8 +195,11 @@ define([
 				return this.add(value, this.length);
 			},
 			addEach: function(values, index){
+				if (index === undefined){index = 0;}
 				this._startChanges();
-				values.forEach(this.add, this);
+				values.forEach(function(value, key){
+					this.add(value, index+key);
+				}, this);
 				this._stopChanges();
 			},
 			remove: function(index){
@@ -274,17 +277,258 @@ define([
 			filter: function(){
 				return this._store.filter.apply(this._store, arguments);
 			},
+			reduce: function(){
+				return this._store.reduce.apply(this._store, arguments);
+			},
+
 		},
 		Evented,
 		Observable,
 		Bindable
 	);
 
+	var reactiveList = window.reactiveList = new ReactiveList();
+	reactiveList.asReactive().map(".map", function(item){
+		return item.qty;
+	}).log("source list");
+	reactiveList.addEach([{qty:1}, {qty:2}, {qty:3}]);
+
+	reactiveList.onStreamOfChanges = function(f){
+		var contentAsChanges = this.reduce(function(seed, item, index){
+			seed.push({type: "add", value: item, index: index});
+			return seed;
+		}, []);
+		return this.asStream("changes").toProperty(contentAsChanges).onValue(f);
+	};
+
+/*	var plus = function (a,b) { return a + b ;};
+	var incrementalPlus = function(cb){
+		cb = cb || function(a){return a;};
+		return function(sum, changes){
+			changes.forEach(function(change){
+				if (change.type === "add"){
+					sum = plus(sum, cb(change.value));
+				} else if (change.type === "remove"){
+					sum = plus(sum, -cb(change.value));
+				}
+			});
+			return sum;
+		};
+	};
+	reactiveList.asStreamOfChanges(incrementalPlus(function(item){
+		return item.qty;
+	}), 0).log("sum");
+*/
+	// function qui applique à une liste les changements observés sur une autre liste en transformant les items au passage
+	var incrementalMap = function(cb, mappedList){
+		return function(changes){
+			mappedList._startChanges();
+			changes.forEach(function(change){
+				if (change.type === "add"){
+					mappedList.add(cb(change.value), change.index);
+				} else if (change.type === "remove"){
+					mappedList.remove(change.index);
+				}
+			});
+			mappedList._stopChanges();
+		};
+
+	};
+	var reactiveListClone = window.reactiveListClone = new ReactiveList();
+	reactiveListClone.asReactive().map("._store").log("reactiveListClone");
+	var h = window.h = reactiveList.onStreamOfChanges(incrementalMap(function(item){
+		return item.qty;
+	}, reactiveListClone));
+
+	// function qui applique à une liste les changements observés sur une autre liste mais n'ajoute que les items qui passent le filtre
+	// la difficulté est de garder un mapping d'index entre la liste complète etla liste filtrée pour insérer et supprimer les items au bon endroit
+	var incrementalFilter = function(cb, filteredList){
+		var filterResult = new ReactiveList();
+		var pass, i;
+
+		return function(changes){
+			filteredList._startChanges();
+			changes.forEach(function(change){
+				if (change.type === "add"){
+					pass = cb(change.value);
+					filterResult.add(pass, change.index);
+					if (pass){
+						var insertIndex = 0;
+						for (i = 0; i < change.index; i++){
+							if (filterResult.get(i)){insertIndex++;}
+						}
+						filteredList.add(change.value, insertIndex);
+					}
+				} else if (change.type === "remove"){
+					pass = filterResult.get(change.index);
+					if (pass){
+						var removeIndex = 0;
+						for (i = 0; i < change.index; i++){
+							if (filterResult.get(i)){removeIndex++;}
+						}
+						filteredList.remove(removeIndex);
+					}
+					filterResult.remove(change.index);
+				}
+			});
+			filteredList._stopChanges();
+		};
+	};
+	var reactiveListFiltered = window.reactiveListFiltered = new ReactiveList();
+	reactiveListFiltered.asReactive().map("._store.map", function(item){
+		return item.qty;
+	}).log("reactiveListFiltered");
+	reactiveList.onStreamOfChanges(incrementalFilter(function(item){
+		return item.qty>1;
+	}, reactiveListFiltered));
+
+
+	window.sortedArray = new SortedArray([
+		{text: "z"},
+		{text: "a"},
+		{text: "b"},
+	], function(a, b){
+		return Object.equals(a.text, b.text);
+	}, function(a, b){
+		return Object.compare(a.text, b.text);
+	});
+
+	var ReactiveOrderedList = window.ReactiveOrderedList = compose(
+		function(args){
+			this._store = new SortedArray(null, function(a, b){
+				return Object.equals(a.get(args.prop), b.get(args.prop));
+			}, function(a, b){
+				return Object.compare(a.get(args.prop), b.get(args.prop));
+			});
+			this.length = 0;
+			this._changing = 0;
+			this._observedProp = args.prop;
+			this._propObservers = new Map();
+		},
+		{
+			_startChanges: function(){
+				this._changing++;
+			},
+			_stopChanges: function(){
+				this._changing--;
+				if (! this._changing){
+					this.length = this._store.length;
+					this._emit("changes", this._changesQueue || []);
+					delete this._changesQueue;
+					this._emit("changed");
+				}
+			},
+			_pushChanges: function(changes){
+				this._changesQueue = this._changesQueue ? this._changesQueue.concat(changes) : changes;
+			},
+			add: function(value){
+				this._startChanges();
+				this._store.add(value);
+				this._pushChanges([{type: "add", value: value, index: this._store.indexOf(value)}]);
+				this._stopChanges();
+				// start observing value property
+				var canceler = value.asStream("changed").
+					map(".get", this._observedProp).
+					skipDuplicates().
+					onValue(function(){
+						this._replaceValue(value);
+					}.bind(this));
+				this._propObservers.set(value, canceler);
+			},
+			_replaceValue: function(value){
+				var from = this.find(value);
+				this._startChanges();
+				this.remove(from);
+				this.add(value);
+				this._stopChanges();
+			},
+			addEach: function(values){
+				this._startChanges();
+				values.forEach(this.add, this);
+				this._stopChanges();
+			},
+			remove: function(index){
+				this._startChanges();
+				var value = this._store.splice(index, 1)[0];
+				this._propObservers.get(value)(); // stop listening value property changes
+				this._pushChanges([{type: "remove", value: value, index: index || 0}]);
+				this._stopChanges();
+			},
+			removeEach: function(indexes){
+				this._startChanges();
+				indexes.forEach(this.remove, this);
+				this._stopChanges();
+			},
+			removeRange: function(index, length){
+				this._startChanges();
+				for (var i = index; i < length; i++){
+					this.remove(i);
+				}
+				this._stopChanges();
+			},
+			clear: function(){
+				this._startChanges();
+				for (var i = this.length; i > 0 ; i--){
+					this.remove(0);
+				}
+				this._stopChanges();
+			},
+			// replace the current values by the new ones
+			setContent: function(values){
+				this._startChanges();
+				this.clear();
+				this.addEach(values);
+				this._stopChanges();
+			},
+			// apply changes to current content
+			updateContent: function(changes){
+				this._startChanges();
+				changes.forEach(function(change){
+					if (change.type === "add"){
+						this.add(change.value);
+					}
+					if (change.type === "remove"){
+						this.remove(this.find(change.value));
+					}
+				}, this);
+				this._stopChanges();
+			},
+			get: function(index){
+				return this._store[index];
+			},
+			has: function(value){
+				return this.find(value) !== -1;
+			},
+			find: function(value){
+				var index;
+				var found = this._store.some(function(item, key){
+					index = key;
+					return item === value;
+				});
+				return found ? index : -1;
+			},
+			forEach: function(){
+				return this._store.forEach.apply(this._store, arguments);
+			},
+			map: function(){
+				return this._store.map.apply(this._store, arguments);
+			},
+			filter: function(){
+				return this._store.filter.apply(this._store, arguments);
+			},
+		},
+		Evented,
+		Observable,
+		Bindable
+	);
+
+	// stream operand that create a stream that emits when source stream emits AND when the emited value emits a "changed"
 	Bacon.Property.prototype.onChanged = function(){
 		return this.flatMapLatest(function(iterable){
 			return iterable && iterable.asReactive() || Bacon.constant(undefined);
 		});
 	};
+	// stream operand that create a stream that emits when source stream emits AND when the emited value emits a "changed" AND when one of its item emits a "changed"
 	Bacon.Property.prototype.onEach = function(){
 		return this.flatMapLatest(function(iterable){
 			return iterable && iterable.asReactive() || Bacon.constant(undefined);
@@ -317,6 +561,7 @@ define([
 		));
 
 		this.todos = new ReactiveList();
+		this.set("sortedTodos", this.get("todos"));
 		// demo data
 		this.set("todos", [
 			new Todo({text:'learn angular', done:true}),
@@ -378,6 +623,17 @@ define([
 			var todos = this.get("todos");
 			var todoIndex = todos.find(todo);
 			todos.move(todoIndex, todoIndex === 0 ? todos.length-1 : todoIndex-1);
+		},
+		sortTodosByText: function(){
+			var sortedTodos = new ReactiveOrderedList({
+				prop: "text",
+			});
+			sortedTodos.setContent(this.get("todos"));
+			// sortedTodos.updateContentR(this.get("todos").asStream("changes"));
+			this.get("todos").asStream("changes").onValue(function(changes){
+				sortedTodos.updateContent(changes);
+			});
+			this.set("sortedTodos", sortedTodos);
 		},
 	};
 
@@ -441,7 +697,7 @@ define([
 				var stream = value && value.asStream && value.asStream("changes").toProperty(oldItemsRemoves.concat(newItemsAdds)) || Bacon.constant(oldItemsRemoves);
 				oldValue = value;
 				return stream;
-			}).onValue(function(changes){
+			})/*.log("todos changes")*/.onValue(function(changes){
 				this[PROCESS_CHANGES](changes);
 			}.bind(this));
 		};
@@ -466,7 +722,7 @@ define([
 		function(args){
 			this._factory = args.factory;
 			this._cmps = new ReactiveList();
-			this.setR("content", this._cmps.asReactive().log("cmps cahnged"));
+			this.setR("content", this._cmps.asReactive());
 		},
 		WithValueChangesObservingGenerator({
 			prop: "value",
@@ -598,7 +854,7 @@ define([
 
 			// bindings
 			cmps.when("presenter", "todoList", function(presenter, list){
-				return list.setR("value", presenter.getR("todos").onChanged());
+				return list.setR("value", presenter.getR("sortedTodos"));
 			});
 			// cmps.bindValue("presenter", "stats", "subTitle", "innerHTML");
 			cmps.when("presenter", "subTitle", function(presenter, subTitle){
