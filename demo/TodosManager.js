@@ -674,6 +674,9 @@ define([
           _todosSetter: function(todos){
             this.get("todos").setContent(todos);
           },
+          _todosGetter: function(todos){
+            return this.todos;
+          },
           toggleLive: function(){
             var newState = !this.get("reactive");
             this.setEach({
