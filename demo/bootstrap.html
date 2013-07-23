@@ -7,12 +7,15 @@
 <body>
     <script data-dojo-config="async: true, isDebug: true", src="../deps/dojo/dojo.js"></script>
     <script>
-
 		require({
 			paths: {
 				ksf: "../..",
-				collections: "../collections-amd",
+				collections: "../collections-amd"
 			},
+			packages: [
+				{ name: 'compose', location: '../compose', main: 'compose' },
+				{ name: 'bacon.js', location: '../bacon.js/dist', main: 'Bacon' }
+			]
 		}, [
 			"ksf/demo/TodosManager",
 		], function(TodosManager){

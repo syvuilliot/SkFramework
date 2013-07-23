@@ -4,11 +4,11 @@ define({
 	loader: {
 		packages: [
 			{ name: 'compose', location: 'compose', main: 'compose' },
-			{ name: 'chai', location: 'intern/chai', main: 'chai' }
+			{ name: 'bacon.js', location: 'bacon.js/dist', main: 'Bacon' }
 		],
 		paths: {
 			"collections": "collections-amd",
-			"frb": "frb-amd",
+			"frb": "frb-amd"
 		}
 	},
 

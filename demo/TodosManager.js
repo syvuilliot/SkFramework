@@ -13,7 +13,7 @@ define([
   'ksf/utils/ObservableObject',
   'ksf/components/HtmlElement',
   'ksf/component/CompositeDomComponent',
-  'ksf/components/WithOrderedContentForHtmlElement',
+  'ksf/dom/WithOrderedContent',
 
 
   'collections/shim-array',
@@ -41,18 +41,18 @@ define([
 
   var WithEmittingChangedForHtmlElement = function(){
     // listen to dom "change" event to emit ks standardised "changed" event
-    this.domNode.addEventListener("change", function(){
+    this.get('domNode').addEventListener("change", function(){
       this._emit("changed");
     }.bind(this));
   };
   var WithEmittingSubmitForHtmlForm = function(){
-    this.domNode.addEventListener("submit", function(ev){
+    this.get('domNode').addEventListener("submit", function(ev){
       ev.preventDefault();
       this._emit("submit");
     }.bind(this));
   };
   var WithEmittingSubmitForHtmlButton = function(){
-    this.domNode.addEventListener("click", function(ev){
+    this.get('domNode').addEventListener("click", function(ev){
       this._emit("submit");
     }.bind(this));
   };
@@ -69,8 +69,8 @@ define([
     },
     {
       _doneSetter: function(done){
-        this.done = !!done;
-      },
+        this._Setter('done', !!done);
+      }
     }
   );
   var not = function(fun){
@@ -654,7 +654,9 @@ define([
           // this.bindProp("total").to(this, ["qty", "price"], multiply);
         };
         WithTodosForPresenter.prototype = {
-          todoText: "",
+          _todoTextGetter: function() {
+            return this._Getter('todoText') || "";
+          },
           addTodo: function() {
             var todo = new Todo({text:this.get("todoText")});
             this.get("todos").add(todo);
@@ -789,7 +791,7 @@ define([
 
       var ListContainer = compose(
         SimpleContainer,
-        function(args){
+        function(tag, args){
           this._factory = args.factory;
           this._cmps = new ReactiveList();
           this.setR("content", this._cmps.asReactive());
@@ -843,11 +845,11 @@ define([
                           return compose.create(Stateful, WithTodosForPresenter);
                       },
                       root: function(){
-                          return new HtmlElement({tag: "div"});
+                          return new HtmlElement("div");
                       },
                       title: function(){
-                          return new HtmlElement({
-                              tag: "h2",
+                          return new HtmlElement(
+                             "h2", {
                               value: "Todos",
                           });
                       },
@@ -865,29 +867,28 @@ define([
 
     cmps.factories.addEach({
       root: function(){
-        return new SimpleContainer({tag: "div"});
+        return new SimpleContainer("div");
       },
       title: function(){
-        return new HtmlElement({
-          tag: "h2",
+        return new HtmlElement(
+         "h2", {
           innerHTML: "Todos",
         });
       },
       subTitle: function(){
-        return new HtmlElement({tag: "span"});
+        return new HtmlElement("span");
       },
       todoList: function(){
-        return new ListContainer({
-          tag: "ul",
+        return new ListContainer("ul", {
           factory: function(todo){
                               // ici on ne crée volontairement pas un composant composite qui encapsule ces sous-composants car on veut, par simplicité, que ces sous-composants appartiennent au todoManager (et pas à list).
                               // cela permet de binder directement les propriétés des composants au presenter de todoManager (comme dans l'exemple angularJS)
-                              var container = new SimpleContainer({tag: "li"});
-                              var textDisplayer = new compose(HtmlElement, WithEmittingChangedForHtmlElement)({tag: "input"});
-                              var doneEditor = new compose(HtmlElement, WithEmittingChangedForHtmlElement)({tag: "input", type: "checkbox"});
-                              var deleteButton = new Button({tag: "button", innerHTML: "X"});
-                              var moveUpButton = new Button({tag: "button", innerHTML: "^"});
-                              var moveDownButton = new Button({tag: "button", innerHTML: "v"});
+                              var container = new SimpleContainer("li");
+                              var textDisplayer = new compose(HtmlElement, WithEmittingChangedForHtmlElement)("input");
+                              var doneEditor = new compose(HtmlElement, WithEmittingChangedForHtmlElement)("input", { type: "checkbox"});
+                              var deleteButton = new Button("button", { innerHTML: "X"});
+                              var moveUpButton = new Button("button", { innerHTML: "^"});
+                              var moveDownButton = new Button("button", { innerHTML: "v"});
                               // la question est de savoir comment les enregistrer dans le registre du todoManager... ou faut-il le déléguer à "list" ?
                               cmps.addEach([container, textDisplayer, doneEditor, moveUpButton, moveDownButton, deleteButton]);
                               container.set("content", [doneEditor, textDisplayer, moveUpButton, moveDownButton, deleteButton]);
@@ -909,22 +910,22 @@ define([
                           });
   },
   newTodoForm: function(){
-                      return new compose(SimpleContainer, WithEmittingSubmitForHtmlForm)({tag: "form"}); // new Form(); // TODO: create a Form component
+                      return new compose(SimpleContainer, WithEmittingSubmitForHtmlForm)("form"); // new Form(); // TODO: create a Form component
                     },
                     newTodoText: function(){
-                      return new compose(HtmlElement, WithEmittingChangedForHtmlElement)({tag: "input", placeholder: "add new todo"});
+                      return new compose(HtmlElement, WithEmittingChangedForHtmlElement)("input", { placeholder: "add new todo"});
                     },
                     addTodoButton: function(){
-                      return new HtmlElement({tag: "button", type: "submit", innerHTML: "add"});
+                      return new HtmlElement("button", { type: "submit", innerHTML: "add"});
                     },
                     liveButton: function(){
-                      return new compose(HtmlElement, WithEmittingSubmitForHtmlButton)({tag: "button"});
+                      return new compose(HtmlElement, WithEmittingSubmitForHtmlButton)("button");
                     },
                     sortedToogle: function(){
-                      return new compose(HtmlElement, WithEmittingChangedForHtmlElement)({tag: "input", type: "checkbox"});
+                      return new compose(HtmlElement, WithEmittingChangedForHtmlElement)("input", { type: "checkbox"});
                     },
                     sortedToogleText: function(){
-                      return new HtmlElement({tag: "span", innerHTML: "Sort todos by name"});
+                      return new HtmlElement("span", { innerHTML: "Sort todos by name"});
                     },
                   });
 
@@ -961,7 +962,7 @@ define([
               });
               this._layout.set("default");
   */          // manual layout to be removed
-  this.domNode = this._components.get("root").domNode;
+  this.set('domNode', this._components.get("root").get('domNode'));
   cmps.get("root").set("content", [
     cmps.get("title"),
     cmps.get("subTitle"),

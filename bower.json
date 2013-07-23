@@ -9,6 +9,7 @@
     "compose": "kriszyp/compose#0.2.2",
     "frb": "montagejs/frb#0.1.25",
     "collections": "montagejs/collections#0.1.16",
-    "intern": "theintern/intern"
+    "intern": "theintern/intern",
+    "bacon.js": "raimohanska/bacon.js"
   }
 }

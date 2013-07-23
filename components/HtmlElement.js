@@ -1,49 +1,32 @@
 define([
-	"compose/compose",
-	"../utils/ObservableObject",
-	"../utils/Destroyable",
-
+	'compose',
+	'ksf/utils/ObservableObject',
+	'ksf/dom/WithHTMLElement'
 ], function(
 	compose,
 	ObservableObject,
-	Destroyable
-){
-	var WithDefaultGetterSetterForHtmlElement = function(){
-		this._Getter = function(prop){
-			return this.domNode[prop];
-		};
-		this._Setter = function(prop, value){
-			this.domNode[prop] = value;
-		};
-		this._Detector = function(prop){
-			return this.domNode.hasOwnProperty(prop);
-		};
-		this._Remover = function(prop){
-			// delete this[prop]; // we can't do this on an HtmlElement, that breaks it
-		};
-		this._domNodeGetter = function(){
-			return this.domNode;
-		};
-	};
-
-	var HtmlElement = compose(
+	WithHTMLElement
+) {
+	return compose(
 		ObservableObject,
-		Destroyable,
-		WithDefaultGetterSetterForHtmlElement,
-		function(args){
-			this._tag = args.tag;
+		WithHTMLElement,
+		function(tag, attrs) {
+			this._tag = tag;
 			this.createRendering();
-			// TODO: remove le "setEach" non explicite
-			if (args) {
-				this.setEach(args);
+			if (attrs) {
+				this.setEach(attrs);
 			}
-		}, {
-			createRendering: function(){
-				this.domNode = document.createElement(this._tag);
+		},
+		{
+			_Getter: function(prop) {
+				return this._domNode[prop];
 			},
+			_Setter: function(prop, value) {
+				this._applyDomAttr(prop, value);
+			},
+			_Detector: function(prop){
+				return this._domNode.hasOwnProperty(prop);
+			}
 		}
 	);
-
-	return HtmlElement;
-
 });
