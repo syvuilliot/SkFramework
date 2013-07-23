@@ -2,7 +2,7 @@ define([
 	'intern!object',	'intern/chai!assert',
 	'compose',
 	'put-selector/put',
-	'ksf/components/layout/FlexContainer',
+	'ksf/components/layout/FlexContainer',	'ksf/components/layout/WindowContainer',
 	'ksf/components/HtmlElement',
 	'../Sizeable',
 	'../WithOuterSize'
@@ -10,7 +10,7 @@ define([
 	registerSuite,		assert,
 	compose,
 	put,
-	FlexContainer,
+	FlexContainer,							WindowContainer,
 	HtmlElement,
 	Sizeable,
 	WithOuterSize
@@ -19,6 +19,7 @@ define([
 	var css = document.createElement("style");
 	css.type = "text/css";
 	document.head.appendChild(css);
+	css.sheet.insertRule('html, body { height: 100%; margin: 0; }', css.sheet.cssRules.length);
 	css.sheet.insertRule('.fixed { background-color: lightgray; }', css.sheet.cssRules.length);
 	css.sheet.insertRule('.flex { background-color: lightblue; }', css.sheet.cssRules.length);
 
@@ -51,19 +52,7 @@ define([
 		div3
 	]);
 
-	document.body.parentNode.style.height = '100%';
-	document.body.style.height = '100%';
-	document.body.style.margin = 0;
-	
-	var size = function() {
-		container.set('bounds', {
-			height: document.body.offsetHeight,
-			width: document.body.offsetWidth
-		});
-		container.updateRendering();
-	};
-
-	document.body.appendChild(container.get('domNode'));
-	size();
-	window.onresize = size;
+	new WindowContainer({
+		content: container
+	});
 });

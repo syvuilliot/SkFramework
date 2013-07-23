@@ -2,7 +2,7 @@ define([
 	'intern!object',	'intern/chai!assert',
 	'compose',
 	'put-selector/put',
-	'ksf/components/layout/FlexContainer',
+	'ksf/components/layout/FlexContainer',	'ksf/components/layout/WindowContainer',
 	'ksf/components/HtmlElement',
 	'../Sizeable',
 	'../WithOuterSize'
@@ -10,7 +10,7 @@ define([
 	registerSuite,		assert,
 	compose,
 	put,
-	FlexContainer,
+	FlexContainer,							WindowContainer,
 	HtmlElement,
 	Sizeable,
 	WithOuterSize
@@ -52,18 +52,10 @@ define([
 		[div2, { flex: true }],
 		div3
 	]);
-	
-	var size = function() {
-		container.set('bounds', {
-			height: document.body.offsetHeight,
-			width: document.body.offsetWidth
-		});
-		container.updateRendering();
-	};
 
-	document.body.appendChild(container.get('domNode'));
-	size();
-	window.onresize = size;
+	new WindowContainer({
+		content: container
+	});
 
 	div1.set('innerHTML', "Fixed - With a long content so that we can increase height of this bloc by resizing the viewport");
 	div1.updateRendering();

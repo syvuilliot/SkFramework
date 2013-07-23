@@ -3,6 +3,7 @@ define([
 	'compose',
 	"put-selector/put",
 	"ksf/components/layout/FlexContainer",
+	"ksf/components/layout/WindowContainer",
 	'ksf/components/HtmlElement',
 	'../Sizeable',
 	'../WithOuterSize'
@@ -11,6 +12,7 @@ define([
 	compose,
 	put,
 	FlexContainer,
+	WindowContainer,
 	HtmlElement,
 	Sizeable,
 	WithOuterSize
@@ -60,17 +62,9 @@ define([
 		]
 	});
 
-	var size = function() {
-		main.set('bounds', {
-			height: document.body.offsetHeight,
-			width: document.body.offsetWidth
-		});
-		main.updateRendering();
-	};
-
-	document.body.appendChild(main.get('domNode'));
-	size();
-	window.onresize = size;
+	new WindowContainer({
+		content: main
+	});
 
 	div1.set('innerHTML', "Fixed - With a long content so that we can increase height of this bloc by resizing the viewport");
 	div1.updateRendering();
