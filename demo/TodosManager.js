@@ -1,10 +1,8 @@
 define([
 	'compose/compose',
 	'collections/map',
-	'collections/set',
-	'collections/sorted-array',
 	'ksf/utils/Evented',
-	'bacon.js/Bacon',
+	'ksf/utils/Bacon',
 	'ksf/utils/Destroyable',
 	'ksf/utils/Observable',
 	'ksf/utils/Bindable',
@@ -14,6 +12,8 @@ define([
 	'ksf/dom/WithOrderedContent',
 	'ksf/collections/List',
 	'ksf/collections/OrderableSet',
+	'ksf/utils/destroy',
+	'./Todo',
 
 
 	'collections/shim-array',
@@ -21,8 +21,6 @@ define([
 ], function(
 	compose,
 	Map,
-	Set,
-	SortedArray,
 	Evented,
 	Bacon,
 	Destroyable,
@@ -33,7 +31,9 @@ define([
 	CompositeDomComponent,
 	WithOrderedContentForHtmlElement,
 	ReactiveList,
-	OrderableSet
+	OrderableSet,
+	destroy,
+	Todo
 ){
 
 
@@ -61,47 +61,8 @@ define([
 
 // ------------ APP ----------------
 
-	var Todo = compose(
-		ObservableObject,
-		function(args){
-			this.set("text", args.text);
-			this.set("done", args.done);
-		},
-		{
-			_doneSetter: function(done){
-				this._Setter('done', !!done);
-			}
-		}
-	);
 
 
-	/*  window.sortedArray = new SortedArray([
-					{text: "z"},
-					{text: "a"},
-					{text: "b"},
-			], function(a, b){
-					return Object.equals(a.text, b.text);
-			}, function(a, b){
-					return Object.compare(a.text, b.text);
-			});
-	*/
-		// stream operand that create a stream that emits when source stream emits AND when the emited value emits a "changed"
-	Bacon.Property.prototype.onChanged = function(){
-		return this.flatMapLatest(function(value){
-			return value && value.asReactive() || Bacon.constant(undefined);
-		});
-	};
-	// stream operand that create a stream that emits when source stream emits AND when the emited value emits a "changed" AND when one of its item emits a "changed"
-	Bacon.Property.prototype.onEach = function(){
-		return this.onChanged()
-			// on each change of "iterable" create a new stream that observes all current iterable
-			.flatMapLatest(function(iterable){
-				return iterable && Bacon.combineAsArray(iterable.map(function(item){
-					return item.asReactive();
-				}).toArray()).map(iterable) || Bacon.constant(undefined);
-			})
-		;
-	};
 
 	var WithTodosForPresenter = function(args){
 		this.toggleLive();
@@ -114,28 +75,21 @@ define([
 			.map(".filter", remainingTodo)
 			.map(".length")
 			.skipDuplicates()
-			);
+		);
 
 		this.setR("stats", this.getR("remainingCount").combine(this.getR("todos", ".length").skipDuplicates(),
 			function(remaining, total){
 				return total ? remaining + " remaining todos out of " + total : "no todos";
 			}
-			));
+		));
 
 		this.todos = new ReactiveList();
-		this.todos.name="unsorted";
 		this.setR("sortedTodos", this.getR("todos").
 			onEach().
 			map(".sorted", function(a, b){
 				return Object.compare(a.get("text"), b.get("text"));
 			})
-			);
-		// demo data
-		this.set("todos", [
-			new Todo({text:'learn angular', done:true}),
-			new Todo({text:'build an angular app', done:false}),
-			new Todo({text:'faire les courses', done:true}),
-		]);
+		);
 
 
 		// plusieurs options possibles pour écrire des 'computed properties'
@@ -198,19 +152,7 @@ define([
 			var todoIndex = todos.indexOf(todo);
 			todos.move(todoIndex, todoIndex === 0 ? todos.length-1 : todoIndex-1);
 		},
-	/*  sortTodosByText: function(){
-			var sortedTodos = new ReactiveOrderedList({
-					prop: "text",
-			});
-			sortedTodos.setContent(this.get("todos"));
-			// sortedTodos.updateContentR(this.get("todos").asStream("changes"));
-			this.get("todos").asStream("changes").onValue(function(changes){
-					sortedTodos.updateContent(changes);
-			});
-			this.set("sortedTodos", sortedTodos);
-		},
-*/  };
-
+	};
 
 
 	var SimpleContainer = compose(
@@ -224,20 +166,25 @@ define([
 		}
 	);
 
+
 	var ListContainer = compose(
 		SimpleContainer,
 		function(tag, args){
-			this._factory = args.factory;
+			var list = this;
 			this._cmps = new OrderableSet();
-			var canceler;
-			this.getR("value").onValue(function(value){
-				canceler && canceler();
-				if (value){
-					canceler = this._cmps.setContentIncrementalMap(value, function(todo){
-						return this._factory(todo);
-					}.bind(this));
-				}
-			}.bind(this));
+			this._cmps.updateContentMapR(
+				this.getR("value").
+				flatMapLatestDiff(new OrderableSet(), function(oldItems, newItems){
+					var diffChanges = [];
+					oldItems && oldItems.forEach(function(item){
+						diffChanges.push({type: "remove", value: item, index: 0});
+					});
+					newItems && newItems.forEach(function(item, index){
+						diffChanges.push({type: "add", value: item, index: index});
+					});
+					return newItems && newItems.asStream("changes").toProperty(diffChanges) || Bacon.constant(diffChanges);
+				}),
+			args.factory);
 
 			this.setR("content", this._cmps.asReactive());
 		}

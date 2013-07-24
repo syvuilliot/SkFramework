@@ -5,6 +5,7 @@ define([
 	'ksf/utils/Bindable',
 	'ksf/utils/Destroyable',
 	'ksf/collections/GenericList',
+	'ksf/utils/IndexedSet',
 
 ], function(
 	compose,
@@ -12,7 +13,8 @@ define([
 	Observable,
 	Bindable,
 	Destroyable,
-	GenericList
+	GenericList,
+	IndexedSet
 
 ){
 	var List = compose(
@@ -70,6 +72,35 @@ define([
 			},
 			toArray: function(){
 				return this._store.slice();
+			},
+			setContentIncrementalMap: function(source, mapFunction){
+				this.setContent(source.map(mapFunction));
+				return this.updateContentR(source.asStream("changes").map(function(changes){
+
+					// keep a temporary cache of mapFunction results to reuse them instead of always creating new results
+					// this is useful when the result of mapFunction is a domComponent for example, so that we don't destroy it when the corresponding item is only moved
+					var mappedValues = new IndexedSet();
+
+					return changes.map(function(change, i){
+						var mappedValue;
+						if (change.type === "remove"){
+							mappedValue = this.get(change.index);
+							mappedValues.add(mappedValue, change.value);
+						} else if (change.type === "add") {
+							if (mappedValues.hasKey(change.value)){
+								mappedValue = mappedValues.get(change.value);
+								mappedValues.remove(mappedValue);
+							} else {
+								mappedValue = mapFunction(change.value);
+							}
+						}
+						return {
+							type: change.type,
+							index: change.index,
+							value: mappedValue,
+						};
+					}, this);
+				}.bind(this)));
 			},
 
 			// same as setContentIncrementalMap but also update target

@@ -1,12 +1,14 @@
 define([
 	'compose',
 	'ksf/collections/List',
-	'ksf/utils/IndexedSet',
+	'collections/Map',
+	'ksf/utils/destroy',
 
 ], function(
 	compose,
 	List,
-	IndexedSet
+	Map,
+	destroy
 
 ){
 	var OrderableSet = compose(
@@ -20,37 +22,45 @@ define([
 					List.prototype.add.apply(this, arguments);
 				}
 			},
-
-			// same as setContentIncremental but map each item from source with "mapFunction"
-			// and destroy the result of "mapFunction" when the corresponding item is removed from source
-			setContentIncrementalMap: function(source, mapFunction){
-				this.setContent(source.map(mapFunction));
-				return this.updateContentR(source.asStream("changes").map(function(changes){
-
-					// keep a temporary cache of mapFunction results to reuse them instead of always creating new results
-					// this is useful when the result of mapFunction is a domComponent for example, so that we don't destroy it when the corresponding item is only moved
-					var mappedValues = new IndexedSet();
-
-					return changes.map(function(change, i){
+			// same as "updateContentR" but map values of changes events with "mapFunction"
+			// destroy created mapped values when the corresponding value is removed
+			// dont't create a new mappedValue if the same value is removed and added in the same changes event (and don't destroy it)
+			updateContentMapR: function(changesStream, mapFunction){
+				var target = this;
+				var mapChanges = function(changes){
+					var mappedValues = new Map();
+					var offset = 0;
+					var mappedChanges = changes.map(function(change){
 						var mappedValue;
 						if (change.type === "remove"){
-							mappedValue = this.get(change.index);
-							mappedValues.add(mappedValue, change.value);
+							// store the mappedValue for eventual reuse
+							mappedValue = target.get(change.index + offset);
+							mappedValues.set(change.value, mappedValue);
+							// count the number of remove
+							offset++;
 						} else if (change.type === "add") {
-							if (mappedValues.hasKey(change.value)){
+							// restore the mapped value or create a new one
+							if (mappedValues.has(change.value)){
 								mappedValue = mappedValues.get(change.value);
-								mappedValues.remove(mappedValue);
+								mappedValues.delete(change.value);
 							} else {
 								mappedValue = mapFunction(change.value);
 							}
+							offset--;
 						}
 						return {
 							type: change.type,
 							index: change.index,
 							value: mappedValue,
 						};
-					}, this);
-				}.bind(this)));
+					});
+					// destroy all mappedValues that are no more in target
+					mappedValues.forEach(destroy);
+
+					return mappedChanges;
+				};
+
+				return this.updateContentR(changesStream.map(mapChanges));
 			},
 			setContentIncrementalMapReactive: function(source, mapStream){
 				var cancelers = new Map();
