@@ -263,9 +263,83 @@ define([
         this.setContent(source);
         return this.updateContentR(source.asStream("changes"));
       },
+      // same as setContentIncremental but map each item from source with "mapFunction"
+      // and destroy the result of "mapFunction" when the corresponding item is removed from source
+      // warning: only working for list of unique values
+      setContentIncrementalMap: function(source, mapFunction){
+        this.setContent(source.map(mapFunction));
+        return this.updateContentR(source.asStream("changes").map(function(changes){
+
+          var mappedValues = new Map();
+
+          return changes.map(function(change){
+            if (change.type === "remove"){
+              mappedValues.set(change.value, this.get(change.index));
+            }
+            var mappedValue = mappedValues.has(change.value) ? mappedValues.get(change.value) : mapFunction(change.value);
+            return {
+              type: change.type,
+              index: change.index,
+              value: mappedValue,
+            };
+          }, this);
+        }.bind(this)));
+      },
+      setContentIncrementalMapReactive: function(source, mapStream){
+        var cancelers = new Map();
+        var target = this;
+
+        function processChanges (changes) {
+          changes.forEach(function(change) {
+            if (change.type === 'add') {
+              var reactiveItem = mapStream(change.value);
+              // insert in target list
+              reactiveItem.take(1).onValue(function(value) {
+                target.set(change.index, value);
+              });
+              // observe changes on source item
+              cancelers.add(reactiveItem.changes().onValue(function(value) {
+                target.updateContent([{
+                  type: 'remove',
+                  index: source.find(change.value)
+                }, {
+                  type: 'add',
+                  index: source.find(change.value),
+                  value: value
+                }]);
+              }), change.value);
+            } else if (change.type === "remove") {
+              // cancel observation of source item
+              cancelers.get(change.value)();
+              cancelers.remove(change.value);
+              target.remove(change.index);
+            }
+          });
+        }
+
+        // clear current items
+        processChanges(this.map(function(item, index) {
+          return {
+            type: 'remove',
+            index: index,
+            value: item
+          };
+        }));
+        // initialize
+        processChanges(source.map(function(item, index) {
+          return {
+            type: 'add',
+            index: index,
+            value: item
+          };
+        }));
+
+        source.asStream("changes").onValue(processChanges);
+      },
+      // same as setContentIncrementalMap but also update target
       // same as setContentIncremental but map each item from source with "mapCb" AND observe each item (if possible) to map it whenever it changes
       // this is to get the same reasult as "setContentR(source.onEach().map(source.map(mapCb)))"
-      setContentIncrementalMap: function(source, mapCb){
+      setContentIncrementalMapReactive: function(source, mapCb){
         var target = this;
         var reactToItemChange = function(item, index){
           var canceler = item && item.asReactive && item.asStream("changed")
@@ -424,7 +498,7 @@ define([
     Destroyable
   );
 
-  /*  var reactiveList = window.reactiveList = new ReactiveList();
+      var reactiveList = window.reactiveList = new ReactiveList();
       reactiveList.asReactive().map(".map", function(item){
           return item.get("text");
       }).log("source list");
@@ -432,10 +506,10 @@ define([
 
       var reactiveListClone = window.reactiveListClone = new ReactiveList();
       reactiveListClone.asReactive().map("._store").log("reactiveListClone");
-      reactiveListClone.setContentIncrementalMap(reactiveList, function(item){
-          return item.get("text");
+      reactiveListClone.setContentIncrementalMapReactive(reactiveList, function(item){
+          return item.getR("text");
       });
-
+/*
       var reactiveListFiltered = window.reactiveListFiltered = new ReactiveList();
       reactiveListFiltered.asReactive().map("._store.map", function(item){
           return item.get("text");
@@ -769,7 +843,7 @@ define([
             var stream = value && value.asStream && value.asStream("changes").toProperty(oldItemsRemoves.concat(newItemsAdds)) || Bacon.constant(oldItemsRemoves);
             oldValue = value;
             return stream;
-          }).log("todos changes").onValue(function(changes){
+          }).onValue(function(changes){
             this[PROCESS_CHANGES](changes);
           }.bind(this));
         };
@@ -794,12 +868,22 @@ define([
         function(tag, args){
           this._factory = args.factory;
           this._cmps = new ReactiveList();
+          var canceler;
+          this.getR("value").onValue(function(value){
+            canceler && canceler();
+            if (value){
+              canceler = this._cmps.setContentIncrementalMap(value, function(todo){
+                return this._factory(todo);
+              }.bind(this));
+            }
+          }.bind(this));
+
           this.setR("content", this._cmps.asReactive());
         },
-        WithValueChangesObservingGenerator({
-          prop: "value",
-          method: "_processValueChanges",
-        }),
+        // WithValueChangesObservingGenerator({
+        //   prop: "value",
+        //   method: "_processValueChanges",
+        // }),
         {
           _createComponentForItem: function(item){
             var cmp = this._factory(item);
@@ -932,7 +1016,7 @@ define([
               // bindings
               cmps.when("presenter", "todoList", function(presenter, list){
                 return list.setR("value", presenter.getR("sorted").flatMapLatest(function(sorted){
-                  return (sorted ? presenter.getR("sortedTodos").log("sorted") : presenter.getR("todos").log("unsorted"));
+                  return (sorted ? presenter.getR("sortedTodos") : presenter.getR("todos"));
                 }));
               });
               // cmps.bindValue("presenter", "stats", "subTitle", "innerHTML");
