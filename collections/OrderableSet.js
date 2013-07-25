@@ -1,7 +1,7 @@
 define([
 	'compose',
-	'ksf/collections/List',
-	'collections/Map',
+	'./List',
+	'collections/map',
 	'ksf/utils/destroy',
 
 ], function(

@@ -1,8 +1,8 @@
 define([
 	'collections/set',
 	'collections/map',
-	'./proxyFunctions',
-	"./Evented",
+	'ksf/utils/proxyFunctions',
+	'../base/Evented',
 ], function(
 	Set,
 	Map,

@@ -1,5 +1,5 @@
 define([
-	'./constructor',
+	'ksf/utils/constructor',
 	'collections/map',	'collections/set'
 ], function(
 	constructor,
@@ -98,15 +98,28 @@ define([
 		 * Remove node from tree
 		 */
 		remove: function(child, parent) {
-			var children = this._topDown.get(parent);
-			children && children.delete(child);
-			var parents = this._bottomUp.get(child);
-			parents && parents.delete(parent);
+			if (parent) {
+				var children = this._topDown.get(parent);
+				if (children) {
+					children.delete(child);
+					if (!children.length) {
+						this._topDown.delete(parent);
+					}
+				}
+
+				var parents = this._bottomUp.get(child);
+				parents && parents.delete(parent);
+				if (!parents.length) {
+					this._bottomUp.delete(child);
+				}
+			} else {
+				this._root = undefined;
+			}
 		},
 
 		getChildren: function(parent) {
 			var children = this._topDown.get(parent);
-			return children && children.keys();
+			return children && children.keys() || new Set();
 		},
 
 		getParents: function(child) {
@@ -115,7 +128,7 @@ define([
 		},
 
 		get length() {
-			return this._bottomUp.length + 1;
+			return this._bottomUp.length + (this._root ? 1 : 0);
 		},
 
 		/*
@@ -129,9 +142,38 @@ define([
 					processNode(child, cb, node);
 				});
 			}
-			if (this.hasOwnProperty("_root")){
+			if (this._root) {
 				processNode(this._root, callback);
 			}
+		},
+
+		/**
+		 * Execute a callback for each parent and their children, bottom-up
+		 * @param  {Function} cb    Callback
+		 * @param  {Object}   scope Scope of callback
+		 */
+		forEachParent: function(cb, scope) {
+			var bottomUp = function(tree, root, cb) {
+				var children = tree.getChildren(root);
+				children.forEach(function(child) {
+					if (!tree.isLeaf(child)) {
+						bottomUp(tree, child, cb);
+					}
+				});
+				cb.call(scope, root, children);
+			};
+			bottomUp(this, this.root, cb);
+		},
+
+		bottomUp: function(tree, root, cb) {
+			var children = tree.getChildren(root);
+			children.forEach(function(child) {
+				if (tree.isLeaf(child)) {
+					cb(child);
+				} else {
+					this.bottomUp(tree, child, cb);
+				}
+			}.bind(this));
 		},
 
 		getAttribute: function(child, parent) {

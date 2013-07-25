@@ -1,5 +1,5 @@
 define([
-	'bacon.js/Bacon',
+	'originalBacon',
 ], function(
 	Bacon
 ){

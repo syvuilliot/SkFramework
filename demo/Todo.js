@@ -1,6 +1,6 @@
 define([
 	"compose",
-	"ksf/utils/ObservableObject",
+	"ksf/base/ObservableObject",
 ], function(
 	compose,
 	ObservableObject

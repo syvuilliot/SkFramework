@@ -1,7 +1,7 @@
 define([
 	"compose/compose",
-	"../utils/ObservableObject",
-	"../utils/Destroyable",
+	"./ObservableObject",
+	"./Destroyable",
 	"./WithComponentsRegistry"
 ], function(
 	compose,

@@ -1,11 +1,11 @@
 define([
 	'compose',
-	'ksf/utils/Evented',
-	'ksf/utils/Observable',
-	'ksf/utils/Bindable',
-	'ksf/utils/Destroyable',
-	'ksf/collections/GenericList',
+	'../base/Evented',
+	'../base/Observable',
+	'../base/Bindable',
+	'../base/Destroyable',
 	'ksf/utils/destroy',
+	'./GenericList',
 
 ], function(
 	compose,
@@ -13,8 +13,8 @@ define([
 	Observable,
 	Bindable,
 	Destroyable,
-	GenericList,
-	destroy
+	destroy,
+	GenericList
 
 ){
 	var List = compose(

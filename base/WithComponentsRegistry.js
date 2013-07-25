@@ -1,32 +1,27 @@
 define([
 	"compose/compose",
-	"../utils/IndexedSet",
-	"../utils/Observable",
-	"../utils/Bindable",
-	"../utils/Destroyable",
+	"ksf/base/ObservableObject",
 	"collections/map",
 ], function(
 	compose,
-	IndexedSet,
-	Observable,
-	Bindable,
-	Destroyable,
+	ObservableObject,
 	Map
 ){
 	// je considère que le fait d'ajouter un "fallback" qui appelle une factory quand un composant n'est pas trouvé par "get" n'est pas une fonctionnalité en soit, c'est juste une logique de surcharge. Donc, suivant ce que l'on s'est dit, je le met directement dans la "composition" et je n'en fait pas un mixin à part (comme c'était le cas).
 	var LazyRegistry = compose(
-		IndexedSet,
-		Observable,
-		Bindable,
-		Destroyable,
+		ObservableObject,
 
 		function(args){
 			this._usersCount = new Map();
 			this.factories = new Map();
 		},
 		{
+			has: function(id) {
+				if (typeof id !== 'string') { return false; }
+				return ObservableObject.prototype.has.call(this, id) || this.factories.has(id);
+			},
 			get: function(id){
-				var cmp = IndexedSet.prototype.get.call(this, id);
+				var cmp = ObservableObject.prototype.get.call(this, id);
 				if (!cmp) {
 					var factory = this.factories.get(id);
 					cmp = factory && factory();

@@ -42,7 +42,13 @@ define([
 		WithDefaultGetterSetter,
 		Observable,
 		Bindable,
-		Destroyable
+		Destroyable,
+
+		{
+			add: function(value, prop) {
+				this.set(prop, value);
+			}
+		}
 	);
 
 	return ObservableObject;
