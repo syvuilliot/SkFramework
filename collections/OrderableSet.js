@@ -62,57 +62,6 @@ define([
 
 				return this.updateContentR(changesStream.map(mapChanges));
 			},
-			setContentIncrementalMapReactive: function(source, mapStream){
-				var cancelers = new Map();
-				var target = this;
-
-				function processChanges (changes) {
-					changes.forEach(function(change) {
-						if (change.type === 'add') {
-							var reactiveItem = mapStream(change.value);
-							// insert in target list
-							reactiveItem.take(1).onValue(function(value) {
-								target.set(change.index, value);
-							});
-							// observe changes on source item
-							cancelers.add(reactiveItem.changes().onValue(function(value) {
-								target.updateContent([{
-									type: 'remove',
-									index: source.indexOf(change.value)
-								}, {
-									type: 'add',
-									index: source.indexOf(change.value),
-									value: value
-								}]);
-							}), change.value);
-						} else if (change.type === "remove") {
-							// cancel observation of source item
-							cancelers.get(change.value)();
-							cancelers.remove(change.value);
-							target.remove(change.index);
-						}
-					});
-				}
-
-				// clear current items
-				processChanges(this.map(function(item, index) {
-					return {
-						type: 'remove',
-						index: index,
-						value: item
-					};
-				}));
-				// initialize
-				processChanges(source.map(function(item, index) {
-					return {
-						type: 'add',
-						index: index,
-						value: item
-					};
-				}));
-
-				source.asStream("changes").onValue(processChanges);
-			},
 			setContentIncrementalFilter: function(source, filterCb){
 					var pass, i;
 					var target = this;

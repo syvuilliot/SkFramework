@@ -5,7 +5,7 @@ define([
 	'ksf/utils/Bindable',
 	'ksf/utils/Destroyable',
 	'ksf/collections/GenericList',
-	'ksf/utils/IndexedSet',
+	'ksf/utils/destroy',
 
 ], function(
 	compose,
@@ -14,7 +14,7 @@ define([
 	Bindable,
 	Destroyable,
 	GenericList,
-	IndexedSet
+	destroy
 
 ){
 	var List = compose(
@@ -73,76 +73,86 @@ define([
 			toArray: function(){
 				return this._store.slice();
 			},
-			setContentIncrementalMap: function(source, mapFunction){
-				this.setContent(source.map(mapFunction));
-				return this.updateContentR(source.asStream("changes").map(function(changes){
-
-					// keep a temporary cache of mapFunction results to reuse them instead of always creating new results
-					// this is useful when the result of mapFunction is a domComponent for example, so that we don't destroy it when the corresponding item is only moved
-					var mappedValues = new IndexedSet();
-
-					return changes.map(function(change, i){
-						var mappedValue;
-						if (change.type === "remove"){
-							mappedValue = this.get(change.index);
-							mappedValues.add(mappedValue, change.value);
-						} else if (change.type === "add") {
-							if (mappedValues.hasKey(change.value)){
-								mappedValue = mappedValues.get(change.value);
-								mappedValues.remove(mappedValue);
-							} else {
-								mappedValue = mapFunction(change.value);
-							}
-						}
-						return {
-							type: change.type,
-							index: change.index,
-							value: mappedValue,
-						};
-					}, this);
-				}.bind(this)));
-			},
-
-			// same as setContentIncrementalMap but also update target
-			// same as setContentIncremental but map each item from source with "mapCb" AND observe each item (if possible) to map it whenever it changes
-			// this is to get the same reasult as "setContentR(source.onEach().map(source.map(mapCb)))"
-			setContentIncrementalMapReactive: function(source, mapCb){
+			// same as updateContentMapR but also start observing items to call mapFunction whenever they change
+			updateContentReactiveMapR: function(changesStream, mapFunction){
 				var target = this;
-				var reactToItemChange = function(item, index){
-					var canceler = item && item.asReactive && item.asStream("changed")
-						.map(item)
-						.map(mapCb)
-						.skipDuplicates()
-						.onValue(function(mappedItem) {
-								target.set(observers.indexOf(canceler), mappedItem);
-						});
+				var cancelers = new this.constructor();
+				var updateTargetOnItemChanged = function(item){
+					var canceler = item && item.asReactive && item.asReactive().map(mapFunction).onValue(function(result){
+						var index = cancelers.indexOf(canceler);
+						target.updateContent([{
+							type: 'remove',
+							index: index,
+						}, {
+							type: 'add',
+							index: index,
+							value: result,
+						}]);
+					});
 					return canceler;
 				};
 
-				this.setContent(source.map(mapCb));
-				// start observing each item from source
-				var observers = new List();
-				observers.addEach(source.map(reactToItemChange));
+				var changesStreamCanceler = cancelers.updateContentMapR(changesStream, function(item){
+					return updateTargetOnItemChanged(item);
+				});
 
-				return this.updateContentR(source.asStream("changes").map(function(changes){
-					// create and cancel observers when items are added/removed from source
-					changes.forEach(function(change){
-						if (change.type === "add"){
-							observers.add(reactToItemChange(change.value, change.index), change.index);
-						} else if (change.type === "remove"){
-							var canceler = observers.get(change.index);
-							if (typeof canceler === "function") {canceler();}
-							observers.remove(change.index);
+				return function(){
+					changesStreamCanceler();
+					cancelers.forEach(destroy);
+				};
+			},
+			// same as setContentIncremental but get a reactiveValue from mapStream(item)
+			// this is to get the same reasult as "setContentR(source.onEach().map(source.map(mapCb)))"
+			setContentIncrementalMapReactive: function(source, mapStream){
+				var cancelers = new Map();
+				var target = this;
+
+				function processChanges (changes) {
+					changes.forEach(function(change) {
+						if (change.type === 'add') {
+							var reactiveItem = mapStream(change.value);
+							// insert in target list
+							reactiveItem.take(1).onValue(function(value) {
+								target.set(change.index, value);
+							});
+							// observe changes on source item
+							cancelers.add(reactiveItem.changes().onValue(function(value) {
+								target.updateContent([{
+									type: 'remove',
+									index: source.indexOf(change.value)
+								}, {
+									type: 'add',
+									index: source.indexOf(change.value),
+									value: value
+								}]);
+							}), change.value);
+						} else if (change.type === "remove") {
+							// cancel observation of source item
+							cancelers.get(change.value)();
+							cancelers.remove(change.value);
+							target.remove(change.index);
 						}
 					});
-					return changes.map(function(change){
-						return {
-							type: change.type,
-							index: change.index,
-							value: mapCb(change.value),
-						};
-					});
+				}
+			-
+				// clear current items
+				processChanges(this.map(function(item, index) {
+					return {
+						type: 'remove',
+						index: index,
+						value: item
+					};
 				}));
+				// initialize
+				processChanges(source.map(function(item, index) {
+					return {
+						type: 'add',
+						index: index,
+						value: item
+					};
+				}));
+			-
+				source.asStream("changes").onValue(processChanges);
 			},
 			setContentIncrementalFilter: function(source, filterCb){
 					var pass, i;
