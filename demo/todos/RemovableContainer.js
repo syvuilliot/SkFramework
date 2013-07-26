@@ -33,6 +33,8 @@ define([
 				]
 			});
 			this._layout.set('current', 'default');
+
+			this._style.set('base', 'RemovableContainer');
 		}
 	);
 });

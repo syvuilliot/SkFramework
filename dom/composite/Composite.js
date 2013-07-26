@@ -4,12 +4,14 @@ define([
 	'../../collections/ObservableObject',
 	'../WithDomNode',
 	'./LayoutManager',
+	'ksf/utils/string'
 ], function(
 	compose,
 	CompositeBase,
 	ObservableObject,
 	WithDomNode,
-	LayoutManager
+	LayoutManager,
+	str
 ){
 	return compose(
 		CompositeBase,
@@ -17,14 +19,26 @@ define([
 		function() {
 			this._layout = new LayoutManager({ registry: this._components });
 
-			this._style = new ObservableObject();
+			this.style = this._style = new ObservableObject();
+			this._components.asStream('changes').onValue(function(changes) {
+				changes.forEach(function(change) {
+					if (change.type=== 'add') {
+						change.value.style && change.value.style.set('name', str.hyphenate(change.key));
+					} else {
+						// remove
+						change.value.style && change.value.style.remove('name');
+					}
+				});
+			});
 		}, {
 			_applyLayout: function() {
 				this._layout.apply(this._layout.get('current'));
 			},
 
 			_applyStyle: function() {
-				this._layout.get('root').set('style', this._style);
+				this.style.forEach(function(value, category) {
+					this._layout.get('root').style.set(category, value);
+				}, this);
 			},
 
 			createRendering: function() {

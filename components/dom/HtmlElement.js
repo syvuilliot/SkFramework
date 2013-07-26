@@ -19,6 +19,7 @@ define([
 			if (attrs) {
 				this.setEach(attrs);
 			}
+			this.style.asReactive().onValue(this._applyStyle.bind(this));
 		},
 		{
 			_Getter: function(prop) {
@@ -29,14 +30,6 @@ define([
 			},
 			_Detector: function(prop){
 				return this._domNode.hasOwnProperty(prop);
-			},
-
-			_styleSetter: function(style) {
-				this._style = style;
-				this._applyStyle();
-			},
-			_styleGetter: function(style) {
-				return this._style;
 			}
 		}
 	);

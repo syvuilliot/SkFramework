@@ -1,15 +1,20 @@
 define([
 	'compose',
-	'collections/set'
+	'collections/set',
+	'ksf/collections/ObservableObject'
 ], function(
 	compose,
-	Set
+	Set,
+	ObservableObject
 ){
-	return compose({
+	return compose(function() {
+		this.style = new ObservableObject();
+	}, {
 		_applyStyle: function() {
-			var style = this.get('style'),
+			var style = this.style,
 				newClasses = new Set(),
 				domNode = this.get('domNode');
+
 			style && style.forEach(function(value) {
 				newClasses.add(value);
 			});

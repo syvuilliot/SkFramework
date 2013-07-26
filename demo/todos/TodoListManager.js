@@ -55,19 +55,18 @@ define([
 				};
 			};
 
-/*			this._components.when('list',
+			this._components.when('list',
 				bindTwoProps('value', '<', 'todoList').bind(this)
 			);
-*/
-			this._style.set('base', 'TodoListManager');
-
 			var self = this;
-/*			this._components.when('addNew', function(addNew) {
+			this._components.when('addNew', function(addNew) {
 				return addNew.on('newTodo', function(newTodo) {
 					self.get('todoList').add(newTodo);
 				});
 			});
-*/
+
+			this._style.set('base', 'TodoListManager');
+
 			this._layout.configs.addEach({
 				default: [
 					new HtmlContainer('div'), [

@@ -45,13 +45,13 @@ define([
 				return this._store.has(prop);
 			},
 			_Remover: function(prop){
-				this._store.remove(prop);
+				this._store.delete(prop);
 			},
-			forEach: function() {
-				return this._store.forEach.apply(this, arguments);
+			forEach: function(cb, scope) {
+				return this._store.forEach(cb, scope || this);
 			},
-			map: function() {
-				return this._store.map.apply(this, arguments);
+			map: function(cb) {
+				return this._store.map(cb, this);
 			},
 			add: function(value, prop) {
 				this.set(prop, value);
