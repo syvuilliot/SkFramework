@@ -1,6 +1,6 @@
 define([
 	'compose',
-	'./HtmlElement',
+	'../HtmlElement',
 	'ksf/dom/WithIncrementalContentRendering',
 ], function(
 	compose,

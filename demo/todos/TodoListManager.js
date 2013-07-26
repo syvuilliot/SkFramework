@@ -1,8 +1,8 @@
 define([
 	'compose',
-	'ksf/dom/Composite',
+	'ksf/dom/composite/Composite',
 	'ksf/components/dom/List',
-	'ksf/components/dom/layout/HTMLContainer',
+	'ksf/components/dom/layout/HtmlContainer',
 	'./TodoCreator',
 	'./TodoEditor',
 	'./RemovableContainer'
@@ -10,7 +10,7 @@ define([
 	compose,
 	Composite,
 	List,
-	HTMLContainer,
+	HtmlContainer,
 	TodoCreator,
 	TodoEditor,
 	RemovableContainer
@@ -37,19 +37,40 @@ define([
 				}
 			});
 
-			this._components.when('list', function(list) {
-				return list.setR('value', this.getR('todoList'));
-			}.bind(this));
+
+			var bindTwoProps = function(prop1, dir, prop2) {
+				return function() {
+					var cmp1 = arguments[0],
+						cmp2;
+					if (arguments.length > 2) { return; }
+					if (arguments.length === 1) {
+						cmp2 = this;
+					}
+					if (arguments.length === 2) {
+						cmp2 = arguments[1];
+					}
+					if (dir === '<') {
+						return cmp1.setR(prop1, cmp2.getR(prop2));
+					}
+				};
+			};
+
+			this._components.when('list',
+				bindTwoProps('value', '<', 'todoList').bind(this)
+			);
+
+			this._style.set('base', 'TodoListManager');
+
+			var self = this;
 			this._components.when('addNew', function(addNew) {
 				return addNew.on('newTodo', function(newTodo) {
-					this.get('todoList').add(newTodo);
-				}.bind(this));
-			}.bind(this));
-
+					self.get('todoList').add(newTodo);
+				});
+			});
 
 			this._layout.configs.addEach({
 				default: [
-					new HTMLContainer('div'), [
+					new HtmlContainer('div'), [
 						'list',
 						'addNew'
 					]

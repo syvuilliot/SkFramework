@@ -22,11 +22,11 @@ define([
 		_contentGetter: function(){
 			return this._content || [];
 		},
-		_applyContent: function(content) {
+		_applyContent: function() {
 			var domNode = this.get("domNode");
 			// store old content for comparison purpose
 			var oldContent = this._oldContent;
-			var newContent = this._oldContent = content;
+			var newContent = this._oldContent = this.get("content");
 
 			// remove domNode of components that are no longer in content
 			var removed = oldContent && oldContent.filter(function(item){

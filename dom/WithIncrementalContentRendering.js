@@ -12,7 +12,10 @@ define([
 	var WithIncrementalContentRendering = function(){
 		this._content = new OrderableSet();
 
-		this._content.asStream("changes").onValue(function(changes) {
+		this._content.asStream("changes").onValue(this._applyContentChanges.bind(this));
+	};
+	WithIncrementalContentRendering.prototype = {
+		_applyContentChanges: function(changes) {
 			var domNode = this.get('domNode');
 			changes.forEach(function(change) {
 				if (change.type === 'add') {
@@ -21,9 +24,7 @@ define([
 					domNode.removeChild(change.value.get('domNode'));
 				}
 			});
-		}.bind(this));
-	};
-	WithIncrementalContentRendering.prototype = {
+		},
 		_contentSetter: function(cmps){
 			this.get("content").setContent(cmps);
 		},
@@ -31,12 +32,6 @@ define([
 			return this._content;
 		},
 	};
-	// que faut-il faire pour "updateRendering" ?
-	// faut-il rendre la mise à jour des children du domNode débrayable et que updateRendering se contente d'embrayer et de débrayer immédaitement ?
-/*		updateRendering: function() {
-			this._applyContent(this.get('content'));
-		}
-*/
 
 	return WithIncrementalContentRendering;
 });

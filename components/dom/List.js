@@ -1,16 +1,16 @@
 define([
 	'compose',
 	'bacon',
-	'./HtmlElementReactiveContainer'
+	'./layout/HtmlContainerIncremental'
 ], function(
 	compose,
 	Bacon,
-	HtmlElementReactiveContainer
+	HtmlContainer
 ){
 	return compose(
-		HtmlElementReactiveContainer,
+		HtmlContainer,
 		function(tag, args){
-			this.get("_content").updateContentMapR(
+			this.get("content").updateContentMapR(
 				this.getR("value").
 				flatMapLatestDiff(null, function(oldItems, newItems){
 					var diffChanges = [];

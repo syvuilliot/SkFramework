@@ -1,13 +1,13 @@
 define([
 	'compose',
-	'ksf/dom/Composite',
-	'ksf/components/dom/layout/HTMLContainer',
+	'ksf/dom/composite/Composite',
+	'ksf/components/dom/layout/HtmlContainer',
 	'ksf/components/dom/HtmlElement',
 	'ksf/dom/proxyEvent',
 ], function(
 	compose,
 	Composite,
-	HTMLContainer,
+	HtmlContainer,
 	HtmlElement,
 	proxyEvent
 ){
@@ -26,7 +26,7 @@ define([
 
 			this._layout.configs.addEach({
 				default: [
-					new HTMLContainer('div'), [
+					new HtmlContainer('div'), [
 						args.content,
 						'removeBtn'
 					]
