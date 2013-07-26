@@ -1,6 +1,6 @@
 define([
 	"compose/compose",
-	"./ObservableObject",
+	"ksf/collections/ObservableObject",
 	"./Destroyable",
 	"./WithComponentsRegistry"
 ], function(

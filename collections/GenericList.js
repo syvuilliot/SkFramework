@@ -4,21 +4,6 @@ define([
 
 ){
 	var GenericList = {
-		_startChanges: function(){
-			this._changing++;
-		},
-		_stopChanges: function(){
-			this._changing--;
-			if (! this._changing){
-				this.length = this._store.length;
-				this._emit("changes", this._changesQueue || []);
-				delete this._changesQueue;
-				this._emit("changed");
-			}
-		},
-		_pushChanges: function(changes){
-			this._changesQueue = this._changesQueue ? this._changesQueue.concat(changes) : changes;
-		},
 		addEach: function(values, index){
 			this._startChanges();
 			values.forEach(function(value, key){
@@ -105,6 +90,11 @@ define([
 			output.addEach(this);
 			output.addEach(list);
 			return output;
+		},
+		toChanges: function(type){
+			return this.map(function(item, index){
+				return {type: type || "add", value: item, index: index};
+			});
 		},
 	};
 	return GenericList;

@@ -1,7 +1,7 @@
 define([
 	'compose',
 	'../../base/Composite',
-	'../../base/ObservableObject',
+	'../../collections/ObservableObject',
 	'../WithDomNode',
 	'./LayoutManager',
 ], function(

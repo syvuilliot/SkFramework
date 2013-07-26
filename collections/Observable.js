@@ -3,10 +3,26 @@ define([
 ], function(
 	Bacon
 ){
-	var WithGetRSetRBacon = function(){
+	var Observable = function(){
+		this._changing = 0;
 	};
 
-	WithGetRSetRBacon.prototype = {
+	Observable.prototype = {
+		_startChanges: function(){
+			this._changing++;
+		},
+		_stopChanges: function(){
+			this._changing--;
+			if (! this._changing){
+				this.length = this._store.length;
+				this._emit("changes", this._changesQueue || []);
+				delete this._changesQueue;
+				this._emit("changed");
+			}
+		},
+		_pushChanges: function(changes){
+			this._changesQueue = this._changesQueue ? this._changesQueue.concat(changes) : changes;
+		},
 		// create an eventStream from an eventType
 		asStream: function(eventType){
 			var emitter = this;
@@ -24,6 +40,12 @@ define([
 		},
 		asReactive: function(){
 			return this._reactive || (this._reactive = this.asStream("changed").map(this).toProperty(this));
+		},
+		diffAsChanges: function(from){
+			return from.toChanges("remove").concat(this.toChanges("add"));
+		},
+		asChangesStream: function(from){
+			return this.asStream("changes").toProperty(this.diffAsChanges(from));
 		},
 		// return a bacon reactive from expression applied to this
 		watch: function(expression, equals){
@@ -74,5 +96,6 @@ define([
 			}.bind(this)).toProperty(this.getEach.apply(this, arguments));
 */		},
 	};
-	return WithGetRSetRBacon;
+
+	return Observable;
 });

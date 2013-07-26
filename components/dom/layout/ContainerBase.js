@@ -1,6 +1,6 @@
 define([
 	'compose',
-	'ksf/base/ObservableObject',
+	'ksf/collections/ObservableObject',
 	'ksf/dom/WithHTMLElement'
 ], function(
 	compose,

@@ -1,9 +1,9 @@
 define([
 	'compose',
-	'../base/Evented',
-	'../base/Observable',
-	'../base/Bindable',
-	'../base/Destroyable',
+	'ksf/base/Evented',
+	'./Observable',
+	'./Bindable',
+	'ksf/base/Destroyable',
 	'ksf/utils/destroy',
 	'./GenericList',
 
@@ -27,7 +27,6 @@ define([
 		function(args){
 			this._store = [];
 			this.length = 0;
-			this._changing = 0;
 		},
 		{
 			add: function(value, index){
@@ -39,8 +38,8 @@ define([
 			},
 			remove: function(index){
 				this._startChanges();
-				var value = this._store.splice(index, 1);
-				this._pushChanges([{type: "remove", value: value[0], index: index || 0}]);
+				var value = this._store.splice(index, 1)[0];
+				this._pushChanges([{type: "remove", value: value, index: index || 0}]);
 				this._stopChanges();
 			},
 			get: function(index){

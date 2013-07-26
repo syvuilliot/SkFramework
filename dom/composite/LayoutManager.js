@@ -2,7 +2,7 @@ define([
 	'compose',
 	'collections/dict',
 	'ksf/collections/AttributeTree',
-	'../../base/ObservableObject'
+	'ksf/collections/ObservableObject'
 ], function(
 	compose,
 	Dict,
