@@ -9,7 +9,7 @@ define([
 	// 'orderedListOfComponents' est une collection ordonnée de composants uniques
 	// on ne s'occupe pas de l'objet 'orderedListOfComponents' lui-même mais de son contenu : les composants et leur ordre
 	// par contre l'objet retourné par "get('content')" est un réactif incrémental, c'est à dire qui supporte "updateContent" et "updateContentR"
-	var WithReactiveOrderedContentForHtmlElement = function(){
+	var WithIncrementalContentRendering = function(){
 		this._content = new OrderableSet();
 
 		this._content.asStream("changes").onValue(function(changes) {
@@ -23,7 +23,7 @@ define([
 			});
 		}.bind(this));
 	};
-	WithReactiveOrderedContentForHtmlElement.prototype = {
+	WithIncrementalContentRendering.prototype = {
 		_contentSetter: function(cmps){
 			this.get("content").setContent(cmps);
 		},
@@ -38,5 +38,5 @@ define([
 		}
 */
 
-	return WithReactiveOrderedContentForHtmlElement;
+	return WithIncrementalContentRendering;
 });

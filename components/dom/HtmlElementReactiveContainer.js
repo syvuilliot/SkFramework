@@ -1,14 +1,20 @@
 define([
 	'compose',
 	'./HtmlElement',
-	'ksf/dom/WithReactiveOrderedContent',
+	'ksf/dom/WithOrderedContent',
 ], function(
 	compose,
 	HtmlElement,
-	WithReactiveOrderedContent
+	WithOrderedContent
 ){
 	return compose(
 		HtmlElement,
-		WithReactiveOrderedContent
+		WithOrderedContent,
+		{
+			_contentSetter: function(cmps){
+				WithOrderedContent.prototype._contentSetter.call(this, cmps);
+				this.updateRendering();
+			},
+		}
 	);
 });
