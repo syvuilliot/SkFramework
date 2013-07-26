@@ -20,13 +20,14 @@ define([
 			this._layout = new LayoutManager({ registry: this._components });
 
 			this.style = this._style = new ObservableObject();
-			this._components.asStream('changes').onValue(function(changes) {
+			this._components.asChangesStream().onValue(function(changes) {
 				changes.forEach(function(change) {
 					if (change.type=== 'add') {
 						change.value.style && change.value.style.set('name', str.hyphenate(change.key));
 					} else {
 						// remove
-						change.value.style && change.value.style.remove('name');
+						// TODO: decommenter quand le bug sur change.value sera résolu
+						// change.value.style && change.value.style.remove('name');
 					}
 				});
 			});

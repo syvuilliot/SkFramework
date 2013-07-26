@@ -42,7 +42,7 @@ define([
 			return this._reactive || (this._reactive = this.asStream("changed").map(this).toProperty(this));
 		},
 		diffAsChanges: function(from){
-			return from.toChanges("remove").concat(this.toChanges("add"));
+			return from ? from.toChanges("remove").concat(this.toChanges("add")) : this.toChanges("add");
 		},
 		asChangesStream: function(from){
 			return this.asStream("changes").toProperty(this.diffAsChanges(from));
