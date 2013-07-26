@@ -1,22 +1,18 @@
 define([
 	'compose',
 	'bacon',
-	'ksf/collections/OrderableSet',
-	'./HtmlElement'
+	'./HtmlElementReactiveContainer'
 ], function(
 	compose,
 	Bacon,
-	OrderableSet,
-	HtmlElement
+	HtmlElementReactiveContainer
 ){
 	return compose(
-		HtmlElement,
+		HtmlElementReactiveContainer,
 		function(tag, args){
-			var list = this;
-			this._content = new OrderableSet();
-			this._content.updateContentMapR(
+			this.get("_content").updateContentMapR(
 				this.getR("value").
-				flatMapLatestDiff(new OrderableSet(), function(oldItems, newItems){
+				flatMapLatestDiff(null, function(oldItems, newItems){
 					var diffChanges = [];
 					oldItems && oldItems.forEach(function(item){
 						diffChanges.push({type: "remove", value: item, index: 0});
@@ -28,16 +24,6 @@ define([
 				}),
 			args.factory);
 
-			this._content.asStream("changes").onValue(function(changes) {
-				var domNode = this.get('domNode');
-				changes.forEach(function(change) {
-					if (change.type === 'add') {
-						domNode.insertBefore(change.value.get('domNode'), domNode.children[change.index]);
-					} else {
-						domNode.removeChild(change.value.get('domNode'));
-					}
-				});
-			}.bind(this));
 		}
 	);
 });
