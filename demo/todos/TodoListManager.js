@@ -69,9 +69,9 @@ define([
 
 			this._layout.configs.addEach({
 				default: [
-					new HtmlContainer('div'), [
+					new HtmlContainer('div'), [,
+						'addNew',
 						'list',
-						'addNew'
 					]
 				]
 			});
