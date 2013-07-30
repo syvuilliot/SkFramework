@@ -41,6 +41,7 @@ define([
 		// permet d'éxécuter une fonction lorsque la valeur de chaque propriété est définie (!== undefined) et à chaque fois que la valeur de l'une ou plusieurs d'entre elles change
 		// afin de faciliter les choses, si la fonction retourne un canceler ou destroyable, celui-ci est exécutée/détruit à la prochaine itération (changement de l'une ou plusieurs des propriétés et même si une des valeurs est undefined)
 		//
+		// le dernier argument de when peut être une fonction ou un itérable de fonctions
 		when: function(){
 			var canceler;
 			var args = Array.prototype.slice.call(arguments, 0, arguments.length-1).map(function(cmp){
@@ -48,14 +49,14 @@ define([
 			}.bind(this));
 			var binder;
 			var lastArg = arguments[arguments.length-1];
-			if (Array.isArray(lastArg)){
+			if (typeof lastArg === 'function'){
+				binder = lastArg;
+			} else {
 				binder = function(){
 					return lastArg.map(function(cb) {
 						return cb.apply(this, arguments);
 					}.bind(this));
 				};
-			} else {
-				binder = lastArg;
 			}
 
 			args.push(function(){
