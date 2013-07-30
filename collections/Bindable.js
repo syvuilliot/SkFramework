@@ -1,7 +1,9 @@
 define([
 	"bacon",
+	"../utils/destroy",
 ], function(
-	Bacon
+	Bacon,
+	destroy
 ){
 	var Bindable = {
 		// call set(prop) with value from observable at each notification
@@ -44,16 +46,21 @@ define([
 			var args = Array.prototype.slice.call(arguments, 0, arguments.length-1).map(function(cmp){
 				return this.getR(cmp);
 			}.bind(this));
-			var binder = arguments[arguments.length-1];
+			var binder;
+			var lastArg = arguments[arguments.length-1];
+			if (Array.isArray(lastArg)){
+				binder = function(){
+					return lastArg.map(function(cb) {
+						return cb.apply(this, arguments);
+					}.bind(this));
+				};
+			} else {
+				binder = lastArg;
+			}
 
 			args.push(function(){
-				// console.log("cb called");
 				if (canceler){
-					if (canceler.destroy) {
-						canceler.destroy();
-					} else {
-						canceler();
-					}
+					destroy(canceler);
 					this.unown && this.unown(canceler);
 					canceler = undefined;
 				}
