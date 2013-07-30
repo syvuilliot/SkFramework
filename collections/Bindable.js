@@ -10,8 +10,8 @@ define([
 		setR: function(prop, observable){
 			return this.own(observable.onValue(this, "set", prop));
 		},
-		// create a bidi value binding from this to target
-		bind: function(targetProp, mode, source, sourceProp){
+		// create a bidi value binding from source to this
+		bind: function(targetProp, source, sourceProp){
 			var init = true;
 			var target = this;
 			var sourceValueR = source.getR(sourceProp);
@@ -74,36 +74,16 @@ define([
 			}.bind(this));
 			return this.own(Bacon.onValues.apply(Bacon, args));
 		},
+		// deprecated
 		bindValue: function(source, sourceProp, target, targetProp){
 			return this.when(source, target, function(source, target){
 				return target.setR(targetProp, source.getR(sourceProp));
 			});
 		},
+		// deprecated
 		syncValue: function(source, sourceProp, target, targetProp){
 			return this.when(source, target, function(source, target){
-				var init = true;
-				var sourceValueR = source.getR(sourceProp);
-				var targetValueR = target.getR(targetProp);
-				var changing = false;
-				var sourceHandler = sourceValueR.onValue(function(value){
-					if (! changing){
-						changing = true;
-						target.set(targetProp, value);
-						changing = false;
-					}
-				});
-				var targetHandler = targetValueR.onValue(function(value){
-					if (! changing && ! init){
-						changing = true;
-						source.set(sourceProp, value);
-						changing = false;
-					}
-				});
-				init = false;
-				return function(){
-					targetHandler();
-					sourceHandler();
-				};
+				return target.bind(targetProp, source, sourceProp);
 			});
 		},
 		bindEvent: function(source, eventType, target, targetMethod){

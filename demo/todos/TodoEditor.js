@@ -13,7 +13,7 @@ define([
 			HtmlElement.call(this, 'input', { type: 'text' });
 			proxyEvent.changed.call(this);
 
-			this.own(this.bind('value',"<<->", todo, 'text'));
+			this.own(this.bind('value', todo, 'text'));
 		}
 	);
 });

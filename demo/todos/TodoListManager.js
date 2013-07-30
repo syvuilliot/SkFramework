@@ -5,7 +5,8 @@ define([
 	'ksf/components/dom/layout/HtmlContainer',
 	'./TodoCreator',
 	'./TodoEditor',
-	'./RemovableContainer'
+	'./RemovableContainer',
+	'ksf/utils/bindProps',
 ], function(
 	compose,
 	Composite,
@@ -13,7 +14,8 @@ define([
 	HtmlContainer,
 	TodoCreator,
 	TodoEditor,
-	RemovableContainer
+	RemovableContainer,
+	bindProps
 ){
 	return compose(
 		Composite,
@@ -37,28 +39,10 @@ define([
 				}
 			});
 
-
-			var bindTwoProps = function(prop1, dir, prop2) {
-				return function() {
-					var cmp1 = arguments[0],
-						cmp2;
-					if (arguments.length > 2) { return; }
-					if (arguments.length === 1) {
-						cmp2 = this;
-					}
-					if (arguments.length === 2) {
-						cmp2 = arguments[1];
-					}
-					if (dir === '<') {
-						return cmp1.setR(prop1, cmp2.getR(prop2));
-					}
-				};
-			};
-
-			this._components.when('list',
-				bindTwoProps('value', '<', 'todoList').bind(this)
-			);
 			var self = this;
+			this._components.when('list',
+				bindProps('value', '<', 'todoList').bind(self)
+			);
 			this._components.when('addNew', function(addNew) {
 				return addNew.on('newTodo', function(newTodo) {
 					self.get('todoList').add(newTodo);
