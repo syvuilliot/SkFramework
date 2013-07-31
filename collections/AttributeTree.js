@@ -165,13 +165,14 @@ define([
 			bottomUp(this, this.root, cb);
 		},
 
-		bottomUp: function(tree, root, cb) {
-			var children = tree.getChildren(root);
+		bottomUp: function(cb, root) {
+			root = root || this.root;
+			var children = this.getChildren(root);
 			children.forEach(function(child) {
-				if (tree.isLeaf(child)) {
+				if (this.isLeaf(child)) {
 					cb(child);
 				} else {
-					this.bottomUp(tree, child, cb);
+					this.bottomUp(cb, child);
 				}
 			}.bind(this));
 		},

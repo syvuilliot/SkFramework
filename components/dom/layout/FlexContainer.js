@@ -2,20 +2,17 @@ define([
 	'compose',
 	'./ContainerBase',
 	'ksf/dom/Sizeable',
-	'ksf/dom/WithOuterSize',
 	'ksf/dom/WithInnerSize',
 	'collections/shim-array'
 ], function(
 	compose,
 	Container,
 	Sizeable,
-	WithOuterSize,
 	WithInnerSize
 ) {
 	return compose(
 		Container,
 		Sizeable,
-		WithOuterSize,
 		WithInnerSize,
 		function(args) {
 			this._handlers = [];
@@ -41,8 +38,9 @@ define([
 				this.updateRendering();
 			},
 
-			_applyContent: function(content) {
-				var bounds = this.get('bounds'),
+			_applyContent: function() {
+				var content = this.get('content'),
+					bounds = this.get('bounds'),
 					thisNode = this.get('domNode'),
 					innerSize = this.get('innerSize'),
 					vertical = this._vertical,
@@ -141,7 +139,8 @@ define([
 
 			updateRendering: function() {
 				Sizeable.prototype.updateRendering.apply(this, arguments);
-				this._applyContent(this.get('content'));
+				Container.prototype.updateRendering.apply(this, arguments);
+				this._applyContent();
 			}
 		}
 	);

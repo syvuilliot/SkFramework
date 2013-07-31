@@ -74,6 +74,13 @@ define([
 			}.bind(this));
 			return this.own(Bacon.onValues.apply(Bacon, args));
 		},
+
+		whenEach: function() {
+			Array.prototype.forEach.call(arguments, function(args) {
+				this.when.apply(this, args);
+			}, this);
+		},
+
 		// deprecated
 		bindValue: function(source, sourceProp, target, targetProp){
 			return this.when(source, target, function(source, target){

@@ -14,8 +14,13 @@ define([
 			} else {
 				this["_Remover"](prop); // default
 			}
-			this._pushChanges({type: "remove", value: value, key: prop});
+			this._pushChanges([{type: "remove", value: value, key: prop}]);
 			this._stopChanges();
+		},
+		removeEach: function(){
+			Array.prototype.forEach.call(arguments, function(prop){
+				this.remove(prop);
+			}, this);
 		},
 		get: function(prop){
 			if (this["_"+prop+"Getter"]){

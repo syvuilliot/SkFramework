@@ -15,10 +15,6 @@ define([
 			delete this._domNode;
 		},
 
-		createRendering: function() {
-			this._domNode = document.createElement(this._tag);
-		},
-
 		destroyRendering: function() {
 			this.remove('domNode');
 		},
@@ -29,6 +25,19 @@ define([
 				this._emit('sizechanged');
 			}
 		},
+
+		_outerSizeGetter: function() {
+			var node = this.get('domNode');
+			return {
+				height: node.offsetHeight,
+				width: node.offsetWidth
+			};
+		},
+
+		createRendering: function() {
+			this._domNode = document.createElement(this._tag);
+		},
+
 		updateRendering: function() {
 			this.forEach(function(value, prop) {
 				this._applyDomAttr(prop, value);
