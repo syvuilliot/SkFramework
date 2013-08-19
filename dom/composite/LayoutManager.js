@@ -15,8 +15,8 @@ define([
 			this.configs = new Dict();
 		},
 		{
-			apply: function(configId) {
-				var config = this.configs.get(configId);
+			apply: function() {
+				var config = this.get('config');
 
 				var tree = new Tree(config);
 
@@ -26,6 +26,13 @@ define([
 				}, this);
 
 				this._applyTree(cmpTree);
+			},
+
+			_configSetter: function(config) {
+				if (typeof config === 'string') {
+					config = this.configs.get(config);
+				}
+				this._Setter('config', config);
 			},
 
 			_rootGetter: function() {

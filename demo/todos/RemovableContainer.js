@@ -24,15 +24,12 @@ define([
 				return btn.on('click', args.removeCallback);
 			}.bind(this));
 
-			this._layout.configs.addEach({
-				default: [
-					new HtmlContainer('div'), [
-						args.content,
-						'removeBtn'
-					]
+			this._layout.set('config', [
+				new HtmlContainer('div'), [
+					args.content,
+					'removeBtn'
 				]
-			});
-			this._layout.set('current', 'default');
+			]);
 
 			this._style.set('base', 'RemovableContainer');
 		}

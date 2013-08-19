@@ -21,7 +21,7 @@ define([
 
 		_applyDomAttr: function(prop, value) {
 			this._domNode[prop] = value;
-			if (prop == 'innerHTML') {
+			if (prop === 'innerHTML') {
 				this._emit('sizechanged');
 			}
 		},

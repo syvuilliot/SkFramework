@@ -33,7 +33,7 @@ define([
 			});
 		}, {
 			_applyLayout: function() {
-				this._layout.apply(this._layout.get('current'));
+				this._layout.apply();
 			},
 
 			_applyStyle: function() {
@@ -51,7 +51,7 @@ define([
 			updateRendering: function() {
 				this._applyLayout();
 				this._applyStyle();
-				this._layout.get('tree').bottomUp(function(cmp) {
+				this._layout.get('tree').topDown(function(cmp) {
 					cmp.updateRendering();
 				});
 			}

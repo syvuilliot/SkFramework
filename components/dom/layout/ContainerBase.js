@@ -16,6 +16,7 @@ define([
 		{
 			_tag: 'div',
 			updateRendering: function() {
+				WithHTMLElement.prototype.updateRendering.apply(this);
 				this._applyStyle();
 			}
 		}

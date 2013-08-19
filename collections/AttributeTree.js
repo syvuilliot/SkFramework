@@ -165,6 +165,15 @@ define([
 			bottomUp(this, this.root, cb);
 		},
 
+		topDown: function(cb, root) {
+			root = root || this.root;
+			cb(root);
+			var children = this.getChildren(root);
+			children.forEach(function(child) {
+				this.topDown(cb, child);
+			}.bind(this));
+		},
+
 		bottomUp: function(cb, root) {
 			root = root || this.root;
 			var children = this.getChildren(root);
@@ -175,6 +184,7 @@ define([
 					this.bottomUp(cb, child);
 				}
 			}.bind(this));
+			cb(root);
 		},
 
 		getAttribute: function(child, parent) {

@@ -51,15 +51,12 @@ define([
 
 			this._style.set('base', 'TodoListManager');
 
-			this._layout.configs.addEach({
-				default: [
-					new HtmlContainer('div'), [,
-						'addNew',
-						'list',
-					]
+			this._layout.set('config', [
+				new HtmlContainer('div'), [,
+					'addNew',
+					'list',
 				]
-			});
-			this._layout.set('current', 'default');
+			]);
 		}
 	);
 });
