@@ -172,6 +172,10 @@ define([
 			o.set("activeItem", cmp1);
 			collection.addEach([cmp1, cmp2, cmp3]);
 			o.bindSelection("activeItem", collection, "active");
+			assert.equal(o.get("activeItem"), cmp1);
+			assert.equal(cmp1.get("active"), true);
+			assert.equal(cmp2.get("active"), false);
+			assert.equal(cmp3.get("active"), false);
 			o.set("activeItem", cmp2);
 			assert.equal(o.get("activeItem"), cmp2);
 			assert.equal(cmp1.get("active"), false);
@@ -195,6 +199,11 @@ define([
 			assert.equal(o.get("activeItem"), cmp1);
 			assert.equal(cmp1.get("active"), true);
 			assert.equal(cmp2.get("active"), false);
+			assert.equal(cmp3.get("active"), false);
+			cmp2.set("active", true);
+			assert.equal(o.get("activeItem"), cmp2);
+			assert.equal(cmp1.get("active"), false);
+			assert.equal(cmp2.get("active"), true);
 			assert.equal(cmp3.get("active"), false);
 		},
 		"change all items to false": function() {

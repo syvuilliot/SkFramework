@@ -24,9 +24,10 @@ define([
 		Destroyable,
 		GenericList,
 
-		function(args){
+		function(values){
 			this._store = [];
 			this.length = 0;
+			values && values.forEach && this.addEach(values);
 		},
 		{
 			add: function(value, index){

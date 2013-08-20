@@ -13,7 +13,7 @@ define([
 			return this.own(observable.onValue(this, "set", prop));
 		},
 		// create a bidi value binding from source to this
-		bind: function(targetProp, source, sourceProp){
+		bind: function(targetProp, source, sourceProp, options){
 			var init = true;
 			var target = this;
 			var sourceValueR = source.getR(sourceProp);
@@ -22,14 +22,14 @@ define([
 			var sourceHandler = sourceValueR.onValue(function(value){
 				if (! changing){
 					changing = true;
-					target.set(targetProp, value);
+					target.set(targetProp, options && options.convert && options.convert.call(target, value) || value);
 					changing = false;
 				}
 			});
 			var targetHandler = targetValueR.onValue(function(value){
 				if (! changing && ! init){ // prevent calling source.set at init time
 					changing = true;
-					source.set(sourceProp, value);
+					source.set(sourceProp, options && options.revert && options.revert.call(target, value) || value);
 					changing = false;
 				}
 			});
@@ -103,7 +103,7 @@ define([
 			});
 		},
 		// create a bidirectionnal binding with the following logic: targetProp value is the content item from the collection for which itemProp is truthy
-		// at init time,
+		// at init time, the target prop value is the winner
 		// TODO: allow a "multi" behavior > the targetProp become a collection (unordered set)
 		bindSelection:function(targetProp, collection, itemProp, multi){
 			var changing = false;
@@ -137,6 +137,8 @@ define([
 						itemHandlers.set(item, item.getR(itemProp).skip(1).onValue(function(bool){
 							if (! changing){
 								changing = true;
+								var oldItem = target.get(targetProp);
+								oldItem && oldItem.set(itemProp, false);
 								target.set(targetProp, bool ? item : undefined);
 								changing = false;
 							}
