@@ -1,9 +1,11 @@
 define([
 	"bacon",
 	"../utils/destroy",
+	"collections/map",
 ], function(
 	Bacon,
-	destroy
+	destroy,
+	Map
 ){
 	var Bindable = {
 		// call set(prop) with value from observable at each notification
@@ -98,6 +100,60 @@ define([
 				return source.on(eventType, function(ev){
 					target[targetMethod](ev);
 				});
+			});
+		},
+		// create a bidirectionnal binding with the following logic: targetProp value is the content item from the collection for which itemProp is truthy
+		// at init time,
+		// TODO: allow a "multi" behavior > the targetProp become a collection (unordered set)
+		bindSelection:function(targetProp, collection, itemProp, multi){
+			var changing = false;
+			var target = this;
+			var currentItem = this.get(targetProp);
+			// init time
+			collection.forEach(function(item){
+				item.set(itemProp, item === currentItem);
+			});
+
+			// incremental update
+			var targetHandler = this.getR(targetProp).diff(undefined, function(oldItem, currentItem){
+				return {oldItem: oldItem, currentItem: currentItem};
+			}).skip(1).onValue(function(oldAndCurrentItems){
+				if (! changing){
+					changing = true;
+					var oldItem = oldAndCurrentItems.oldItem;
+					var currentItem = oldAndCurrentItems.currentItem;
+					oldItem && oldItem.set(itemProp, false);
+					currentItem && currentItem.set(itemProp, true);
+					changing = false;
+				}
+			});
+
+			var itemHandlers = new Map();
+			var sourceHandler = collection.asChangesStream().onValue(function(changes){
+				changes.forEach(function(change){
+					var item = change.value;
+					if (change.type === "add"){
+						item.set(itemProp, item === target.get(targetProp));
+						itemHandlers.set(item, item.getR(itemProp).skip(1).onValue(function(bool){
+							if (! changing){
+								changing = true;
+								target.set(targetProp, bool ? item : undefined);
+								changing = false;
+							}
+						}));
+					}
+					if (change.type === "remove"){
+						destroy(itemHandlers.get(item));
+						itemHandlers.delete(item);
+					}
+				});
+			});
+
+			// return a canceler
+			return this.own(function(){
+				destroy(targetHandler);
+				destroy(sourceHandler);
+				itemHandlers.forEach(destroy);
 			});
 		},
 	};

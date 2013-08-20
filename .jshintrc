@@ -7,7 +7,6 @@
 	"trailing": true,
 	"curly": true,
 
-	"es5": true,
 	"browser": true,
 	"devel": true,
 	"trailing": true,
