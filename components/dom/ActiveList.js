@@ -14,15 +14,15 @@ define([
 				convert: function(item){
 					var items = this.get('content');
 					var itemIndex = items && items.indexOf(item);
-					return itemIndex > -1 ? this._components.get('root').get('content').get(itemIndex) : undefined;
+					return itemIndex > -1 ? this._component.get('content').get(itemIndex) : undefined;
 				},
 				revert: function(cmp){
-					var cmps = this._components.get('root').get('content');
+					var cmps = this._component.get('content');
 					var index = cmps && cmps.indexOf(cmp);
 					return index > -1 ? this.get('content').get(index) : undefined;
 				},
 			});
-			this.bindSelection("activeContentElement", this._components.get('root').get("content"), "active");
+			this.bindSelection("activeContentElement", this._component.get("content"), "active");
 		}
 	);
 });

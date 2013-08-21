@@ -11,10 +11,10 @@ define([
 			return {
 				destroy: function(){
 					listeners.delete(cb);
-					if(!listeners.lenght){
+					if(!listeners.length){
 						delete this._listeners[type];
 					}
-				}.bind(this),
+				}.bind(this)
 			};
 		},
 		_emit: function(type, event){

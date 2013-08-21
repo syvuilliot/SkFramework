@@ -16,14 +16,9 @@ define([
 	return compose(
 		Composite,
 		function(args){
-			this._components.factories.addEach({
-				root: function() {
-					return  new HtmlContainer(args.tag || 'ul');
-				},
-			});
-			this._layout.set('config', this._components.get('root'));
+			this._component = new HtmlContainer(args.tag || 'ul');
 
-			this._components.get('root').get("content").updateContentMapR(
+			this._component.get("content").updateContentMapR(
 				this.getR("content").
 				flatMapLatestDiff(null, function(oldItems, newItems){
 					return newItems && newItems.asChangesStream(oldItems) ||
@@ -31,6 +26,21 @@ define([
 				}),
 			args.factory);
 
+		}, {
+			_applyStyle: function() {
+				this.style.forEach(function(value, category) {
+					this._component.style.set(category, value);
+				}, this);
+			},
+
+			createRendering: function() {
+				this._applyStyle();
+				this.set('domNode', this._component.get('domNode'));
+			},
+
+			updateRendering: function() {
+				this._applyStyle();
+			}
 		}
 	);
 });

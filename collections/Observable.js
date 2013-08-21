@@ -1,7 +1,9 @@
 define([
 	"bacon",
+	'ksf/utils/destroy'
 ], function(
-	Bacon
+	Bacon,
+	destroy
 ){
 	var Observable = function(){
 		this._changing = 0;
@@ -34,7 +36,7 @@ define([
 					}));
 				});
 				return function() {
-					handler.destroy();
+					destroy(handler);
 				};
 			}));
 		},

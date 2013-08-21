@@ -55,7 +55,11 @@ define([
 			},
 			add: function(value, prop) {
 				this.set(prop, value);
+			},
+			addEach: function(values) {
+				this.setEach(values);
 			}
+
 		}
 	);
 
