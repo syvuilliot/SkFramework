@@ -27,7 +27,7 @@ define([
 	var grid = window.grid = new Grid({});
 	document.body.appendChild(grid.get('domNode'));
 
-	grid.set('value', collection);
+	grid.set('content', collection);
 
 	var columns = window.columns = new OrderableSet([{
 		head: {
@@ -53,11 +53,14 @@ define([
 	grid.set('active', ant);
 
 	// add column
-	columns.add({head: {label: "Genre"}, body: {
+	columns.add({
+		head: {label: "Genre"},
+		body: {
 			factory : function(item) {
 				return new HtmlElement('input', {value: item.genre});
 			},
-	}});
+		}
+	});
 
 	// add row
 	collection.add(leo);

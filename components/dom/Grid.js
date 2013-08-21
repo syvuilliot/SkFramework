@@ -21,7 +21,8 @@ define([
 			var self = this;
 			this._components.factories.addEach({
 				head: function() {
-					return new List('tr', {
+					return new List({
+						tag: 'tr',
 						factory: function(column) {
 							return new HtmlElement('th', {
 								innerHTML: column.head.label,
@@ -30,22 +31,26 @@ define([
 					});
 				},
 				body: function() {
-					var body = new ActiveList('tbody', {
+					var body = new ActiveList({
+						tag: 'tbody',
 						factory: function(item){
-							var row = new List('tr', {
+							var row = new List({
+								tag: 'tr',
 								factory: function(column){
 									return new HtmlContainer('td', {
 										content: [column.body.factory(item)],
 									});
 								},
 							});
-							row.bind('value', body, 'columns');
+							row.bind('content', body, 'columns');
 							row._activeSetter = function(value){
 								this._active = !!value;
 								if (value){
-									this.style.set('active', 'active');
+									// this.style.set('active', 'active');
+									this.get('domNode').classList.add('active');
 								} else {
-									this.style.remove('active');
+									// this.style.remove('active');
+									this.get('domNode').classList.remove('active');
 								}
 							};
 							row._activeGetter = function(){
@@ -62,10 +67,10 @@ define([
 			});
 
 			this._components.when('head',
-				bindProps('value', '<', 'columns').bind(self)
+				bindProps('content', '<', 'columns').bind(self)
 			);
 			this._components.when('body', [
-				bindProps('value', '<', 'value').bind(self),
+				bindProps('content', '<', 'content').bind(self),
 				bindProps('columns', '<', 'columns').bind(self),
 				bindProps('active', '<<->', 'active').bind(self),
 			]);

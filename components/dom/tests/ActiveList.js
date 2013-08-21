@@ -54,5 +54,6 @@ define([
 
 	list.set("active", aur);
 
+	list.set("content", new OrderableSet([leo, ant]));
 
 });
