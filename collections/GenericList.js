@@ -92,8 +92,13 @@ define([
 			return output;
 		},
 		toChanges: function(type){
+			if (type === "remove"){
+				return this.map(function(item){
+					return {type: "remove", value: item, index: 0};
+				});
+			}
 			return this.map(function(item, index){
-				return {type: type || "add", value: item, index: index};
+				return {type: "add", value: item, index: index};
 			});
 		},
 	};
