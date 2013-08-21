@@ -1,8 +1,10 @@
 define([
 	"dojo/when",
+	'../collections/ObservableObject',
 	"collections/shim-object",
 ], function(
-	when
+	when,
+	ObservableObject
 ){
 	var Syncable = function(args){
 		// default values
@@ -35,25 +37,29 @@ define([
 			return this.logRequest(rsc, "delete", this.dataSource.remove(this.getSyncId(rsc)));
 		};
 		this.logRequest = function(rsc, type, result) {
-			var status = {
+			var status = new ObservableObject({
 				type: type,
 				started: new Date(),
 				stage: "inProgress",
 				finished: null,
 				response: null,
 				// request: result,
-			};
+			});
 			this.setPropValue(rsc, "lastRequestStatus", status);
 
 			result.then(function(response){
-				status.stage = "success";
-				status.response = response;
-				status.finished = new Date();
+				status.setEach({
+					stage: "success",
+					response: response,
+					finished: new Date(),
+				});
 				return response;
 			}, function(response){
-				status.stage = "error";
-				status.response = response;
-				status.finished = new Date();
+				status.setEach({
+					stage: "error",
+					response: response,
+					finished: new Date(),
+				});
 				return response;
 			});
 			return result;

@@ -11,7 +11,7 @@ define([
 	"../propertyManagers/PropertyValueIsResource",
 	"../propertyManagers/WithValueIsSet",
 	"../propertyManagers/WithValueIsOrderedSet",
-	"../propertyManagers/WithPropertyOnResource",
+	"../propertyManagers/WithPropertyOnObservableObject",
 	"../propertyManagers/WithValueFromManager",
 	"../propertyManagers/WithSerialize",
 	"../propertyManagers/WithItemsSerialize",
@@ -115,22 +115,21 @@ define([
 	var Person = compose(
 		ObservableObject,
 		function Person(fullName){
-			this.fullName = fullName || "prenom nom";
+			this.set('fullName', fullName || "prenom nom");
+		}, {
+			_fullNameGetter: function(){
+				return this.get('firstName') + " " + this.get('lastName');
+			},
+			// just for fun
+			_fullNameSetter: function(value){
+				if (!(value && value.split)) {return;}
+				var names = value.split(" ");
+				this.set('firstName', names[0]);
+				this.set('lastName', names[1]);
+			},
+
 		}
 	);
-	Object.defineProperty(Person.prototype, "fullName", {
-		get: function(){
-			return this.firstName + " " + this.lastName;
-		},
-		// just for fun
-		set: function(value){
-			if (!(value && value.split)) {return;}
-			var names = value.split(" ");
-			this.firstName = names[0];
-			this.lastName = names[1];
-		},
-		configurable: true,
-	});
 
 	var WithValidateEachProperty = function(){
 		this.validate = function(rsc){
@@ -424,16 +423,16 @@ define([
 				phones: ["06", "09"],
 			});
 			assert.deepEqual(personManager.getPropValue(syv, "phones"), ["06", "09"]);
-			assert.deepEqual(syv.phones, ["06", "09"]);
+			assert.deepEqual(syv.get('phones'), ["06", "09"]);
 		},
 		"set and get value of a 'fromManager' property (auto populated and read-only)": function(){
 			var syv = personManager.create({fullName : "Sylvain Vuilliot"});
 			assert.equal(personManager.getPropValue(syv, "tasks"), tasksListManager.getBy("assignee", syv));
-			assert.equal(syv.tasks, tasksListManager.getBy("assignee", syv));
-			syv.tasks = "bidon";
+			assert.equal(syv.get('tasks'), tasksListManager.getBy("assignee", syv));
+			syv.set('tasks', "bidon");
 			personManager.setPropValue(syv, "tasks", "bindon");
 			assert.equal(personManager.getPropValue(syv, "tasks"), tasksListManager.getBy("assignee", syv));
-			assert.equal(syv.tasks, tasksListManager.getBy("assignee", syv));
+			assert.equal(syv.get('tasks'), tasksListManager.getBy("assignee", syv));
 		},
 		"set and get value of a 'isResource' property (read-only)": function(){
 			var maListeDeTaches = tasksListManager.create({
@@ -454,9 +453,9 @@ define([
 		},
 		"validation": function(){
 			var maTache = taskManager.create();
-			maTache.label = "Faire le ménage";
+			maTache.set('label', "Faire le ménage");
 			assert(taskManager.validate(maTache));
-			maTache.label = 5;
+			maTache.set('label', 5);
 			assert(!taskManager.validate(maTache));
 		},
 		"getBy": function(){
@@ -471,9 +470,9 @@ define([
 		beforeEach: setupModelWithSerialisation,
 		"serialize person": function(){
 			var syv = personManager.create();
-			syv.fullName = "Sylvain Vuilliot";
-			syv.phones.push("09");
-			syv.phones.unshift("06");
+			syv.set('fullName', "Sylvain Vuilliot");
+			syv.get('phones').push("09");
+			syv.get('phones').unshift("06");
 			assert.deepEqual(personManager.serialize(syv), {
 				fullName: "Sylvain Vuilliot",
 				phones: ["06", "09"],
@@ -509,14 +508,14 @@ define([
 				description: "Faire les courses",
 				personId: "S",
 			});
-			assert.equal(maTache.label, "Faire les courses");
-			assert.equal(maTache.assignee, personManager.getBy("syncId", "S"));
-			personManager.deserialize(maTache.assignee, {
+			assert.equal(maTache.get('label'), "Faire les courses");
+			assert.equal(maTache.get('assignee'), personManager.getBy("syncId", "S"));
+			personManager.deserialize(maTache.get('assignee'), {
 				fullName: "Sylvain Vuilliot",
 				wifeId: "A",
 			});
-			assert.equal(maTache.assignee.firstName, "Sylvain");
-			assert.equal(maTache.assignee.wife, personManager.getBy("syncId", "A"));
+			assert.equal(maTache.get('assignee').get('firstName'), "Sylvain");
+			assert.equal(maTache.get('assignee').get('wife'), personManager.getBy("syncId", "A"));
 		},
 		"serialize relation with a resource without id": function(){
 			// est-ce que le serializer doit faire une erreur ou bien laisser undefined ?
@@ -585,11 +584,11 @@ define([
 				syncId: "syv",
 			});
 			assert.equal(syv.lastSourceData, undefined);
-			observe(syv, "lastSourceData.time", function(value){
+			syv.getR("lastSourceData").map('.time').onValue(function(value){
 				observedValue = value;
 			});
 			return syv.fetch().then(function(){
-				assertEqualNow(syv.lastSourceData.time);
+				assertEqualNow(syv.get('lastSourceData').time);
 				assertEqualNow(observedValue);
 			});
 		},
@@ -609,31 +608,28 @@ define([
 		},
 		"observable syncStatus": function(){
 			var inSyncObservedValue;
-			var binded = {};
+			var binded = new ObservableObject();
 			var syv = personManager.create({
 				fullName: "Sylvain Vuilliot",
 			});
-			assert.equal(syv.inSync, false);
-			bind(binded, "inSync", {
-				"<-": "inSync",
-				source: syv,
-			});
-			assert.equal(binded.inSync, false);
-			propChange.addOwnPropertyChangeListener(syv, "inSync", function(value){
+			assert.equal(syv.get('inSync'), false);
+			binded.setR("inSync", syv.getR('inSync'));
+			assert.equal(binded.get('inSync'), false);
+			syv.getR("inSync").onValue(function(value){
 				inSyncObservedValue = value;
 			});
 			personManager.setPropValue(syv, "lastSourceData", {data:{
 				fullName: "Sylvain Vuilliot",
 				phones: [],
 			}});
-			assert.equal(syv.inSync, true);
-			assert.equal(binded.inSync, true);
+			assert.equal(syv.get('inSync'), true);
+			assert.equal(binded.get('inSync'), true);
 			assert.equal(inSyncObservedValue, true);
 			inSyncObservedValue = undefined;
 			personManager.setPropValue(syv, "fullName", "syv");
-			assert.equal(syv.inSync, false);
+			assert.equal(syv.get('inSync'), false);
 			assert.equal(inSyncObservedValue, false);
-			assert.equal(binded.inSync, false);
+			assert.equal(binded.get('inSync'), false);
 		},
 		"syncStatus refreshed only once on merge": function(){
 			var syv = personManager.create();
@@ -647,7 +643,7 @@ define([
 				return isInSync.apply(this, arguments);
 			};
 			var isInSyncCallCount = 0;
-			assert.equal(syv.inSync, false);
+			assert.equal(syv.get('inSync'), false);
 			personManager.merge(syv);
 			assert.equal(personManager.getPropValue(syv, "inSync"), true);
 			assert.equal(isInSyncCallCount, 1);
@@ -659,12 +655,12 @@ define([
 			assert.equal(personManager.getPropValue(syv, "lastRequestStatus"), undefined);
 			var pullReturn = syv.pull();
 			var status = personManager.getPropValue(syv, "lastRequestStatus");
-			assert.equal(status.type, "get");
-			assert.equal(status.stage, "inProgress");
-			assertEqualNow(status.started);
+			assert.equal(status.get('type'), "get");
+			assert.equal(status.get('stage'), "inProgress");
+			assertEqualNow(status.get('started'));
 			return pullReturn.then(function(){
-				assert.equal(status.stage, "success");
-				assertEqualNow(status.finished);
+				assert.equal(status.get('stage'), "success");
+				assertEqualNow(status.get('finished'));
 			});
 		},
 		"observable requestStatus": function(){
@@ -672,18 +668,18 @@ define([
 			var syv = personManager.create({
 				syncId: "syv",
 			});
-			observe(syv, "lastRequestStatus.stage", function(value){
+			syv.getR("lastRequestStatus", "stage").onValue(function(value){
 				observedValue = value;
 			});
-			assert.equal(syv.lastRequestStatus, undefined);
+			assert.equal(syv.get('lastRequestStatus'), undefined);
 
 			var fetchReturn = syv.fetch();
-			assert.equal(syv.lastRequestStatus.stage, "inProgress");
+			assert.equal(syv.get('lastRequestStatus').get('stage'), "inProgress");
 			assert.equal(observedValue, "inProgress");
 			observedValue = undefined;
 
 			return fetchReturn.then(function(){
-				assert.equal(syv.lastRequestStatus.stage, "success");
+				assert.equal(syv.get('lastRequestStatus').get('stage'), "success");
 				assert.equal(observedValue, "success");
 			});
 		},
@@ -694,27 +690,27 @@ define([
 			assert.equal(personManager.getPropValue(syv, "lastRequestStatus"), undefined);
 			var pullReturn = syv.pull();
 			var pullStatus = personManager.getPropValue(syv, "lastRequestStatus");
-			assert.equal(pullStatus.type, "get");
-			assert.equal(pullStatus.stage, "inProgress");
+			assert.equal(pullStatus.get('type'), "get");
+			assert.equal(pullStatus.get('stage'), "inProgress");
 			var pushReturn = syv.push();
 			var pushStatus = personManager.getPropValue(syv, "lastRequestStatus"); // the lastResquestStatus is the pushStatus
 			assert(pullStatus !== pushStatus);
-			assert.equal(pushStatus.type, "put");
-			assert.equal(pushStatus.stage, "inProgress");
+			assert.equal(pushStatus.get('type'), "put");
+			assert.equal(pushStatus.get('stage'), "inProgress");
 			return pullReturn.then(function(){
 				assert.equal(personManager.getPropValue(syv, "lastRequestStatus"), pushStatus); // the lastResquestStatus is the pushStatus
-				assert.equal(pullStatus.stage, "success");
+				assert.equal(pullStatus.get('stage'), "success");
 				return pushReturn.then(function(){
 					assert.equal(personManager.getPropValue(syv, "lastRequestStatus"), pushStatus); // the lastResquestStatus is the pushStatus
-					assert.equal(pushStatus.stage, "success");
+					assert.equal(pushStatus.get('stage'), "success");
 				});
 			});
 		},
 		"pull remote data": function(){
 			var syv = personManager.create({syncId: "syv"});
-			return syv.tasks.pull().then(function(){
-				assert.equal(syv.tasks.length, 2);
-				assert.deepEqual(syv.tasks.map(function(task){
+			return syv.get('tasks').pull().then(function(){
+				assert.equal(syv.get('tasks').length, 2);
+				assert.deepEqual(syv.get('tasks').map(function(task){
 					return taskManager.getPropValue(task, "syncId");
 				}), ["1", "2"]);
 			});
@@ -723,8 +719,8 @@ define([
 			var syv = personManager.create({
 				syncId: "syv",
 			});
-			syv.fullName = "Syv Vuil";
-			assert.equal(syv.inSync, false);
+			syv.set('fullName', "Syv Vuil");
+			assert.equal(syv.get('inSync'), false);
 			return syv.push().then(function(){
 				assert.deepEqual(personManager.dataSource.data[0], {
 					id: "syv",
@@ -732,7 +728,7 @@ define([
 					phones: [],
 				});
 				return syv.fetch().then(function(){
-					assert.equal(syv.inSync, true);
+					assert.equal(syv.get('inSync'), true);
 				});
 			});
 		},
@@ -740,12 +736,12 @@ define([
 			var syv = personManager.create({
 				fullName: "Syv Vuil",
 			});
-			assert.equal(syv.inSync, false);
+			assert.equal(syv.get('inSync'), false);
 			return syv.push().then(function(){
 				assert.equal(personManager.dataSource.data[1].fullName, "Syv Vuil");
 				var syncId = personManager.dataSource.data[1].id;
 				assert(syncId !== undefined); // be sure that an id has been assigned by the dataSource
-				assert.equal(syv.inSync, true);
+				assert.equal(syv.get('inSync'), true);
 				assert.equal(personManager.getPropValue(syv, "syncId"), syncId);
 			});
 		},
@@ -754,12 +750,12 @@ define([
 				syncId: "syv",
 			});
 			return syv.pull().then(function(){
-				assert.equal(syv.inSync, true);
-				syv.fullName = "Titi Parisien";
-				assert.equal(syv.inSync, false);
+				assert.equal(syv.get('inSync'), true);
+				syv.set('fullName', "Titi Parisien");
+				assert.equal(syv.get('inSync'), false);
 				syv.merge();
-				assert.equal(syv.firstName, "Sylvain");
-				assert.equal(syv.inSync, true);
+				assert.equal(syv.get('firstName'), "Sylvain");
+				assert.equal(syv.get('inSync'), true);
 			});
 		},
 
@@ -800,46 +796,46 @@ define([
 			var syv = personManager.create({
 				fullName: "Sylvain Vuilliot",
 			});
-			assert(tasksListManager.getPropValue(syv.tasks, "assignee"), syv);
+			assert(tasksListManager.getPropValue(syv.get('tasks'), "assignee"), syv);
 			var courses = taskManager.create({
 				label: "Faire les courses",
 			});
-			syv.tasks.add(courses);
-			assert(syv.tasks.has(courses));
-			assert.equal(courses.assignee, syv);
-			syv.tasks.delete(courses);
-			assert.equal(courses.assignee, undefined);
+			syv.get('tasks').add(courses);
+			assert(syv.get('tasks').has(courses));
+			assert.equal(courses.get('assignee'), syv);
+			syv.get('tasks').delete(courses);
+			assert.equal(courses.get('assignee'), undefined);
 		},
 		"create tasks via tasksList": function(){
 			var syv = personManager.create({
 				fullName: "Sylvain Vuilliot",
 			});
-			var task = syv.tasks.create({
+			var task = syv.get('tasks').create({
 				label: "Faire le ménage",
 			});
-			assert.equal(task.label, "Faire le ménage");
-			assert.equal(task.assignee, syv);
-			assert.equal(syv.tasks.length, 1);
-			assert(syv.tasks.has(task));
+			assert.equal(task.get('label'), "Faire le ménage");
+			assert.equal(task.get('assignee'), syv);
+			assert.equal(syv.get('tasks').length, 1);
+			assert(syv.get('tasks').has(task));
 		},
 		"pull remote data": function(){
 			var syv = personManager.create({syncId: "syv"});
-			return syv.tasks.pull().then(function(){
-				assert.equal(syv.tasks.length, 2);
-				assert.deepEqual(syv.tasks.map(function(task){
+			return syv.get('tasks').pull().then(function(){
+				assert.equal(syv.get('tasks').length, 2);
+				assert.deepEqual(syv.get('tasks').map(function(task){
 					return taskManager.getPropValue(task, "syncId");
 				}), ["1", "2"]);
-				syv.tasks.forEach(function(task){
+				syv.get('tasks').forEach(function(task){
 					assert(taskManager.has(task));
-					assert.equal(task.assignee, syv);
+					assert.equal(task.get('assignee'), syv);
 				});
 			});
 		},
 		"update tasks data by updating tasksList data": function(){
 			var syv = personManager.create({syncId: "syv"});
-			return syv.tasks.pull().then(function(){
-				assert.deepEqual(syv.tasks.map(function(task){
-					return task.label;
+			return syv.get('tasks').pull().then(function(){
+				assert.deepEqual(syv.get('tasks').map(function(task){
+					return task.get('label');
 				}), ["Faire les courses", "Faire le ménage"]);
 			});
 		},
