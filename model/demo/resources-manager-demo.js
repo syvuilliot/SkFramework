@@ -17,6 +17,7 @@ define([
 	"../propertyManagers/WithItemsSerialize",
 	"../propertyManagers/WithRelationSerialize",
 	"../propertyManagers/WithUpdateSyncStatus",
+	'ksf/collections/ObservableObject',
 	"collections/set",
 	"collections/map",
 	'frb/bind',
@@ -44,6 +45,7 @@ define([
 	WithItemsSerialize,
 	WithRelationSerialize,
 	WithUpdateSyncStatus,
+	ObservableObject,
 	Set,
 	Map,
 	bind,
@@ -81,47 +83,48 @@ define([
 
 
 	// Task constructor
-	function Task(label, done){
-		this.label = label || "";
-		this.done = done;
-	}
-	Object.defineProperty(Task.prototype, "label", {
-		set: function(value){
-			if (this.done) {
-				throw "Cannot change label of a closed task";
-			} else {
-				this._label = value;
-			}
-		},
-		get : function(){
-			return this._label;
-		},
-		configurable: true,
-	});
-	Object.defineProperty(Task.prototype, "done", {
-		set: function(value){
-			this._done = !!(value);
-		},
-		get : function(){
-			return this._done;
-		},
-		configurable: true,
-	});
-	Task.prototype.toggle = function(){
-		this.done = !(this.done);
-	};
+	var Task = compose(
+		ObservableObject,
+		function Task(label, done){
+			this.set('label', label || "");
+			this.set('done', done);
+		}, {
+			_labelSetter: function(value){
+				if (this.get('done')) {
+					throw "Cannot change label of a closed task";
+				} else {
+					this._label = value;
+				}
+			},
+			_labelGetter : function(){
+				return this._label;
+			},
+			_doneSetter: function(value){
+				this._done = !!(value);
+			},
+			_doneGetter: function(){
+				return this._done;
+			},
+			toggle: function(){
+				this.set('done', !(this.get('done')));
+			},
+		}
+	);
 
 	// Person Constructor
-	function Person(fullName){
-		this.fullName = fullName || "prenom nom";
-	}
+	var Person = compose(
+		ObservableObject,
+		function Person(fullName){
+			this.fullName = fullName || "prenom nom";
+		}
+	);
 	Object.defineProperty(Person.prototype, "fullName", {
 		get: function(){
 			return this.firstName + " " + this.lastName;
 		},
 		// just for fun
 		set: function(value){
-			if (!(value && value.split)) return;
+			if (!(value && value.split)) {return;}
 			var names = value.split(" ");
 			this.firstName = names[0];
 			this.lastName = names[1];
@@ -407,12 +410,12 @@ define([
 		},
 		"set and get value synced on resource": function(){
 			var maTache = taskManager.create();
-			assert.equal(maTache.done, false); // this is the default value for this business object
+			assert.equal(maTache.get('done'), false); // this is the default value for this business object
 			assert.equal(taskManager.getPropValue(maTache, "done"), false);
 			taskManager.setPropValue(maTache, "done", true);
-			assert.equal(maTache.done, true);
+			assert.equal(maTache.get('done'), true);
 			assert.equal(taskManager.getPropValue(maTache, "done"), true);
-			maTache.done = false;
+			maTache.set('done', false);
 			assert.equal(taskManager.getPropValue(maTache, "done"), false);
 		},
 		"set and get orderedSet value": function(){

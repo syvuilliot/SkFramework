@@ -18,7 +18,8 @@ define([
 	css.sheet.insertRule('.active { background-color: red; }', css.sheet.cssRules.length);
 	css.sheet.insertRule('.selected { background-color: blue; }', css.sheet.cssRules.length);
 
-	var list = window.list = new ActiveList("ul", {
+	var list = window.list = new ActiveList({
+		tag: 'ul',
 		factory: function (item) {
 			var li = new HtmlElement("li");
 			li.set("innerHTML", item.name);
@@ -49,7 +50,7 @@ define([
 	var collection = window.collection = new OrderableSet([syv, aur, ant]);
 
 
-	list.set("value", collection);
+	list.set("content", collection);
 
 	list.set("active", aur);
 
