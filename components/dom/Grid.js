@@ -2,6 +2,7 @@ define([
 	'compose',
 	'ksf/dom/composite/Composite',
 	'ksf/components/dom/List',
+	'ksf/components/dom/ActiveList',
 	'ksf/components/dom/layout/HtmlContainer',
 	'ksf/components/dom/HtmlElement',
 	'ksf/utils/bindProps',
@@ -9,6 +10,7 @@ define([
 	compose,
 	Composite,
 	List,
+	ActiveList,
 	HtmlContainer,
 	HtmlElement,
 	bindProps
@@ -16,6 +18,7 @@ define([
 	return compose(
 		Composite,
 		function() {
+			var self = this;
 			this._components.factories.addEach({
 				head: function() {
 					return new List('tr', {
@@ -27,18 +30,30 @@ define([
 					});
 				},
 				body: function() {
-					var body = new List('tbody', {
+					var body = new ActiveList('tbody', {
 						factory: function(item){
 							var row = new List('tr', {
 								factory: function(column){
-									var td = new HtmlContainer('td', {
-										content: column.body.factory(item),
+									return new HtmlContainer('td', {
+										content: [column.body.factory(item)],
 									});
-									td.set('content', [column.body.factory(item)]);
-									return td;
 								},
 							});
 							row.bind('value', body, 'columns');
+							row._activeSetter = function(value){
+								this._active = !!value;
+								if (value){
+									this.style.set('active', 'active');
+								} else {
+									this.style.remove('active');
+								}
+							};
+							row._activeGetter = function(){
+								return this._active;
+							};
+							row.get("domNode").addEventListener("click", function(){
+								row.set("active", !row.get("active"));
+							});
 							return row;
 						},
 					});
@@ -46,13 +61,13 @@ define([
 				},
 			});
 
-			var self = this;
 			this._components.when('head',
 				bindProps('value', '<', 'columns').bind(self)
 			);
 			this._components.when('body', [
 				bindProps('value', '<', 'value').bind(self),
 				bindProps('columns', '<', 'columns').bind(self),
+				bindProps('active', '<<->', 'active').bind(self),
 			]);
 
 

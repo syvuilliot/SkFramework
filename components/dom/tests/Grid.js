@@ -50,6 +50,7 @@ define([
 	}]);
 
 	grid.set('columns', columns);
+	grid.set('active', ant);
 
 	// add column
 	columns.add({head: {label: "Genre"}, body: {
