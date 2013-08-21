@@ -106,12 +106,16 @@ define([
 		"multi cb": function() {
 			collection.when("cmp1", "cmp2", [
 				function(c1, c2){
+					assert.equal(c1, cmp2);
+					assert.equal(c2, cmp3);
 					cbCalledCount++;
 					return function() {
 						cancelerCalledCount++;
 					};
 				},
 				function(c1, c2){
+					assert.equal(c1, cmp2);
+					assert.equal(c2, cmp3);
 					cb2CalledCount++;
 					return function() {
 						canceler2CalledCount++;

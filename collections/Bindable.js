@@ -55,8 +55,9 @@ define([
 				binder = lastArg;
 			} else {
 				binder = function(){
+					var cmps = arguments;
 					return lastArg.map(function(cb) {
-						return cb.apply(this, arguments);
+						return cb.apply(this, cmps);
 					}.bind(this));
 				};
 			}
