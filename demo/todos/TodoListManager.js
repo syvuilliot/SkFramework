@@ -52,7 +52,7 @@ define([
 			this._style.set('base', 'TodoListManager');
 
 			this._layout.set('config', [
-				new HtmlContainer('div'), [,
+				new HtmlContainer('div'), [
 					'addNew',
 					'list',
 				]

@@ -51,5 +51,7 @@ define([
 
 	list.set("value", collection);
 
+	list.set("active", aur);
+
 
 });
