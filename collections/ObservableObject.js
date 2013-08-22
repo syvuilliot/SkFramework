@@ -31,11 +31,8 @@ define([
 		Destroyable,
 		WithMapChanges,
 		WithGetSet,
-		function(args) {
+		function() {
 			this._store = new Dict();
-			if (args){
-				this.setEach(args);
-			}
 		},
 		{
 			_Getter: function(prop){
