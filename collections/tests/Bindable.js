@@ -1,13 +1,11 @@
 define([
 	'intern!object',
 	'intern/chai!assert',
-	'../Bindable',
 	'../ObservableObject',
 	'../OrderableSet',
 ], function(
 	registerSuite,
 	assert,
-	Bindable,
 	ObservableObject,
 	OrderableSet
 ){

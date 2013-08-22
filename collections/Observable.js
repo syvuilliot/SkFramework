@@ -80,23 +80,28 @@ define([
 */
 		},
 		getEachR: function(){
-			// implementation qui utilise getR
-			var streams = Array.prototype.map.call(arguments, function(prop){
+			var props = arguments;
+			return this.asStream("changed").map(function(){
+				return this.getEach.apply(this, props);
+			}.bind(this)).toProperty(this.getEach.apply(this, arguments)).skipDuplicates(function(old, current){
+				return current.every(function(val, i){
+					return val === old[i];
+				});
+			});
+
+			// TODO: implementation qui utilise getR pour pouvoir faire de l'observation 'deep'
+/*			var streams = Array.prototype.map.call(arguments, function(prop){
 				if (Array.isArray(prop)){
 					return this.getR.apply(this, prop);
 				}
 				return this.getR(prop);
 			}, this);
-			return Bacon.combineAsArray(streams)/*.sampledBy(this.asStream("changed")).skipDuplicates()*/;
+			return Bacon.combineAsArray(streams).sampledBy(this.asStream("changed")).skipDuplicates();
+*/
 			// sampledBy permet de n'émettre la valeur que sur l'événement "changed" de l'objet et pas sur chaque output des getR
 			// mais par contre, cela revient à émettre aussi lorsqu'aucun getR n'a émit, d'où le skipDuplicates qui permet de détecter que la valeur n'a pas changé (un nouveau array n'a pas été créé)
+		},
 
-			// implementation qui n'utilise pas getR
-/*			var props = arguments;
-			return this.asStream("changed").map(function(){
-				return this.getEach.apply(this, props);
-			}.bind(this)).toProperty(this.getEach.apply(this, arguments));
-*/		},
 	};
 
 	return Observable;
