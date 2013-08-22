@@ -40,11 +40,42 @@ define([
 			});
 		},
 
+		// whenChanged(...props, cb(...props))
+		// called whenever at least one of the props changed (so, only once when many props changed)
+		// if cb returns something, this is owned by this (destroyed when this is destroyed) and destroyed at the next call
+		// cb can also be a collection of cb
+		whenChanged: function(){
+			var canceler;
+			var props = Array.prototype.slice.call(arguments, 0, arguments.length-1);
+			var binder;
+			var lastArg = arguments[arguments.length-1];
+			if (typeof lastArg === 'function'){
+				binder = lastArg;
+			} else {
+				binder = function(){
+					var cmps = arguments;
+					return lastArg.map(function(cb) {
+						return cb.apply(this, cmps);
+					}.bind(this));
+				};
+			}
+
+			return this.own(this.getEachR.apply(this, props).onValue(function(propsValues){
+				if (canceler){
+					destroy(canceler);
+					this.unown && this.unown(canceler);
+					canceler = undefined;
+				}
+				canceler = binder.apply(this, propsValues);
+				this.own && this.own(canceler);
+			}.bind(this)));
+		},
+
 		// permet d'éxécuter une fonction lorsque la valeur de chaque propriété est définie (!== undefined) et à chaque fois que la valeur de l'une ou plusieurs d'entre elles change
 		// afin de faciliter les choses, si la fonction retourne un canceler ou destroyable, celui-ci est exécutée/détruit à la prochaine itération (changement de l'une ou plusieurs des propriétés et même si une des valeurs est undefined)
 		//
 		// le dernier argument de when peut être une fonction ou un itérable de fonctions
-		when: function(){
+		whenDefined: function(){
 			var canceler;
 			var args = Array.prototype.slice.call(arguments, 0, arguments.length-1).map(function(cmp){
 				return this.getR(cmp);
@@ -84,18 +115,6 @@ define([
 			}, this);
 		},
 
-		// deprecated
-		bindValue: function(source, sourceProp, target, targetProp){
-			return this.when(source, target, function(source, target){
-				return target.setR(targetProp, source.getR(sourceProp));
-			});
-		},
-		// deprecated
-		syncValue: function(source, sourceProp, target, targetProp){
-			return this.when(source, target, function(source, target){
-				return target.bind(targetProp, source, sourceProp);
-			});
-		},
 		bindEvent: function(source, eventType, target, targetMethod){
 			return this.when(source, target, function(source, target){
 				return source.on(eventType, function(ev){

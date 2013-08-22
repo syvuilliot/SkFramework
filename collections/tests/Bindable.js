@@ -13,6 +13,7 @@ define([
 	var cbCalledCount, cb2CalledCount;
 	var cancelerCalledCount, canceler2CalledCount;
 	var cmp1, cmp2, cmp3;
+	var cbArgs, cb2Args;
 
 	registerSuite({
 		name: "when",
@@ -131,6 +132,162 @@ define([
 			collection.remove("cmp1");
 			assert.equal(cancelerCalledCount, 1);
 			assert.equal(canceler2CalledCount, 1);
+		},
+	});
+
+	registerSuite({
+		name: "whenChanged",
+		beforeEach: function(){
+			collection = new ObservableObject();
+			cbCalledCount = cb2CalledCount = 0;
+			cancelerCalledCount = canceler2CalledCount = 0;
+			cbArgs = undefined;
+			cmp1 = {name: "cmp1"};
+			cmp2 = {name: "cmp2"};
+			cmp3 = {name: "cmp3"};
+		},
+		"only one key": function(){
+			collection.whenChanged("cmp1", function(c1){
+				cbArgs = arguments;
+				assert.equal(this, collection);
+				cbCalledCount++;
+				return function() {
+					cancelerCalledCount++;
+				};
+			});
+			assert.deepEqual(cbArgs, [undefined]);
+			assert.equal(cbCalledCount, 1);
+			assert.equal(cancelerCalledCount, 0);
+
+			collection.set("cmp1", cmp1);
+			assert.deepEqual(cbArgs, [cmp1]);
+			assert.equal(cbCalledCount, 2);
+			assert.equal(cancelerCalledCount, 1);
+
+			collection.remove("cmp1");
+			assert.deepEqual(cbArgs, [undefined]);
+			assert.equal(cbCalledCount, 3);
+			assert.equal(cancelerCalledCount, 2);
+
+		},
+		"two keys": function(){
+			collection.whenChanged("cmp1", "cmp2", function(c1, c2){
+				cbArgs = arguments;
+				assert.equal(this, collection);
+				cbCalledCount++;
+				return function() {
+					cancelerCalledCount++;
+				};
+			});
+			assert.deepEqual(cbArgs, [undefined, undefined]);
+			assert.equal(cbCalledCount, 1);
+			assert.equal(cancelerCalledCount, 0);
+
+			collection.set("cmp1", cmp1);
+			assert.deepEqual(cbArgs, [cmp1, undefined]);
+			assert.equal(cbCalledCount, 2);
+			assert.equal(cancelerCalledCount, 1);
+
+			collection.set("cmp2", cmp2);
+			assert.deepEqual(cbArgs, [cmp1, cmp2]);
+			assert.equal(cbCalledCount, 3);
+			assert.equal(cancelerCalledCount, 2);
+
+			collection.remove("cmp1");
+			assert.deepEqual(cbArgs, [undefined, cmp2]);
+			assert.equal(cbCalledCount, 4);
+			assert.equal(cancelerCalledCount, 3);
+
+			collection.remove("cmp2");
+			assert.deepEqual(cbArgs, [undefined, undefined]);
+			assert.equal(cbCalledCount, 5);
+			assert.equal(cancelerCalledCount, 4);
+		},
+		"canceler": function(){
+			var canceler = collection.whenChanged("cmp1", "cmp2", function(c1, c2){
+				cbCalledCount++;
+			});
+			assert.equal(cbCalledCount, 1);
+			canceler();
+			collection.setEach({
+				'cmp1': cmp1,
+				'cmp2': cmp2,
+			});
+			assert.equal(cbCalledCount, 1);
+		},
+		"cb called only once on setEach": function() {
+			collection.whenChanged("cmp1", "cmp2", function(c1, c2){
+				// console.log(c1, c2);
+				cbCalledCount++;
+			});
+			assert.equal(cbCalledCount, 1);
+
+			collection.setEach({
+				'cmp1': cmp2,
+				'cmp2': cmp3,
+			});
+			assert.equal(cbCalledCount, 2);
+
+		},
+		"multi cb": function() {
+			collection.whenChanged("cmp1", "cmp2", [
+				function(c1, c2){
+					cbArgs = arguments;
+					cbCalledCount++;
+					return function() {
+						cancelerCalledCount++;
+					};
+				},
+				function(c1, c2){
+					cb2Args = arguments;
+					cb2CalledCount++;
+					return function() {
+						canceler2CalledCount++;
+					};
+				},
+			]);
+			assert.deepEqual(cbArgs, [undefined, undefined]);
+			assert.equal(cbCalledCount, 1);
+			assert.equal(cancelerCalledCount, 0);
+			assert.deepEqual(cb2Args, [undefined, undefined]);
+			assert.equal(cb2CalledCount, 1);
+			assert.equal(canceler2CalledCount, 0);
+
+			collection.setEach({
+				'cmp1': cmp2,
+				'cmp2': cmp3,
+			});
+			assert.deepEqual(cbArgs, [cmp2, cmp3]);
+			assert.equal(cbCalledCount, 2);
+			assert.equal(cancelerCalledCount, 1);
+			assert.deepEqual(cb2Args, [cmp2, cmp3]);
+			assert.equal(cb2CalledCount, 2);
+			assert.equal(canceler2CalledCount, 1);
+
+			collection.remove("cmp1");
+			assert.deepEqual(cbArgs, [undefined, cmp3]);
+			assert.equal(cbCalledCount, 3);
+			assert.equal(cancelerCalledCount, 2);
+			assert.deepEqual(cb2Args, [undefined, cmp3]);
+			assert.equal(cb2CalledCount, 3);
+			assert.equal(canceler2CalledCount, 2);
+		},
+		'not called when another key is changed': function() {
+			collection.whenChanged("cmp1", function(c1){
+				cbArgs = arguments;
+				assert.equal(this, collection);
+				cbCalledCount++;
+				return function() {
+					cancelerCalledCount++;
+				};
+			});
+			assert.deepEqual(cbArgs, [undefined]);
+			assert.equal(cbCalledCount, 1);
+			assert.equal(cancelerCalledCount, 0);
+
+			collection.set("cmp2", cmp2);
+			assert.equal(cbCalledCount, 1);
+			assert.equal(cancelerCalledCount, 0);
 		},
 	});
 
