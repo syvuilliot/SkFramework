@@ -45,7 +45,8 @@ define([
 		// if cb returns something, this is owned by this (destroyed when this is destroyed) and destroyed at the next call
 		// cb can also be a collection of cb
 		whenChanged: function(){
-			var canceler;
+			var cbCanceler;
+
 			var props = Array.prototype.slice.call(arguments, 0, arguments.length-1);
 			var binder;
 			var lastArg = arguments[arguments.length-1];
@@ -60,58 +61,51 @@ define([
 				};
 			}
 
-			return this.own(this.getEachR.apply(this, props).onValue(function(propsValues){
-				if (canceler){
-					destroy(canceler);
-					this.unown && this.unown(canceler);
-					canceler = undefined;
+			var observingCanceler = this.getEachR.apply(this, props).onValue(function(propsValues){
+				if (cbCanceler){
+					destroy(cbCanceler);
+					this.unown && this.unown(cbCanceler);
+					cbCanceler = undefined;
 				}
-				canceler = binder.apply(this, propsValues);
-				this.own && this.own(canceler);
-			}.bind(this)));
+				cbCanceler = binder.apply(this, propsValues);
+				this.own && this.own(cbCanceler);
+			}.bind(this));
+
+			return this.own(function(){
+				destroy(observingCanceler);
+				destroy(cbCanceler);
+			});
 		},
 
-		// permet d'éxécuter une fonction lorsque la valeur de chaque propriété est définie (!== undefined) et à chaque fois que la valeur de l'une ou plusieurs d'entre elles change
-		// afin de faciliter les choses, si la fonction retourne un canceler ou destroyable, celui-ci est exécutée/détruit à la prochaine itération (changement de l'une ou plusieurs des propriétés et même si une des valeurs est undefined)
-		//
-		// le dernier argument de when peut être une fonction ou un itérable de fonctions
+		/**
+		 * Same as whenChanged but only call cb if all of props are defined (!== undefined)
+		 * Whenever at least one key change, the last return from cb is destroyed even if the cb is not called. So the return of cb is only active during the time all of props are defined
+		 * @param {string} props list of properties to observe
+		 * @param {[function, iterable]} cb function or list of function that is/are called with the values of corresponding props whenever at least one of them change
+		 * @return {[function]} canceler Stop observing the properties and calling cb. But the last return from cb is not destroyed
+		 */
 		whenDefined: function(){
-			var canceler;
-			var args = Array.prototype.slice.call(arguments, 0, arguments.length-1).map(function(cmp){
-				return this.getR(cmp);
-			}.bind(this));
-			var binder;
-			var lastArg = arguments[arguments.length-1];
-			if (typeof lastArg === 'function'){
-				binder = lastArg;
-			} else {
-				binder = function(){
-					var cmps = arguments;
-					return lastArg.map(function(cb) {
-						return cb.apply(this, cmps);
-					}.bind(this));
-				};
+			var collection = this;
+			var args = arguments;
+			var cbs = arguments[arguments.length-1];
+			if (typeof cbs === 'function'){
+				cbs = [cbs];
 			}
-
-			args.push(function(){
-				if (canceler){
-					destroy(canceler);
-					this.unown && this.unown(canceler);
-					canceler = undefined;
-				}
-				if (Array.prototype.every.call(arguments, function(val){
-					return val !== undefined;
-				})) {
-					canceler = binder.apply(this, arguments);
-					this.own && this.own(canceler);
-				}
-			}.bind(this));
-			return this.own(Bacon.onValues.apply(Bacon, args));
+			args[args.length-1] = cbs.map(function(cb) {
+				return function(){
+					if (Array.prototype.every.call(arguments, function(val){
+						return val !== undefined;
+					})) {
+						return cb.apply(collection, arguments);
+					}
+				};
+			});
+			return this.whenChanged.apply(this, args);
 		},
 
-		whenEach: function() {
+		whenDefinedEach: function() {
 			Array.prototype.forEach.call(arguments, function(args) {
-				this.when.apply(this, args);
+				this.whenDefined.apply(this, args);
 			}, this);
 		},
 

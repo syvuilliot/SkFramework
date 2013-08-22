@@ -16,7 +16,7 @@ define([
 	var cbArgs, cb2Args;
 
 	registerSuite({
-		name: "when",
+		name: "whenDefined",
 		beforeEach: function(){
 			collection = new ObservableObject();
 			cbCalledCount = cb2CalledCount = 0;
@@ -26,7 +26,7 @@ define([
 			cmp3 = {name: "cmp3"};
 		},
 		"only one key": function(){
-			collection.when("cmp1", function(c1){
+			collection.whenDefined("cmp1", function(c1){
 				assert.equal(c1, cmp1);
 				assert.equal(this, collection);
 				cbCalledCount++;
@@ -47,7 +47,7 @@ define([
 
 		},
 		"two keys": function(){
-			collection.when("cmp1", "cmp2", function(c1, c2){
+			collection.whenDefined("cmp1", "cmp2", function(c1, c2){
 				assert.equal(c1, cmp1);
 				assert.equal(c2, cmp2);
 				assert.equal(this, collection);
@@ -76,7 +76,7 @@ define([
 			assert.equal(cancelerCalledCount, 1);
 		},
 		"canceler": function(){
-			var canceler = collection.when("cmp1", "cmp2", function(c1, c2){
+			var canceler = collection.whenDefined("cmp1", "cmp2", function(c1, c2){
 				cbCalledCount++;
 			});
 			canceler();
@@ -88,7 +88,7 @@ define([
 		},
 		"cb called only once on setEach": function() {
 			collection.set("cmp1", "initCmp1");
-			collection.when("cmp1", "cmp2", function(c1, c2){
+			collection.whenDefined("cmp1", "cmp2", function(c1, c2){
 				// console.log(c1, c2);
 				cbCalledCount++;
 			});
@@ -103,7 +103,7 @@ define([
 
 		},
 		"multi cb": function() {
-			collection.when("cmp1", "cmp2", [
+			collection.whenDefined("cmp1", "cmp2", [
 				function(c1, c2){
 					assert.equal(c1, cmp2);
 					assert.equal(c2, cmp3);
@@ -289,6 +289,24 @@ define([
 			assert.equal(cbCalledCount, 1);
 			assert.equal(cancelerCalledCount, 0);
 		},
+		'canceled on destroy': function(){
+			collection.whenChanged("cmp1", function(c1){
+				cbArgs = arguments;
+				assert.equal(this, collection);
+				cbCalledCount++;
+				return function() {
+					cancelerCalledCount++;
+				};
+			});
+			assert.deepEqual(cbArgs, [undefined]);
+			assert.equal(cbCalledCount, 1);
+			assert.equal(cancelerCalledCount, 0);
+
+			collection.destroy();
+			collection.set("cmp2", cmp2);
+			assert.equal(cbCalledCount, 1);
+			assert.equal(cancelerCalledCount, 1);
+		}
 	});
 
 	var o;
