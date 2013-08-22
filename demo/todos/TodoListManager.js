@@ -41,10 +41,10 @@ define([
 			});
 
 			var self = this;
-			this._components.when('list',
+			this._components.whenDefined('list',
 				bindProps('content', '<', 'todoList').bind(self)
 			);
-			this._components.when('addNew', function(addNew) {
+			this._components.whenDefined('addNew', function(addNew) {
 				return addNew.on('newTodo', function(newTodo) {
 					self.get('todoList').add(newTodo);
 				});

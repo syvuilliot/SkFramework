@@ -20,7 +20,7 @@ define([
 				}
 			});
 
-			this._components.when('removeBtn', function(btn) {
+			this._components.whenDefined('removeBtn', function(btn) {
 				return btn.on('click', args.removeCallback);
 			}.bind(this));
 
