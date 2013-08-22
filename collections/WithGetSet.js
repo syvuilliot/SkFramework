@@ -35,17 +35,25 @@ define([
 			}, this);
 		},
 		set: function(prop, settedValue){
-			// TODO: l'idée était de mettre la valeur avant le set dans la ligne "remove" mais ça boucle avec le lazyRegistry
-			// var value = this.get(prop);
+			var updated = this.has('prop');
+			var value;
+			if (updated){
+				value = this.get(prop);
+			}
 			this._startChanges();
 			if (this["_"+prop+"Setter"]){
 				this["_"+prop+"Setter"](settedValue);
 			} else {
 				this["_Setter"](prop, settedValue); // default setter
 			}
+			// only emit a 'remove' change if the prop was already setted
+			if (updated){
+				this._pushChanges([
+					{type: 'remove', value: value, key: prop},
+				]);
+			}
 			this._pushChanges([
-				{type: 'remove', /*value: value,*/ key: prop},
-				{type: 'add', value: this.get(prop), key: prop}
+				{type: 'add', value: this.get(prop), key: prop},
 			]);
 			this._stopChanges();
 		},

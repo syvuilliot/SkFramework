@@ -26,12 +26,11 @@ define([
 			this.style = this._style = new ObservableObject();
 			this._components.asChangesStream().onValue(function(changes) {
 				changes.forEach(function(change) {
-					if (change.type=== 'add') {
+					if (change.type === 'add') {
 						change.value.style && change.value.style.set('name', str.hyphenate(change.key));
-					} else {
-						// remove
+					} else if (change.type === 'remove') {
 						// TODO: decommenter quand le bug sur change.value sera résolu
-						// change.value.style && change.value.style.remove('name');
+						change.value.style && change.value.style.remove('name');
 					}
 				});
 			});
