@@ -22,7 +22,8 @@ define([
 		function() {
 			this._components.factories.addEach({
 				list: function() {
-					return new List('ul', {
+					return new List({
+						tag: 'ul',
 						factory: function(item) {
 							return new RemovableContainer({
 								content: new TodoEditor(item),
@@ -41,7 +42,7 @@ define([
 
 			var self = this;
 			this._components.when('list',
-				bindProps('value', '<', 'todoList').bind(self)
+				bindProps('content', '<', 'todoList').bind(self)
 			);
 			this._components.when('addNew', function(addNew) {
 				return addNew.on('newTodo', function(newTodo) {

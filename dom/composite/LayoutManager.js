@@ -57,12 +57,29 @@ define([
 				this._currentTree = tree;
 			},
 
-			_resolveNode: function(node) {
-				if (this._registry.has(node)) {
-					return this._registry.get(node);
+			// create components from factories if needed and store/cache them in regsitry to always use the same instance
+			_resolveNode: function(arg) {
+				var node;
+				var registry = this._registry;
+				if (typeof arg === 'string'){
+					if (registry.has(arg)){
+						node = registry.get(arg);
+					} else {
+						var factory = registry.factories.get(arg);
+						if (typeof factory !== 'function'){
+							throw 'No factory for this id';
+						}
+						node = factory();
+						registry.set(arg, node);
+					}
 				} else {
-					return node;
+					node = arg;
 				}
+				// test that node is following the domNode API
+				if (node === undefined || (typeof node.get !== 'function')) {
+					throw "Cannot resolve node";
+				}
+				return node;
 			},
 
 			_treeGetter: function() {
