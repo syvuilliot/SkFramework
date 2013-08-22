@@ -10,10 +10,11 @@ define([
 	"../propertyManagers/PropertyValueStore",
 	"../propertyManagers/PropertyValueIsResource",
 	"../propertyManagers/WithValueIsSet",
-	"../propertyManagers/WithValueIsOrderedSet",
+	"../propertyManagers/WithValueIsOrderableSet",
 	"../propertyManagers/WithPropertyOnObservableObject",
 	"../propertyManagers/WithValueFromManager",
 	"../propertyManagers/WithSerialize",
+	"../propertyManagers/WithSerializeOrderableSet",
 	"../propertyManagers/WithItemsSerialize",
 	"../propertyManagers/WithRelationSerialize",
 	"../propertyManagers/WithUpdateSyncStatus",
@@ -42,6 +43,7 @@ define([
 	WithPropertyValueBindedOnResource,
 	WithValueFromManager,
 	WithSerialize,
+	WithSerializeOrderableSet,
 	WithItemsSerialize,
 	WithRelationSerialize,
 	WithUpdateSyncStatus,
@@ -55,6 +57,15 @@ define([
 	compose,
 	Deferred
 ) {
+	// contentEqual
+	function listContentEqual(a, b){
+		assert.equal(a.length, b.length);
+		a.forEach(function(item, index){
+			assert.equal(item, b.get(index));
+		});
+	}
+
+
 	// asyncMemory
 	var AsyncMemory = compose(Memory, {
 		get: compose.around(function(baseGet){
@@ -284,7 +295,7 @@ define([
 		WithSerialize.call(personManager.propertyManagers.fullName, {
 			serializePropName: "fullName",
 		});
-		WithSerialize.call(personManager.propertyManagers.phones, {
+		WithSerializeOrderableSet.call(personManager.propertyManagers.phones, {
 			serializePropName: "phones",
 		});
 
@@ -422,8 +433,8 @@ define([
 				fullName : "Sylvain Vuilliot",
 				phones: ["06", "09"],
 			});
-			assert.deepEqual(personManager.getPropValue(syv, "phones"), ["06", "09"]);
-			assert.deepEqual(syv.get('phones'), ["06", "09"]);
+			listContentEqual(personManager.getPropValue(syv, "phones"), ["06", "09"]);
+			listContentEqual(syv.get('phones'), ["06", "09"]);
 		},
 		"set and get value of a 'fromManager' property (auto populated and read-only)": function(){
 			var syv = personManager.create({fullName : "Sylvain Vuilliot"});
@@ -471,8 +482,8 @@ define([
 		"serialize person": function(){
 			var syv = personManager.create();
 			syv.set('fullName', "Sylvain Vuilliot");
-			syv.get('phones').push("09");
-			syv.get('phones').unshift("06");
+			syv.get('phones').add("09");
+			syv.get('phones').add("06", 0);
 			assert.deepEqual(personManager.serialize(syv), {
 				fullName: "Sylvain Vuilliot",
 				phones: ["06", "09"],
