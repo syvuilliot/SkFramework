@@ -17,7 +17,7 @@ define([
 	"../propertyManagers/WithItemsSerialize",
 	"../propertyManagers/WithRelationSerialize",
 	"../propertyManagers/WithUpdateSyncStatus",
-	'ksf/collections/ObservableObject',
+	'ksf/collections/Dict',
 	"collections/set",
 	"collections/map",
 	'frb/bind',
@@ -45,7 +45,7 @@ define([
 	WithItemsSerialize,
 	WithRelationSerialize,
 	WithUpdateSyncStatus,
-	ObservableObject,
+	Dict,
 	Set,
 	Map,
 	bind,
@@ -84,7 +84,7 @@ define([
 
 	// Task constructor
 	var Task = compose(
-		ObservableObject,
+		Dict,
 		function Task(label, done){
 			this.set('label', label || "");
 			this.set('done', done);
@@ -113,7 +113,7 @@ define([
 
 	// Person Constructor
 	var Person = compose(
-		ObservableObject,
+		Dict,
 		function Person(fullName){
 			this.set('fullName', fullName || "prenom nom");
 		}, {
@@ -608,7 +608,7 @@ define([
 		},
 		"observable syncStatus": function(){
 			var inSyncObservedValue;
-			var binded = new ObservableObject();
+			var binded = new Dict();
 			var syv = personManager.create({
 				fullName: "Sylvain Vuilliot",
 			});

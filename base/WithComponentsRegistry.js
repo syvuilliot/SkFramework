@@ -7,7 +7,7 @@ define([
 	ObservableObject,
 	Map
 ){
-	// je considère que le fait d'ajouter un "fallback" qui appelle une factory quand un composant n'est pas trouvé par "get" n'est pas une fonctionnalité en soit, c'est juste une logique de surcharge. Donc, suivant ce que l'on s'est dit, je le met directement dans la "composition" et je n'en fait pas un mixin à part (comme c'était le cas).
+	// je considère que le fait d'ajouter un "fallback" qui appelle une factory quand un composant n'est pas trouvé par "get" n'est pas une fonctionnalité en soit, c'est juste une logique de surcharge. Donc, suivant ce que l'on s'est dit, je le met directement dans la "composition" et je n'en fais pas un mixin à part (comme c'était le cas).
 	var LazyRegistry = compose(
 		ObservableObject,
 

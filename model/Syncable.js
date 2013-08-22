@@ -1,10 +1,10 @@
 define([
 	"dojo/when",
-	'../collections/ObservableObject',
+	'../collections/Dict',
 	"collections/shim-object",
 ], function(
 	when,
-	ObservableObject
+	Dict
 ){
 	var Syncable = function(args){
 		// default values
@@ -37,7 +37,7 @@ define([
 			return this.logRequest(rsc, "delete", this.dataSource.remove(this.getSyncId(rsc)));
 		};
 		this.logRequest = function(rsc, type, result) {
-			var status = new ObservableObject({
+			var status = new Dict({
 				type: type,
 				started: new Date(),
 				stage: "inProgress",
