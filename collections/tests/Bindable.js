@@ -133,6 +133,54 @@ define([
 			assert.equal(cancelerCalledCount, 1);
 			assert.equal(canceler2CalledCount, 1);
 		},
+		"many whenDefined": function(){
+			collection.whenDefined("cmp1", "cmp2", function(c1, c2){
+				assert.equal(c1, cmp1);
+				assert.equal(c2, cmp2);
+				assert.equal(this, collection);
+				cbCalledCount++;
+				return function() {
+					cancelerCalledCount++;
+				};
+			});
+			collection.whenDefined("cmp2", "cmp3", function(c1, c2){
+				assert.equal(c1, cmp2);
+				assert.equal(c2, cmp3);
+				assert.equal(this, collection);
+				cb2CalledCount++;
+				return function() {
+					canceler2CalledCount++;
+				};
+			});
+			assert.equal(cbCalledCount, 0);
+			assert.equal(cancelerCalledCount, 0);
+			assert.equal(cb2CalledCount, 0);
+			assert.equal(canceler2CalledCount, 0);
+
+			collection.setEach({
+				"cmp1": cmp1,
+				'cmp2': cmp2,
+				'cmp3': cmp3,
+			});
+			assert.equal(cbCalledCount, 1);
+			assert.equal(cancelerCalledCount, 0);
+			assert.equal(cb2CalledCount, 1);
+			assert.equal(canceler2CalledCount, 0);
+
+			collection.remove("cmp1");
+			assert.equal(cbCalledCount, 1);
+			assert.equal(cancelerCalledCount, 1);
+			assert.equal(cb2CalledCount, 1);
+			assert.equal(canceler2CalledCount, 0);
+
+			collection.remove("cmp2");
+			assert.equal(cbCalledCount, 1);
+			assert.equal(cancelerCalledCount, 1);
+			assert.equal(cb2CalledCount, 1);
+			assert.equal(canceler2CalledCount, 1);
+		},
+
+
 	});
 
 	registerSuite({
