@@ -35,7 +35,7 @@ define([
 			}, this);
 		},
 		set: function(prop, settedValue){
-			var updated = this.has('prop');
+			var updated = this.has(prop);
 			var value;
 			if (updated){
 				value = this.get(prop);
