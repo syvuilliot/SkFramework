@@ -66,10 +66,10 @@ define([
 				},
 			});
 
-			this._components.when('head',
+			this._components.whenDefined('head',
 				bindProps('content', '<', 'columns').bind(self)
 			);
-			this._components.when('body', [
+			this._components.whenDefined('body', [
 				bindProps('content', '<', 'content').bind(self),
 				bindProps('columns', '<', 'columns').bind(self),
 				bindProps('active', '<<->', 'active').bind(self),
