@@ -1,13 +1,15 @@
 define([
 	'intern!object',	'intern/chai!assert',
 	"../ActiveList",
-	"../HtmlElement",
+	"../dom/HtmlElement",
+	'../dom/layout/HtmlContainerIncremental',
 	"dojo/dom-class",
 	"ksf/collections/OrderableSet",
 ], function(
 	registerSuite, assert,
 	ActiveList,
 	HtmlElement,
+	HtmlContainerIncremental,
 	domClass,
 	OrderableSet
 ){
@@ -19,7 +21,7 @@ define([
 	css.sheet.insertRule('.selected { background-color: blue; }', css.sheet.cssRules.length);
 
 	var list = window.list = new ActiveList({
-		tag: 'ul',
+		container: new HtmlContainerIncremental('ul'),
 		factory: function (item) {
 			var li = new HtmlElement("li");
 			li.set("innerHTML", item.name);

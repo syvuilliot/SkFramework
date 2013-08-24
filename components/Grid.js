@@ -1,147 +1,85 @@
 define([
-	'ksf/utils/constructor',
-	"./List",
-	"frb/bind",
-	'frb/bindings',
-	'ksf/components/DomComponent',
-	'ksf/component/layout/samples/DomInDom',
-	'ksf/component/layout/samples/KsDomIn',
+	'compose',
+	'ksf/dom/composite/Composite',
+	'./List',
+	'./ActiveList',
+	'./dom/layout/HtmlContainer',
+	'./dom/layout/HtmlContainerIncremental',
+	'ksf/dom/WithActive',
+	'./dom/HtmlElement',
+	'ksf/utils/bindProps',
 ], function(
-	ctr,
+	compose,
+	Composite,
 	List,
-	bind,
-	bindings,
-	DomComponent,
-	DomInDom,
-	KsDomIn
+	ActiveList,
+	HtmlContainer,
+	HtmlContainerIncremental,
+	WithActive,
+	HtmlElement,
+	bindProps
 ){
+	var ContainerWithActive = compose(
+		HtmlContainerIncremental,
+		WithActive
+	);
 
-	var BodyCell = ctr(function BodyCell(item, column){
-		this.domNode = document.createElement("td");
-		this.item = item;
-		this.column = column;
-		this._content = column.factory.create(item);
-		this.placer = column.placer || new DomInDom();
-		this.placer.put(this._content, this.domNode);
-	},  {
-
-		destroy: function(){
-			this.placer.remove(this._content, this.domNode);
-			this.column.factory.destroy(this.item, this.content);
-		},
-	});
-
-	var BodyRow = ctr(function BodyRow(item){
-		this.domNode = document.createElement("tr");
-		this._cells = new List({
-			domNode : this.domNode,
-			factory: {
-				create: function (column) {
-					var cell = new BodyCell(item, column);
-					return cell;
+	return compose(
+		Composite,
+		function() {
+			var self = this;
+			this._components.factories.addEach({
+				head: function() {
+					return new List({
+						container: new HtmlContainerIncremental('tr'),
+						factory: function(column) {
+							return new HtmlElement('th', {
+								innerHTML: column.head.label,
+							});
+						},
+					});
 				},
-				destroy: function(column, cell){
-					cell.destroy();
+				body: function() {
+					var body = new ActiveList({
+						container: new HtmlContainerIncremental('tbody'),
+						factory: function(item){
+							var row = new List({
+								container: new ContainerWithActive('tr'),
+								factory: function(column){
+									return new HtmlContainer('td', {
+										content: [column.body.factory(item)],
+									});
+								},
+							});
+							row.setR('content', body.getR('columns'));
+							row._component.bind('active', row, 'active');
+							return row;
+						},
+					});
+					return body;
 				},
-			},
-			placer: new KsDomIn(new DomInDom()),
-		});
-		bindings.defineBinding(this._cells, "value", {source: this, "<-": "columns"});
-	}, {
-		destroy: function(){
-			bindings.cancelBinding(this._cells, "value");
-			this._cells.destroy();
+			});
+
+			this._components.whenDefined('head',
+				bindProps('content', '<', 'columns').bind(self)
+			);
+			this._components.whenDefined('body', [
+				bindProps('content', '<', 'content').bind(self),
+				bindProps('columns', '<', 'columns').bind(self),
+				bindProps('active', '<<->', 'active').bind(self),
+			]);
+
+
+			// this._style.set('base', 'TodoListManager');
+
+			this._layout.set('config', [
+				new HtmlContainer('table'), [[
+					new HtmlContainer('thead'), [
+						'head',
+					]],
+					'body',
+				]
+			]);
 		}
-	});
-
-	var Body = ctr(function Body() {
-		this.domNode = document.createElement("tbody");
-		this._rows = new List({
-			domNode : this.domNode,
-			factory: {
-				create: function (item) {
-					var row = new BodyRow(item);
-					bindings.defineBinding(row, "columns", {"<-": "columns", source: this});
-					return row;
-				}.bind(this),
-				destroy: function(item, row){
-					bindings.cancelBinding(row, "columns");
-				},
-			},
-			placer: new KsDomIn(new DomInDom()),
-		});
-		bindings.defineBinding(this._rows, "value", {"<-": "value", source: this});
-	}, {
-		destroy: function(){
-			bindings.cancelBinding(this._rows, "value");
-			this._rows.destroy();
-		},
-	});
-
-	var Head = ctr(function(){
-		this.domNode = document.createElement("thead");
-		this.tr = document.createElement("tr");
-		this.domNode.appendChild(this.tr);
-		this._cells = new List({
-			domNode : this.tr,
-			factory: {
-				create: function (column) {
-					var cell = document.createElement("th");
-					cell.innerHTML = column;
-					return cell;
-				},
-				destroy: function(column, cell){
-				},
-			},
-		});
-		bindings.defineBinding(this._cells, "value", {source: this, "<-": "columns"});
-	}, {
-		destroy: function(){
-			bindings.cancelBinding(this._cells, "value");
-			this._cells.destroy();
-		},
-	});
-
-	return ctr(DomComponent, function Table(args) {
-		DomComponent.apply(this, arguments);
-		// init values
-		this.value = args && args.value;
-		this.columns = args && args.columns;
-
-		//register components
-		this._factory.addEach({
-			"head": function(){return args && args.header || new Head();},
-			"body": function(){return args && args.body || new Body();},
-		});
-
-		//bind components
-		this._bindingsFactory.addEach([
-			["head", function(head){
-				return [
-					bind(head, "columns", {source: this, "<-": "columns.map{header}"}),
-				];
-			}.bind(this)],
-			["body", function(body){
-				return [
-					bind(body, "value", {source: this,	"<-": "value"}),
-					bind(body, "columns", {source: this, "<-": "columns.map{body}"}),
-				];
-			}.bind(this)],
-		]);
-
-		//place components views
-		this._placement.set([
-			"head",
-			"body",
-			// "footer"
-		]);
-
-	}, {
-		_domTag: "table",
-		destroy: function(){
-			// TODO: call this._components.deleteAll() that call "destroy" on components
-			this._components.get("head").destroy();
-			this._components.get("body").destroy();
-		}
-	});
+	);
 });

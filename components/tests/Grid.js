@@ -1,16 +1,14 @@
 define([
 	'intern!object',	'intern/chai!assert',
 	"../Grid",
-	"frb/bind",
-	"frb/observe",
-	"collections/sorted-array",
-	"ksf/utils/frb-dom",
+	"ksf/collections/OrderableSet",
+	'../dom/HtmlElement',
+
 ], function(
 	registerSuite, assert,
 	Grid,
-	bind,
-	observe,
-	SortedArray
+	OrderableSet,
+	HtmlElement
 ){
 	// create css rules
 	var css = document.createElement("style");
@@ -20,54 +18,52 @@ define([
 	css.sheet.insertRule('.selected { background-color: blue; }', css.sheet.cssRules.length);
 
 
-	var syv = window.syv = {name: "Sylvain", age: 31, sexe: "M"};
-	var aur = window.aur = {name: "Aurélie", age: 30, sexe:"F"};
-	var ant = window.ant = {name: "Antonin", age: 2, sexe:"M"};
-	var leo = window.leo = {name: "Léonie", age: 1, sexe:"F"};
-	var collection = window.collection = [syv, aur, ant];
+	var syv = window.syv = {name: "Sylvain", age: 31, genre: "M"};
+	var aur = window.aur = {name: "Aurélie", age: 30, genre:"F"};
+	var ant = window.ant = {name: "Antonin", age: 2, genre:"M"};
+	var leo = window.leo = {name: "Léonie", age: 1, genre:"F"};
+	var collection = window.collection = new OrderableSet([syv, aur, ant]);
 
 	var grid = window.grid = new Grid({});
-	document.body.appendChild(grid.domNode);
+	document.body.appendChild(grid.get('domNode'));
 
-	grid.value = collection;
+	grid.set('content', collection);
 
-	var InputRenderer = function(prop){
-		return {
-			create: function(item){
-				var cmp = document.createElement("input");
-				cmp.destroy = bind(cmp, "value", {
-					"<->": prop,
-					source: item,
-				});
-				return cmp;
-			},
-			destroy: function(item, cmp){
-				cmp.destroy();
-			},
-		};
-	};
-
-	var columns = window.columns = [{
-		header: "Nom",
+	var columns = window.columns = new OrderableSet([{
+		head: {
+			label: "Nom"
+		},
 		body: {
-			factory : InputRenderer("name"),
+			factory : function(item) {
+				return new HtmlElement('div', {innerHTML: item.name});
+			},
 		}
 	}, {
-		header: "Age",
+		head: {
+			label: "Age",
+		},
 		body: {
-			factory : InputRenderer("age"),
+			factory : function(item) {
+				return new HtmlElement('input', {value: item.age});
+			},
 		}
-	}];
+	}]);
 
-	grid.columns = columns;
+	grid.set('columns', columns);
+	grid.set('active', ant);
 
 	// add column
-	columns.push({header: "Sexe", body: {
-		factory: InputRenderer("sexe"),
-	}});
+	columns.add({
+		head: {label: "Genre"},
+		body: {
+			factory : function(item) {
+				return new HtmlElement('input', {value: item.genre});
+			},
+		}
+	});
 
 	// add row
-	collection.push(leo);
+	collection.add(leo);
 
 	// sort collection
 	// collection.reverse();
@@ -80,11 +76,11 @@ define([
 	// select programatically
 
 	// observe activeItem
-	observe(grid, "activeItem", function(item){
+/*	observe(grid, "activeItem", function(item){
 		console.log("active item changed to", item.name);
 	});
 	observe(grid, "activeItemIndex", function(index){
 		console.log("active item index changed to", index);
 	});
-
+*/
 });
