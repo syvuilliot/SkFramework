@@ -22,14 +22,14 @@ define([
 			var sourceHandler = sourceValueR.onValue(function(value){
 				if (! changing){
 					changing = true;
-					target.set(targetProp, options && options.convert && options.convert.call(target, value) || value);
+					target.set(targetProp, (options && options.convert ? options.convert.call(target, value) : value));
 					changing = false;
 				}
 			});
 			var targetHandler = targetValueR.onValue(function(value){
 				if (! changing && ! init){ // prevent calling source.set at init time
 					changing = true;
-					source.set(sourceProp, options && options.revert && options.revert.call(target, value) || value);
+					source.set(sourceProp, (options && options.revert ? options.revert.call(target, value) : value));
 					changing = false;
 				}
 			});
