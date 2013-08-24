@@ -1,8 +1,8 @@
 define([
 	'compose',
 	'ksf/dom/composite/Composite',
-	'ksf/components/dom/List',
-	'ksf/components/dom/layout/HtmlContainer',
+	'ksf/components/List',
+	'ksf/components/dom/layout/HtmlContainerIncremental',
 	'./TodoCreator',
 	'./TodoEditor',
 	'./RemovableContainer',
@@ -23,7 +23,7 @@ define([
 			this._components.factories.addEach({
 				list: function() {
 					return new List({
-						tag: 'ul',
+						container: new HtmlContainer('ul'),
 						factory: function(item) {
 							return new RemovableContainer({
 								content: new TodoEditor(item),
