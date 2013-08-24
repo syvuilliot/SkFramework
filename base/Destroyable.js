@@ -1,7 +1,7 @@
 define([
-
+	'ksf/utils/destroy',
 ], function(
-
+	destroy
 ){
 	var Destroyable = function(){
 		this._owned = [];
@@ -15,14 +15,7 @@ define([
 			this._owned.delete(o);
 		},
 		destroy: function(){
-			this._owned.forEach(function(o){
-				if (typeof o === "function"){
-					o();
-				} else {
-					o.destroy && o.destroy();
-				}
-				this.unown(o);
-			}.bind(this));
+			this._owned.forEach(destroy);
 		},
 	};
 

@@ -60,7 +60,13 @@ define([
 					return mappedChanges;
 				};
 
-				return this.updateContentR(changesStream.map(mapChanges));
+				var canceler = this.updateContentR(changesStream.map(mapChanges));
+				return function(){
+					// stop observing the stream of changes
+					destroy(canceler);
+					// destroy all created values
+					target.forEach(destroy);
+				};
 			},
 			setContentIncrementalFilter: function(source, filterCb){
 					var pass, i;
