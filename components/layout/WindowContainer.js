@@ -17,6 +17,7 @@ define([
 		rootNode.appendChild(args.content.get('domNode'));
 		
 		size();
+		args.content.startLiveRendering();
 		window.onresize = size;
 	};
 });

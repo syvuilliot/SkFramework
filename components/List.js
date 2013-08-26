@@ -1,7 +1,7 @@
 define([
 	'compose',
 	'ksf/dom/composite/Composite',
-	'ksf/dom/composite/WithContentMappedToContainer',
+	'ksf/dom/composite/WithContentMappedToContainer'
 ], function(
 	compose,
 	Composite,
@@ -30,7 +30,9 @@ define([
 
 			updateRendering: function() {
 				this._applyStyle();
-			}
+			},
+
+			startLiveRendering: function() {}
 		}
 	);
 });

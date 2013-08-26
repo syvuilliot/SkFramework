@@ -30,6 +30,14 @@ define([
 			},
 			_Detector: function(prop){
 				return this._domNode.hasOwnProperty(prop);
+			},
+
+			on: function(eventName, callback) {
+				var domNode = this.get('domNode');
+				domNode.addEventListener(eventName, callback);
+				return function() {
+					domNode.removeEventListener(eventName, callback);
+				};
 			}
 		}
 	);

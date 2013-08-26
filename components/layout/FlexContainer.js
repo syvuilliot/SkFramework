@@ -3,12 +3,14 @@ define([
 	'./ContainerBase',
 	'ksf/dom/Sizeable',
 	'ksf/dom/WithInnerSize',
+	'ksf/utils/destroy',
 	'collections/shim-array'
 ], function(
 	compose,
 	Container,
 	Sizeable,
-	WithInnerSize
+	WithInnerSize,
+	destroy
 ) {
 	return compose(
 		Container,
@@ -29,7 +31,7 @@ define([
 			},
 
 			_orientationSetter: function(orientation) {
-				this._vertical = orientation != 'horizontal';
+				this._vertical = orientation !== 'horizontal';
 				return this._Setter('orientation', orientation);
 			},
 
@@ -63,7 +65,7 @@ define([
 				thisNode.innerHTML = "";
 				// cancel listeners
 				this._handlers.forEach(function(handler) {
-					handler.destroy();
+					destroy(handler);
 				});
 				this._handlers = [];
 
