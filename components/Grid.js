@@ -3,10 +3,10 @@ define([
 	'ksf/dom/composite/Composite',
 	'./List',
 	'./ActiveList',
-	'./dom/layout/HtmlContainer',
-	'./dom/layout/HtmlContainerIncremental',
+	'./HtmlContainer',
+	'./HtmlContainerIncremental',
 	'ksf/dom/WithActive',
-	'./dom/HtmlElement',
+	'./HtmlElement',
 	'ksf/utils/bindProps',
 ], function(
 	compose,

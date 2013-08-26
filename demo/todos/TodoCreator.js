@@ -1,6 +1,6 @@
 define([
 	'compose',
-	'ksf/components/dom/HtmlElement',
+	'ksf/components/HtmlElement',
 	'../Todo'
 ], function(
 	compose,

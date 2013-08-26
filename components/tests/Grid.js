@@ -2,7 +2,7 @@ define([
 	'intern!object',	'intern/chai!assert',
 	"../Grid",
 	"ksf/collections/OrderableSet",
-	'../dom/HtmlElement',
+	'../HtmlElement',
 
 ], function(
 	registerSuite, assert,

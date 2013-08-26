@@ -2,7 +2,7 @@ define([
 	'compose',
 	'ksf/dom/composite/Composite',
 	'ksf/components/List',
-	'ksf/components/dom/layout/HtmlContainerIncremental',
+	'ksf/components/HtmlContainerIncremental',
 	'./TodoCreator',
 	'./TodoEditor',
 	'./RemovableContainer',

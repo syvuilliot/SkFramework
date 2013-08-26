@@ -6,8 +6,8 @@ define([
 	'ksf/dom/proxyEvent',
 	'ksf/collections/OrderableSet',
 	'./List',
-	'./dom/HtmlElement',
-	'./dom/layout/HtmlContainerIncremental',
+	'./HtmlElement',
+	'./HtmlContainerIncremental',
 ], function(
 	compose,
 	Composite,

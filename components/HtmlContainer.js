@@ -1,7 +1,7 @@
 define([
 	'compose',
 	'ksf/dom/WithOrderedContent',
-	'../HtmlElement'
+	'./HtmlElement'
 ], function(
 	compose,
 	WithOrderedContent,

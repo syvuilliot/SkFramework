@@ -1,8 +1,8 @@
 define([
 	'compose',
 	'ksf/dom/composite/Composite',
-	'ksf/components/dom/layout/HtmlContainer',
-	'ksf/components/dom/HtmlElement',
+	'ksf/components/HtmlContainer',
+	'ksf/components/HtmlElement',
 	'ksf/dom/proxyEvent',
 ], function(
 	compose,
