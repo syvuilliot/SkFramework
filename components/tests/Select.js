@@ -30,10 +30,10 @@ define([
 			collection = window.collection = new OrderableSet(['syv', 'aur', 'ant']);
 			s = window.s = new Select();
 			document.body.appendChild(s.get('domNode'));
-			s.whenChanged('selected', selectedObserver);
+			s.whenChanged('value', selectedObserver);
 		},
 		"no options": function(){
-			assert.equal(s.get('selected'), undefined);
+			assert.equal(s.get('value'), undefined);
 			assert.equal(s.get('domNode').value, "");
 			assert.equal(s.get('domNode').selectedIndex, -1);
 			assert.equal(s.get('domNode').children.length, 0);
@@ -42,7 +42,7 @@ define([
 		},
 		"set options": function() {
 			s.set('options', collection);
-			assert.equal(s.get('selected'), undefined);
+			assert.equal(s.get('value'), undefined);
 			assert.equal(s.get('domNode').value, "");
 			assert.equal(s.get('domNode').selectedIndex, -1);
 			assert.equal(s.get('domNode').children.length, 3);
@@ -51,8 +51,8 @@ define([
 		},
 		"select an item after options": function() {
 			s.set('options', collection);
-			s.set('selected', 'aur');
-			assert.equal(s.get('selected'), 'aur');
+			s.set('value', 'aur');
+			assert.equal(s.get('value'), 'aur');
 			assert.equal(s.get('domNode').value, "aur");
 			assert.equal(s.get('domNode').selectedIndex, 1);
 			assert.equal(s.get('domNode').children.length, 3);
@@ -60,8 +60,8 @@ define([
 			assert.equal(observedSelected, 'aur');
 		},
 		"select an item before options": function() {
-			s.set('selected', 'aur');
-			assert.equal(s.get('selected'), 'aur');
+			s.set('value', 'aur');
+			assert.equal(s.get('value'), 'aur');
 			assert.equal(s.get('domNode').value, "");
 			assert.equal(s.get('domNode').selectedIndex, -1);
 			assert.equal(s.get('domNode').children.length, 0);
@@ -69,7 +69,7 @@ define([
 			assert.equal(observedSelected, 'aur');
 
 			s.set('options', collection);
-			assert.equal(s.get('selected'), 'aur');
+			assert.equal(s.get('value'), 'aur');
 			assert.equal(s.get('domNode').value, "aur");
 			assert.equal(s.get('domNode').selectedIndex, 1);
 			assert.equal(s.get('domNode').children.length, 3);
@@ -84,7 +84,7 @@ define([
 				bubbles: true,
 				cancelable: true
 			});
-			assert.equal(s.get('selected'), 'aur');
+			assert.equal(s.get('value'), 'aur');
 			assert.equal(s.get('domNode').value, "aur");
 			assert.equal(s.get('domNode').selectedIndex, 1);
 			assert.equal(s.get('domNode').children.length, 3);
@@ -93,9 +93,9 @@ define([
 		},
 		"remove an item before the selected item": function() {
 			s.set('options', collection);
-			s.set('selected', 'aur');
+			s.set('value', 'aur');
 			collection.remove(0);
-			assert.equal(s.get('selected'), 'aur');
+			assert.equal(s.get('value'), 'aur');
 			assert.equal(s.get('domNode').value, "aur");
 			assert.equal(s.get('domNode').selectedIndex, 0);
 			assert.equal(s.get('domNode').children.length, 2);
@@ -104,9 +104,9 @@ define([
 		},
 		"remove an item after the selected item": function() {
 			s.set('options', collection);
-			s.set('selected', 'aur');
+			s.set('value', 'aur');
 			collection.remove(2);
-			assert.equal(s.get('selected'), 'aur');
+			assert.equal(s.get('value'), 'aur');
 			assert.equal(s.get('domNode').value, "aur");
 			assert.equal(s.get('domNode').selectedIndex, 1);
 			assert.equal(s.get('domNode').children.length, 2);
@@ -115,9 +115,9 @@ define([
 		},
 		"remove the selected item": function() {
 			s.set('options', collection);
-			s.set('selected', 'aur');
+			s.set('value', 'aur');
 			collection.remove(1);
-			assert.equal(s.get('selected'), undefined);
+			assert.equal(s.get('value'), undefined);
 			assert.equal(s.get('domNode').value, "");
 			assert.equal(s.get('domNode').selectedIndex, -1);
 			assert.equal(s.get('domNode').children.length, 2);
@@ -126,8 +126,8 @@ define([
 		},
 		"select an item not in options": function() {
 			s.set('options', collection);
-			s.set('selected', 'bidon');
-			assert.equal(s.get('selected'), 'bidon');
+			s.set('value', 'bidon');
+			assert.equal(s.get('value'), 'bidon');
 			assert.equal(s.get('domNode').value, "");
 			assert.equal(s.get('domNode').selectedIndex, -1);
 			assert.equal(s.get('domNode').children.length, 3);
@@ -138,7 +138,7 @@ define([
 			s.set('options', collection);
 			var otherCollection = new OrderableSet(["syv", "aur", "ant", "leo"]);
 			s.set('options', otherCollection);
-			assert.equal(s.get('selected'), undefined);
+			assert.equal(s.get('value'), undefined);
 			assert.equal(s.get('domNode').value, "");
 			assert.equal(s.get('domNode').selectedIndex, -1);
 			assert.equal(s.get('domNode').children.length, 4);
@@ -148,10 +148,10 @@ define([
 
 		"keep value selected when changing options": function(){
 			s.set('options', collection);
-			s.set('selected', 'aur');
+			s.set('value', 'aur');
 			var otherCollection = new OrderableSet(["aur", "ant", "leo"]);
 			s.set('options', otherCollection);
-			assert.equal(s.get('selected'), "aur");
+			assert.equal(s.get('value'), "aur");
 			assert.equal(s.get('domNode').value, "aur");
 			assert.equal(s.get('domNode').selectedIndex, 0);
 			assert.equal(s.get('domNode').children.length, 3);
@@ -176,10 +176,10 @@ define([
 				labelProp: 'name',
 			});
 			document.body.appendChild(s.get('domNode'));
-			s.whenChanged('selected', selectedObserver);
+			s.whenChanged('value', selectedObserver);
 		},
 		"no options": function(){
-			assert.equal(s.get('selected'), undefined);
+			assert.equal(s.get('value'), undefined);
 			assert.equal(s.get('domNode').value, "");
 			assert.equal(s.get('domNode').selectedIndex, -1);
 			assert.equal(s.get('domNode').children.length, 0);
@@ -188,7 +188,7 @@ define([
 		},
 		"set options": function() {
 			s.set('options', collection);
-			assert.equal(s.get('selected'), undefined);
+			assert.equal(s.get('value'), undefined);
 			assert.equal(s.get('domNode').value, "");
 			assert.equal(s.get('domNode').selectedIndex, -1);
 			assert.equal(s.get('domNode').children.length, 3);
@@ -197,8 +197,8 @@ define([
 		},
 		"select an item after options": function() {
 			s.set('options', collection);
-			s.set('selected', aur);
-			assert.equal(s.get('selected'), aur);
+			s.set('value', aur);
+			assert.equal(s.get('value'), aur);
 			assert.equal(s.get('domNode').value, "Aurélie");
 			assert.equal(s.get('domNode').selectedIndex, 1);
 			assert.equal(s.get('domNode').children.length, 3);
@@ -206,8 +206,8 @@ define([
 			assert.equal(observedSelected, aur);
 		},
 		"select an item before options": function() {
-			s.set('selected', aur);
-			assert.equal(s.get('selected'), aur);
+			s.set('value', aur);
+			assert.equal(s.get('value'), aur);
 			assert.equal(s.get('domNode').value, "");
 			assert.equal(s.get('domNode').selectedIndex, -1);
 			assert.equal(s.get('domNode').children.length, 0);
@@ -215,7 +215,7 @@ define([
 			assert.equal(observedSelected, aur);
 
 			s.set('options', collection);
-			assert.equal(s.get('selected'), aur);
+			assert.equal(s.get('value'), aur);
 			assert.equal(s.get('domNode').value, "Aurélie");
 			assert.equal(s.get('domNode').selectedIndex, 1);
 			assert.equal(s.get('domNode').children.length, 3);
@@ -230,7 +230,7 @@ define([
 				bubbles: true,
 				cancelable: true
 			});
-			assert.equal(s.get('selected'), aur);
+			assert.equal(s.get('value'), aur);
 			assert.equal(s.get('domNode').value, "Aurélie");
 			assert.equal(s.get('domNode').selectedIndex, 1);
 			assert.equal(s.get('domNode').children.length, 3);
@@ -239,9 +239,9 @@ define([
 		},
 		"remove an item before the selected item": function() {
 			s.set('options', collection);
-			s.set('selected', aur);
+			s.set('value', aur);
 			collection.remove(0);
-			assert.equal(s.get('selected'), aur);
+			assert.equal(s.get('value'), aur);
 			assert.equal(s.get('domNode').value, "Aurélie");
 			assert.equal(s.get('domNode').selectedIndex, 0);
 			assert.equal(s.get('domNode').children.length, 2);
@@ -250,9 +250,9 @@ define([
 		},
 		"remove an item after the selected item": function() {
 			s.set('options', collection);
-			s.set('selected', aur);
+			s.set('value', aur);
 			collection.remove(2);
-			assert.equal(s.get('selected'), aur);
+			assert.equal(s.get('value'), aur);
 			assert.equal(s.get('domNode').value, "Aurélie");
 			assert.equal(s.get('domNode').selectedIndex, 1);
 			assert.equal(s.get('domNode').children.length, 2);
@@ -261,9 +261,9 @@ define([
 		},
 		"remove the selected item": function() {
 			s.set('options', collection);
-			s.set('selected', aur);
+			s.set('value', aur);
 			collection.remove(1);
-			assert.equal(s.get('selected'), undefined);
+			assert.equal(s.get('value'), undefined);
 			assert.equal(s.get('domNode').value, "");
 			assert.equal(s.get('domNode').selectedIndex, -1);
 			assert.equal(s.get('domNode').children.length, 2);
@@ -272,8 +272,8 @@ define([
 		},
 		"select an item not in options": function() {
 			s.set('options', collection);
-			s.set('selected', toto);
-			assert.equal(s.get('selected'), toto);
+			s.set('value', toto);
+			assert.equal(s.get('value'), toto);
 			assert.equal(s.get('domNode').value, "");
 			assert.equal(s.get('domNode').selectedIndex, -1);
 			assert.equal(s.get('domNode').children.length, 3);
@@ -284,7 +284,7 @@ define([
 			s.set('options', collection);
 			var otherCollection = new OrderableSet([syv, aur, ant, leo]);
 			s.set('options', otherCollection);
-			assert.equal(s.get('selected'), undefined);
+			assert.equal(s.get('value'), undefined);
 			assert.equal(s.get('domNode').value, "");
 			assert.equal(s.get('domNode').selectedIndex, -1);
 			assert.equal(s.get('domNode').children.length, 4);
@@ -293,10 +293,10 @@ define([
 		},
 		"keep value selected when changing options": function(){
 			s.set('options', collection);
-			s.set('selected', aur);
+			s.set('value', aur);
 			var otherCollection = new OrderableSet([aur, ant, leo]);
 			s.set('options', otherCollection);
-			assert.equal(s.get('selected'), aur);
+			assert.equal(s.get('value'), aur);
 			assert.equal(s.get('domNode').value, "Aurélie");
 			assert.equal(s.get('domNode').selectedIndex, 0);
 			assert.equal(s.get('domNode').children.length, 3);
@@ -305,9 +305,9 @@ define([
 		},
 		"change label of non selected item": function() {
 			s.set('options', collection);
-			s.set('selected', aur);
+			s.set('value', aur);
 			ant.set('name', "Antonin Vuilliot");
-			assert.equal(s.get('selected'), aur);
+			assert.equal(s.get('value'), aur);
 			assert.equal(s.get('domNode').value, "Aurélie");
 			assert.equal(s.get('domNode').selectedIndex, 1);
 			assert.equal(s.get('domNode').children.length, 3);
@@ -317,9 +317,9 @@ define([
 		},
 		"change label of selected item": function() {
 			s.set('options', collection);
-			s.set('selected', ant);
+			s.set('value', ant);
 			ant.set('name', "Antonin Vuilliot");
-			assert.equal(s.get('selected'), ant);
+			assert.equal(s.get('value'), ant);
 			assert.equal(s.get('domNode').value, "Antonin Vuilliot");
 			assert.equal(s.get('domNode').selectedIndex, 2);
 			assert.equal(s.get('domNode').children.length, 3);

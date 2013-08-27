@@ -50,7 +50,7 @@ define([
 				},
 			});
 			this._component.setR('content', this.getR('options'));
-			selectComponent.bind('selectedIndex', this, 'selected', {
+			selectComponent.bind('selectedIndex', this, 'value', {
 				convert: function(item){
 					return self.get('options').indexOf(item);
 				},
@@ -63,7 +63,7 @@ define([
 			this.getR('options').flatMapLatest(function(options) {
 				return options.asReactive();
 			}).onValue(function() {
-				selectComponent.set('selectedIndex', self.get('options').indexOf(self.get('selected')));
+				selectComponent.set('selectedIndex', self.get('options').indexOf(self.get('value')));
 			});
 
 		}, {
@@ -81,6 +81,9 @@ define([
 			updateRendering: function() {
 				this._applyStyle();
 			},
+
+			startLiveRendering: function() {},
+
 			destroy: function(){
 				Destroyable.prototype.destroy.call(this);
 				destroy(this._component);
