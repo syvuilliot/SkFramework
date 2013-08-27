@@ -1,8 +1,8 @@
 define([
 	'intern!object',	'intern/chai!assert',
 	"../ActiveList",
-	"../dom/HtmlElement",
-	'../dom/layout/HtmlContainerIncremental',
+	"../HtmlElement",
+	'../HtmlContainerIncremental',
 	"dojo/dom-class",
 	"ksf/collections/OrderableSet",
 ], function(

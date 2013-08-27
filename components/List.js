@@ -13,9 +13,15 @@ define([
 	 */
 	return compose(
 		Composite,
-		WithContentMappedToContainer,
 		function(args){
 			this._component = args.container;
+			this._factory = args.factory;
+			WithContentMappedToContainer.call(this);
+		}, {
+			destroy: function() {
+				Composite.prototype.destroy.call(this);
+				WithContentMappedToContainer.prototype.destroy.call(this);
+			}
 		}, {
 			_applyStyle: function() {
 				this.style.forEach(function(value, category) {
