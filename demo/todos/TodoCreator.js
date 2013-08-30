@@ -1,21 +1,27 @@
 define([
 	'compose',
+	'ksf/dom/composite/CompositeMono',
 	'ksf/components/HtmlElement',
+	'ksf/dom/proxyEvent',
 	'../Todo'
 ], function(
 	compose,
+	CompositeMono,
 	HtmlElement,
+	proxyEvent,
 	Todo
 ) {
 	return compose(
-		HtmlElement.prototype,
+		CompositeMono,
 		function() {
-			HtmlElement.call(this, 'input', { type: 'text', placeholder: "Add new todo" });
+			this._component = new compose(HtmlElement, proxyEvent.changed)('input', { type: 'text', placeholder: "Add new todo" });
 
-			this.get('domNode').addEventListener('change', function() {
-				this._emit('newTodo', new Todo({ text: this.get("value") }));
-				// reset input
-				this.set('value', "");
+			var changing;
+			// we need to filter empty text to prevent emitting twice
+			this._component.getR('value').filter(function(text) {return text !== "";}).onValue(function(text) {
+					this._emit('newTodo', new Todo({ text: text }));
+					// reset input
+					this._component.set('value', "");
 			}.bind(this));
 		}
 	);
