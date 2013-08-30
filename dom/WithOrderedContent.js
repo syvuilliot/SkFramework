@@ -44,9 +44,6 @@ define([
 					domNode.insertBefore(cmpNode, currentNode);
 				}
 			});
-		},
-		updateRendering: function() {
-			this._applyContent(this.get('content'));
 		}
 	};
 

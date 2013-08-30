@@ -4,14 +4,16 @@ define([
 	'../../collections/ObservableObject',
 	'../WithDomNode',
 	'./LayoutManager',
-	'ksf/utils/string'
+	'ksf/utils/string',
+	'ksf/utils/destroy'
 ], function(
 	compose,
 	CompositeBase,
 	ObservableObject,
 	WithDomNode,
 	LayoutManager,
-	str
+	str,
+	destroy
 ){
 	// c'est un domComponent dont la création du domNode est délégué à d'autres domComponents
 	// on peut ainsi se contenter de manipuler les composants selon l'API KSF au lieu de manipuler directement des domNodes
@@ -35,8 +37,14 @@ define([
 				});
 			});
 		}, {
+			_applyBounds: function() {
+				var root = this._layout.get('root');
+				root && root.set('bounds', this.get('bounds'));
+			},
+
 			_applyLayout: function() {
 				this._layout.apply();
+				this._applyBounds();
 			},
 
 			_applyStyle: function() {
@@ -55,8 +63,28 @@ define([
 				this._applyLayout();
 				this._applyStyle();
 				this._layout.get('tree').topDown(function(cmp) {
-					cmp.updateRendering();
+					cmp.updateRendering && cmp.updateRendering();
 				});
+			},
+
+			startLiveRendering: function() {
+				var cancelLiveLayout = this.own(this._layout.on('changed', function() {
+					this.updateRendering();
+					this.stopLiveRendering();
+					this.startLiveRendering();
+				}.bind(this)));
+				var liveCmps = [];
+				this._layout.get('tree').topDown(function(cmp) {
+					cmp.startLiveRendering && cmp.startLiveRendering();
+					liveCmps.push(cmp);
+				});
+				this.stopLiveRendering = function() {
+					destroy(cancelLiveLayout);
+					liveCmps.forEach(function(cmp) {
+						cmp.stopLiveRendering && cmp.stopLiveRendering();
+					});
+					this.stopLiveRendering = undefined;
+				}.bind(this);
 			}
 		}
 	);

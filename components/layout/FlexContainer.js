@@ -1,6 +1,6 @@
 define([
 	'compose',
-	'./ContainerBase',
+	'../ContainerBase',
 	'ksf/dom/Sizeable',
 	'ksf/dom/WithInnerSize',
 	'ksf/utils/destroy',
@@ -30,9 +30,8 @@ define([
 				});
 			},
 
-			_orientationSetter: function(orientation) {
-				this._vertical = orientation !== 'horizontal';
-				return this._Setter('orientation', orientation);
+			__verticalGetter: function() {
+				return this.get('orientation') !== 'horizontal';
 			},
 
 			createRendering: function() {
@@ -45,7 +44,7 @@ define([
 					bounds = this.get('bounds'),
 					thisNode = this.get('domNode'),
 					innerSize = this.get('innerSize'),
-					vertical = this._vertical,
+					vertical = this.get('_vertical'),
 					fixedDim = 0,
 					flexChildren = [];
 
@@ -140,7 +139,7 @@ define([
 			},
 
 			updateRendering: function() {
-				Sizeable.prototype.updateRendering.apply(this, arguments);
+				this._applyBounds();
 				Container.prototype.updateRendering.apply(this, arguments);
 				this._applyContent();
 			}

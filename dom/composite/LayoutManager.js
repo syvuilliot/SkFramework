@@ -17,6 +17,9 @@ define([
 		{
 			apply: function() {
 				var config = this.get('config');
+				if (config === this._appliedConfig) {
+					return;
+				}
 
 				var tree = new Tree(config);
 
@@ -26,6 +29,8 @@ define([
 				}, this);
 
 				this._applyTree(cmpTree);
+
+				this._appliedConfig = config;
 			},
 
 			_configSetter: function(config) {

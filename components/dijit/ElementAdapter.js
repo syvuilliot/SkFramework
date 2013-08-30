@@ -1,21 +1,21 @@
 define([
 	'compose',
 	'ksf/collections/ObservableObject',
-	'ksf/dom/WithHTMLElement',
+	'ksf/dom/WithDomNode',
 	'ksf/dom/WithCssClassStyle'
 ], function(
 	compose,
 	ObservableObject,
-	WithHTMLElement,
+	WithDomNode,
 	WithCssClassStyle
 ) {
 	return compose(
 		ObservableObject,
-		WithHTMLElement,
+		WithDomNode,
 		WithCssClassStyle,
-		function(tag, attrs) {
-			this._tag = tag;
-			this.createRendering();
+		function(dijit, attrs) {
+			this._dijit = dijit;
+			this.set('domNode', this._dijit.domNode);
 			if (attrs) {
 				this.setEach(attrs);
 			}
@@ -23,24 +23,21 @@ define([
 		},
 		{
 			_Getter: function(prop) {
-				return this._domNode[prop];
+				return this._dijit.get(prop);
 			},
 			_Setter: function(prop, value) {
-				this._applyDomAttr(prop, value);
+				this._dijit.set(prop, value);
 			},
-			_Detector: function(prop){
-				return this._domNode.hasOwnProperty(prop);
+
+			updateRendering: function() {
+				this._dijit.resize();
 			},
 
 			on: function(eventName, callback) {
 				if (eventName === 'changed') {
 					return ObservableObject.prototype.on.apply(this, arguments);
 				}
-				var domNode = this.get('domNode');
-				domNode.addEventListener(eventName, callback);
-				return function() {
-					domNode.removeEventListener(eventName, callback);
-				};
+				return this._dijit.on(eventName, callback);
 			}
 		}
 	);

@@ -31,7 +31,7 @@ define([
 			// order current items and add new items
 			items.forEach(function(item, index){
 				if (collection.get(index) !== item){
-					collection.remove(item);
+					collection.remove(collection.indexOf(item));
 					collection.add(item, index);
 				}
 			});

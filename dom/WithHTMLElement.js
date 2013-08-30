@@ -1,41 +1,17 @@
 define([
-	'compose'
+	'compose',
+	'./WithDomNode'
 ], function(
-	compose
+	compose,
+	WithDomNode
 ){
-	return compose({
-		_domNodeGetter: function() {
-			if (!this._domNode) {
-				// create node if not rendered yet
-				this.createRendering();
-			}
-			return this._domNode;
-		},
-		_domNodeRemover: function() {
-			delete this._domNode;
+	return compose(WithDomNode, {
+		createRendering: function() {
+			this.set('domNode', document.createElement(this._tag));
 		},
 
 		destroyRendering: function() {
 			this.remove('domNode');
-		},
-
-		_applyDomAttr: function(prop, value) {
-			this._domNode[prop] = value;
-			if (prop === 'innerHTML') {
-				this._emit('sizechanged');
-			}
-		},
-
-		_outerSizeGetter: function() {
-			var node = this.get('domNode');
-			return {
-				height: node.offsetHeight,
-				width: node.offsetWidth
-			};
-		},
-
-		createRendering: function() {
-			this._domNode = document.createElement(this._tag);
 		},
 
 		updateRendering: function() {
@@ -43,5 +19,12 @@ define([
 				this._applyDomAttr(prop, value);
 			}.bind(this));
 		},
+
+		_applyDomAttr: function(prop, value) {
+			this._domNode[prop] = value;
+			if (prop === 'innerHTML') {
+				this._emit('sizechanged');
+			}
+		}
 	});
 });
