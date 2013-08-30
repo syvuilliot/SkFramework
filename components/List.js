@@ -1,10 +1,10 @@
 define([
 	'compose',
-	'ksf/dom/composite/Composite',
+	'ksf/dom/composite/CompositeMono',
 	'ksf/dom/composite/WithContentMappedToContainer'
 ], function(
 	compose,
-	Composite,
+	CompositeMono,
 	WithContentMappedToContainer
 ){
 	/*
@@ -12,33 +12,16 @@ define([
 	This list is optimized for only calling the factory when a new item is added and only doing incremental changes to the dom.
 	 */
 	return compose(
-		Composite,
+		CompositeMono,
 		function(args){
 			this._component = args.container;
 			this._factory = args.factory;
 			WithContentMappedToContainer.call(this);
 		}, {
 			destroy: function() {
-				Composite.prototype.destroy.call(this);
+				CompositeMono.prototype.destroy.call(this);
 				WithContentMappedToContainer.prototype.destroy.call(this);
 			}
-		}, {
-			_applyStyle: function() {
-				this.style.forEach(function(value, category) {
-					this._component.style.set(category, value);
-				}, this);
-			},
-
-			createRendering: function() {
-				this._applyStyle();
-				this.set('domNode', this._component.get('domNode'));
-			},
-
-			updateRendering: function() {
-				this._applyStyle();
-			},
-
-			startLiveRendering: function() {}
 		}
 	);
 });

@@ -1,6 +1,6 @@
 define([
 	'compose',
-	'ksf/dom/composite/Composite',
+	'ksf/dom/composite/CompositeMono',
 	'ksf/base/Destroyable',
 	'ksf/utils/destroy',
 	'ksf/dom/proxyEvent',
@@ -10,7 +10,7 @@ define([
 	'./HtmlContainerIncremental',
 ], function(
 	compose,
-	Composite,
+	CompositeMono,
 	Destroyable,
 	destroy,
 	proxyEvent,
@@ -30,7 +30,7 @@ define([
 	Known bug: in chrome, the native <select> element automatically select the first item when inserted in dom without emiting a 'change' event. So we have to ensure to insert this Select component in dom before to set the 'options'
 	*/
 	return compose(
-		Composite,
+		CompositeMono,
 		function(args){
 			var self = this;
 			this.set('options', args && args.options || new OrderableSet());
@@ -65,29 +65,6 @@ define([
 			}).onValue(function() {
 				selectComponent.set('selectedIndex', self.get('options').indexOf(self.get('value')));
 			});
-
-		}, {
-			_applyStyle: function() {
-				this.style.forEach(function(value, category) {
-					this._component.style.set(category, value);
-				}, this);
-			},
-
-			createRendering: function() {
-				this._applyStyle();
-				this.set('domNode', this._component.get('domNode'));
-			},
-
-			updateRendering: function() {
-				this._applyStyle();
-			},
-
-			startLiveRendering: function() {},
-
-			destroy: function(){
-				Destroyable.prototype.destroy.call(this);
-				destroy(this._component);
-			},
 
 		}
 	);

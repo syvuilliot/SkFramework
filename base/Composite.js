@@ -10,7 +10,7 @@ define([
 	WithComponentsRegistry
 
 ){
-	var CompositeDomComponent = compose(
+	return compose(
 		ObservableObject,
 		Destroyable,
 		WithComponentsRegistry, // no need for customization
@@ -21,6 +21,4 @@ define([
 			},
 		}
 	);
-
-	return CompositeDomComponent;
 });
