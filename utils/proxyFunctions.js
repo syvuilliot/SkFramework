@@ -1,8 +1,3 @@
-/*
- * Decorator for object with get/set methods
- *
- * Add/Override properties and methods to an object without modifying it
- */
 define([
 ], function(
 ) {
