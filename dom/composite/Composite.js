@@ -31,7 +31,6 @@ define([
 					if (change.type === 'add') {
 						change.value.style && change.value.style.set('name', str.hyphenate(change.key));
 					} else if (change.type === 'remove') {
-						// TODO: decommenter quand le bug sur change.value sera résolu
 						change.value.style && change.value.style.remove('name');
 					}
 				});

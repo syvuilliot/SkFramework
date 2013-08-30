@@ -60,6 +60,7 @@ define([
 				});
 
 				this._currentTree = tree;
+				this._emit('changed');
 			},
 
 			// create components from factories if needed and store/cache them in regsitry to always use the same instance
